@@ -56,14 +56,14 @@ const nowIso = () => new Date().toISOString();
 // ---------- Catálogo ----------
 
 export interface CatalogFilters {
-  q?: string;
-  categoria?: Category | "todas";
-  precioMin?: number;
-  precioMax?: number;
-  artesanoId?: string;
-  orden?: "recientes" | "precio-asc" | "precio-desc" | "nombre";
-  page?: number;
-  pageSize?: number;
+  q?: string | undefined;
+  categoria?: Category | "todas" | undefined;
+  precioMin?: number | undefined;
+  precioMax?: number | undefined;
+  artesanoId?: string | undefined;
+  orden?: "recientes" | "precio-asc" | "precio-desc" | "nombre" | undefined;
+  page?: number | undefined;
+  pageSize?: number | undefined;
 }
 
 export interface Paginated<T> {
@@ -164,7 +164,7 @@ export interface ProductInput {
   precio: number;
   categoria: Category;
   descripcion: string;
-  imagen?: string;
+  imagen?: string | undefined;
 }
 
 export function listMyProducts(artesanoId: string): Promise<Product[]> {
@@ -234,7 +234,7 @@ export function processImage(file: File): Promise<string> {
 export function listOrders(params: {
   rol: Role;
   artesanoId?: string;
-  estado?: OrderStatus | "todos";
+  estado?: OrderStatus | "todos" | undefined;
 }): Promise<Order[]> {
   return api(() => {
     let items = store.orders;
