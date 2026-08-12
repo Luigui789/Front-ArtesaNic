@@ -1,0 +1,103 @@
+import { Ban, Check, Circle, XCircle } from "lucide-react";
+import type { AuditEvent, OrderStatus } from "@/types";
+import { ORDER_FLOW } from "@/lib/order-state";
+import { formatDate, formatTime } from "@/lib/format";
+import { cn } from "@/lib/utils";
+
+/** RF-010: línea de tiempo del pedido con pasos completados, actual y pendientes. */
+export function OrderTimeline({ estado }: { estado: OrderStatus }) {
+  const terminalNegativo = estado === "Rechazado" || estado === "Cancelado";
+  const actualIndex = terminalNegativo ? -1 : ORDER_FLOW.indexOf(estado);
+
+  return (
+    <div>
+      <ol className="space-y-0">
+        {ORDER_FLOW.map((paso, i) => {
+          const completado = !terminalNegativo && i < actualIndex;
+          const actual = !terminalNegativo && i === actualIndex;
+          return (
+            <li key={paso} className="flex gap-3">
+              <div className="flex flex-col items-center">
+                <span
+                  className={cn(
+                    "grid size-7 shrink-0 place-items-center rounded-full border-2",
+                    completado && "border-success bg-success text-success-foreground",
+                    actual && "border-primary bg-primary text-primary-foreground",
+                    !completado && !actual && "border-border bg-card text-muted-foreground",
+                  )}
+                  aria-hidden="true"
+                >
+                  {completado ? <Check className="size-4" /> : <Circle className="size-2.5 fill-current" />}
+                </span>
+                {i < ORDER_FLOW.length - 1 ? (
+                  <span
+                    className={cn("h-8 w-0.5", completado ? "bg-success" : "bg-border")}
+                    aria-hidden="true"
+                  />
+                ) : null}
+              </div>
+              <div className="pb-2">
+                <p
+                  className={cn(
+                    "text-sm font-medium",
+                    actual && "text-primary",
+                    !completado && !actual && "text-muted-foreground",
+                  )}
+                >
+                  {paso}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {completado ? "Completado" : actual ? "Paso actual" : "Pendiente"}
+                </p>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+
+      {terminalNegativo ? (
+        <p
+          className={cn(
+            "mt-3 flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium",
+            estado === "Rechazado"
+              ? "border-destructive/30 bg-destructive/10 text-destructive"
+              : "border-border bg-muted text-muted-foreground",
+          )}
+        >
+          {estado === "Rechazado" ? (
+            <XCircle className="size-4" aria-hidden="true" />
+          ) : (
+            <Ban className="size-4" aria-hidden="true" />
+          )}
+          {estado === "Rechazado"
+            ? "Solicitud rechazada. Este es un estado final."
+            : "Pedido cancelado. Este es un estado final."}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/** RNF-008: historial de trazabilidad de estados de pedido y de pago. */
+export function AuditTimeline({ eventos }: { eventos: AuditEvent[] }) {
+  const ordenados = [...eventos].sort((a, b) => b.fecha.localeCompare(a.fecha));
+  return (
+    <ol className="space-y-3">
+      {ordenados.map((e) => (
+        <li key={e.id} className="rounded-lg border bg-card p-3">
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="rounded bg-surface px-2 py-0.5 text-xs font-medium uppercase tracking-wide">
+              {e.tipo === "pedido" ? "Pedido" : "Pago"}
+            </span>
+            <span className="text-muted-foreground">{e.estadoAnterior}</span>
+            <span aria-hidden="true">→</span>
+            <span className="font-medium">{e.estadoNuevo}</span>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {e.usuario} · {formatDate(e.fecha)} · {formatTime(e.fecha)}
+          </p>
+        </li>
+      ))}
+    </ol>
+  );
+}

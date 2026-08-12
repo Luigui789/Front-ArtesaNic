@@ -10,33 +10,193 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as CatalogoRouteImport } from './routes/catalogo'
+import { Route as ArtesanoIdRouteImport } from './routes/artesano.$id'
+import { Route as PanelIndexRouteImport } from './routes/panel.index'
+import { Route as PanelPerfilRouteImport } from './routes/panel.perfil'
+import { Route as PanelProductosRouteImport } from './routes/panel.productos'
+import { Route as PedidosIndexRouteImport } from './routes/pedidos.index'
+import { Route as PedidosIdRouteImport } from './routes/pedidos.$id'
+import { Route as ProductoIdRouteImport } from './routes/producto.$id'
+import { Route as SolicitarProductIdRouteImport } from './routes/solicitar.$productId'
+import { Route as PanelPedidosIndexRouteImport } from './routes/panel.pedidos.index'
+import { Route as PanelPedidosIdRouteImport } from './routes/panel.pedidos.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CatalogoRoute = CatalogoRouteImport.update({
+  id: '/catalogo',
+  path: '/catalogo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ArtesanoIdRoute = ArtesanoIdRouteImport.update({
+  id: '/artesano/$id',
+  path: '/artesano/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PanelIndexRoute = PanelIndexRouteImport.update({
+  id: '/panel/',
+  path: '/panel/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PanelPerfilRoute = PanelPerfilRouteImport.update({
+  id: '/panel/perfil',
+  path: '/panel/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PanelProductosRoute = PanelProductosRouteImport.update({
+  id: '/panel/productos',
+  path: '/panel/productos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PedidosIndexRoute = PedidosIndexRouteImport.update({
+  id: '/pedidos/',
+  path: '/pedidos/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PedidosIdRoute = PedidosIdRouteImport.update({
+  id: '/pedidos/$id',
+  path: '/pedidos/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductoIdRoute = ProductoIdRouteImport.update({
+  id: '/producto/$id',
+  path: '/producto/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SolicitarProductIdRoute = SolicitarProductIdRouteImport.update({
+  id: '/solicitar/$productId',
+  path: '/solicitar/$productId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PanelPedidosIndexRoute = PanelPedidosIndexRouteImport.update({
+  id: '/panel/pedidos/',
+  path: '/panel/pedidos/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PanelPedidosIdRoute = PanelPedidosIdRouteImport.update({
+  id: '/panel/pedidos/$id',
+  path: '/panel/pedidos/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/catalogo': typeof CatalogoRoute
+  '/artesano/$id': typeof ArtesanoIdRoute
+  '/panel/perfil': typeof PanelPerfilRoute
+  '/panel/productos': typeof PanelProductosRoute
+  '/pedidos/$id': typeof PedidosIdRoute
+  '/producto/$id': typeof ProductoIdRoute
+  '/solicitar/$productId': typeof SolicitarProductIdRoute
+  '/panel/': typeof PanelIndexRoute
+  '/pedidos/': typeof PedidosIndexRoute
+  '/panel/pedidos/$id': typeof PanelPedidosIdRoute
+  '/panel/pedidos/': typeof PanelPedidosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/catalogo': typeof CatalogoRoute
+  '/artesano/$id': typeof ArtesanoIdRoute
+  '/panel/perfil': typeof PanelPerfilRoute
+  '/panel/productos': typeof PanelProductosRoute
+  '/pedidos/$id': typeof PedidosIdRoute
+  '/producto/$id': typeof ProductoIdRoute
+  '/solicitar/$productId': typeof SolicitarProductIdRoute
+  '/panel': typeof PanelIndexRoute
+  '/pedidos': typeof PedidosIndexRoute
+  '/panel/pedidos/$id': typeof PanelPedidosIdRoute
+  '/panel/pedidos': typeof PanelPedidosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/catalogo': typeof CatalogoRoute
+  '/artesano/$id': typeof ArtesanoIdRoute
+  '/panel/perfil': typeof PanelPerfilRoute
+  '/panel/productos': typeof PanelProductosRoute
+  '/pedidos/$id': typeof PedidosIdRoute
+  '/producto/$id': typeof ProductoIdRoute
+  '/solicitar/$productId': typeof SolicitarProductIdRoute
+  '/panel/': typeof PanelIndexRoute
+  '/pedidos/': typeof PedidosIndexRoute
+  '/panel/pedidos/$id': typeof PanelPedidosIdRoute
+  '/panel/pedidos/': typeof PanelPedidosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/catalogo'
+    | '/artesano/$id'
+    | '/panel/perfil'
+    | '/panel/productos'
+    | '/pedidos/$id'
+    | '/producto/$id'
+    | '/solicitar/$productId'
+    | '/panel/'
+    | '/pedidos/'
+    | '/panel/pedidos/$id'
+    | '/panel/pedidos/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/catalogo'
+    | '/artesano/$id'
+    | '/panel/perfil'
+    | '/panel/productos'
+    | '/pedidos/$id'
+    | '/producto/$id'
+    | '/solicitar/$productId'
+    | '/panel'
+    | '/pedidos'
+    | '/panel/pedidos/$id'
+    | '/panel/pedidos'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/catalogo'
+    | '/artesano/$id'
+    | '/panel/perfil'
+    | '/panel/productos'
+    | '/pedidos/$id'
+    | '/producto/$id'
+    | '/solicitar/$productId'
+    | '/panel/'
+    | '/pedidos/'
+    | '/panel/pedidos/$id'
+    | '/panel/pedidos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
+  CatalogoRoute: typeof CatalogoRoute
+  ArtesanoIdRoute: typeof ArtesanoIdRoute
+  PanelPerfilRoute: typeof PanelPerfilRoute
+  PanelProductosRoute: typeof PanelProductosRoute
+  PedidosIdRoute: typeof PedidosIdRoute
+  ProductoIdRoute: typeof ProductoIdRoute
+  SolicitarProductIdRoute: typeof SolicitarProductIdRoute
+  PanelIndexRoute: typeof PanelIndexRoute
+  PedidosIndexRoute: typeof PedidosIndexRoute
+  PanelPedidosIdRoute: typeof PanelPedidosIdRoute
+  PanelPedidosIndexRoute: typeof PanelPedidosIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,22 +208,108 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/catalogo': {
+      id: '/catalogo'
+      path: '/catalogo'
+      fullPath: '/catalogo'
+      preLoaderRoute: typeof CatalogoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/artesano/$id': {
+      id: '/artesano/$id'
+      path: '/artesano/$id'
+      fullPath: '/artesano/$id'
+      preLoaderRoute: typeof ArtesanoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/panel/': {
+      id: '/panel/'
+      path: '/panel'
+      fullPath: '/panel/'
+      preLoaderRoute: typeof PanelIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/panel/perfil': {
+      id: '/panel/perfil'
+      path: '/panel/perfil'
+      fullPath: '/panel/perfil'
+      preLoaderRoute: typeof PanelPerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/panel/productos': {
+      id: '/panel/productos'
+      path: '/panel/productos'
+      fullPath: '/panel/productos'
+      preLoaderRoute: typeof PanelProductosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pedidos/': {
+      id: '/pedidos/'
+      path: '/pedidos'
+      fullPath: '/pedidos/'
+      preLoaderRoute: typeof PedidosIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pedidos/$id': {
+      id: '/pedidos/$id'
+      path: '/pedidos/$id'
+      fullPath: '/pedidos/$id'
+      preLoaderRoute: typeof PedidosIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/producto/$id': {
+      id: '/producto/$id'
+      path: '/producto/$id'
+      fullPath: '/producto/$id'
+      preLoaderRoute: typeof ProductoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/solicitar/$productId': {
+      id: '/solicitar/$productId'
+      path: '/solicitar/$productId'
+      fullPath: '/solicitar/$productId'
+      preLoaderRoute: typeof SolicitarProductIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/panel/pedidos/': {
+      id: '/panel/pedidos/'
+      path: '/panel/pedidos'
+      fullPath: '/panel/pedidos/'
+      preLoaderRoute: typeof PanelPedidosIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/panel/pedidos/$id': {
+      id: '/panel/pedidos/$id'
+      path: '/panel/pedidos/$id'
+      fullPath: '/panel/pedidos/$id'
+      preLoaderRoute: typeof PanelPedidosIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
+  CatalogoRoute: CatalogoRoute,
+  ArtesanoIdRoute: ArtesanoIdRoute,
+  PanelPerfilRoute: PanelPerfilRoute,
+  PanelProductosRoute: PanelProductosRoute,
+  PedidosIdRoute: PedidosIdRoute,
+  ProductoIdRoute: ProductoIdRoute,
+  SolicitarProductIdRoute: SolicitarProductIdRoute,
+  PanelIndexRoute: PanelIndexRoute,
+  PedidosIndexRoute: PedidosIndexRoute,
+  PanelPedidosIdRoute: PanelPedidosIdRoute,
+  PanelPedidosIndexRoute: PanelPedidosIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
