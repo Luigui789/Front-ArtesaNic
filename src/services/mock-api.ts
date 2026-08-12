@@ -341,9 +341,9 @@ export function changeOrderStatus(
 
 export interface PaymentInput {
   metodo: PaymentMethod;
-  referencia?: string;
-  comprobanteNombre?: string;
-  nota?: string;
+  referencia?: string | undefined;
+  comprobanteNombre?: string | undefined;
+  nota?: string | undefined;
 }
 
 export function registerPayment(id: string, input: PaymentInput, usuario: string): Promise<Order> {

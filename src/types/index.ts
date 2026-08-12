@@ -106,16 +106,16 @@ export interface Order {
   precioUnitario: number;
   costosAdicionales: number;
   costoEntrega: number;
-  entrega?: { modalidad: DeliveryMode; detalle?: string };
+  entrega?: { modalidad: DeliveryMode; detalle?: string | undefined };
   pago?: {
     metodo: PaymentMethod;
-    referencia?: string;
-    comprobanteNombre?: string;
-    nota?: string;
+    referencia?: string | undefined;
+    comprobanteNombre?: string | undefined;
+    nota?: string | undefined;
     registradoEn: string;
   };
-  motivoCancelacion?: string;
-  motivoRechazo?: string;
+  motivoCancelacion?: string | undefined;
+  motivoRechazo?: string | undefined;
   creadoEn: string;
   historial: AuditEvent[];
 }
