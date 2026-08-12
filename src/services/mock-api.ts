@@ -386,11 +386,13 @@ export function setDelivery(
 // ---------- Mensajería (RF-014) ----------
 
 export function listMessages(pedidoId: string): Promise<Message[]> {
-  return api(() =>
-    store.messages
-      .filter((m) => m.pedidoId === pedidoId)
-      .sort((a, b) => a.fecha.localeCompare(b.fecha)),
-  , 250);
+  return api(
+    () =>
+      store.messages
+        .filter((m) => m.pedidoId === pedidoId)
+        .sort((a, b) => a.fecha.localeCompare(b.fecha)),
+    250,
+  );
 }
 
 export function sendMessage(
