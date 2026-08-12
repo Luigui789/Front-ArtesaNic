@@ -63,5 +63,5 @@ export const PAYMENT_FLOW: PaymentStatus[] = [
 
 export function nextPaymentState(estado: PaymentStatus): PaymentStatus | null {
   const i = PAYMENT_FLOW.indexOf(estado);
-  return i >= 0 && i < PAYMENT_FLOW.length - 1 ? PAYMENT_FLOW[i + 1] : null;
+  return i >= 0 && i < PAYMENT_FLOW.length - 1 ? (PAYMENT_FLOW[i + 1] ?? null) : null;
 }
