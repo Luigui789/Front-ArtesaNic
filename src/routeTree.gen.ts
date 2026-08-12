@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CatalogoRouteImport } from './routes/catalogo'
 import { Route as ArtesanoIdRouteImport } from './routes/artesano.$id'
 import { Route as PanelIndexRouteImport } from './routes/panel.index'
+import { Route as PanelPerfilRouteImport } from './routes/panel.perfil'
 import { Route as PanelProductosRouteImport } from './routes/panel.productos'
 import { Route as PedidosIndexRouteImport } from './routes/pedidos.index'
 import { Route as PedidosIdRouteImport } from './routes/pedidos.$id'
@@ -45,6 +46,11 @@ const ArtesanoIdRoute = ArtesanoIdRouteImport.update({
 const PanelIndexRoute = PanelIndexRouteImport.update({
   id: '/panel/',
   path: '/panel/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PanelPerfilRoute = PanelPerfilRouteImport.update({
+  id: '/panel/perfil',
+  path: '/panel/perfil',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PanelProductosRoute = PanelProductosRouteImport.update({
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/catalogo': typeof CatalogoRoute
   '/artesano/$id': typeof ArtesanoIdRoute
+  '/panel/perfil': typeof PanelPerfilRoute
   '/panel/productos': typeof PanelProductosRoute
   '/pedidos/$id': typeof PedidosIdRoute
   '/producto/$id': typeof ProductoIdRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/catalogo': typeof CatalogoRoute
   '/artesano/$id': typeof ArtesanoIdRoute
+  '/panel/perfil': typeof PanelPerfilRoute
   '/panel/productos': typeof PanelProductosRoute
   '/pedidos/$id': typeof PedidosIdRoute
   '/producto/$id': typeof ProductoIdRoute
@@ -117,6 +125,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/catalogo': typeof CatalogoRoute
   '/artesano/$id': typeof ArtesanoIdRoute
+  '/panel/perfil': typeof PanelPerfilRoute
   '/panel/productos': typeof PanelProductosRoute
   '/pedidos/$id': typeof PedidosIdRoute
   '/producto/$id': typeof ProductoIdRoute
@@ -133,6 +142,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/catalogo'
     | '/artesano/$id'
+    | '/panel/perfil'
     | '/panel/productos'
     | '/pedidos/$id'
     | '/producto/$id'
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/catalogo'
     | '/artesano/$id'
+    | '/panel/perfil'
     | '/panel/productos'
     | '/pedidos/$id'
     | '/producto/$id'
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/catalogo'
     | '/artesano/$id'
+    | '/panel/perfil'
     | '/panel/productos'
     | '/pedidos/$id'
     | '/producto/$id'
@@ -176,6 +188,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   CatalogoRoute: typeof CatalogoRoute
   ArtesanoIdRoute: typeof ArtesanoIdRoute
+  PanelPerfilRoute: typeof PanelPerfilRoute
   PanelProductosRoute: typeof PanelProductosRoute
   PedidosIdRoute: typeof PedidosIdRoute
   ProductoIdRoute: typeof ProductoIdRoute
@@ -221,6 +234,13 @@ declare module '@tanstack/react-router' {
       path: '/panel'
       fullPath: '/panel/'
       preLoaderRoute: typeof PanelIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/panel/perfil': {
+      id: '/panel/perfil'
+      path: '/panel/perfil'
+      fullPath: '/panel/perfil'
+      preLoaderRoute: typeof PanelPerfilRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/panel/productos': {
@@ -280,6 +300,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   CatalogoRoute: CatalogoRoute,
   ArtesanoIdRoute: ArtesanoIdRoute,
+  PanelPerfilRoute: PanelPerfilRoute,
   PanelProductosRoute: PanelProductosRoute,
   PedidosIdRoute: PedidosIdRoute,
   ProductoIdRoute: ProductoIdRoute,
@@ -292,3 +313,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

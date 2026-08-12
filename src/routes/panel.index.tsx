@@ -72,6 +72,9 @@ function Panel() {
           </div>
           <div className="flex shrink-0 gap-2">
             <Button asChild variant="outline" className="touch-target">
+              <Link to="/panel/perfil">Perfil del taller</Link>
+            </Button>
+            <Button asChild variant="outline" className="touch-target">
               <Link to="/panel/productos">Mis productos</Link>
             </Button>
             <Button asChild className="touch-target">
