@@ -19,6 +19,8 @@ import { Route as PedidosIndexRouteImport } from './routes/pedidos.index'
 import { Route as PedidosIdRouteImport } from './routes/pedidos.$id'
 import { Route as ProductoIdRouteImport } from './routes/producto.$id'
 import { Route as SolicitarProductIdRouteImport } from './routes/solicitar.$productId'
+import { Route as PanelPedidosIndexRouteImport } from './routes/panel.pedidos.index'
+import { Route as PanelPedidosIdRouteImport } from './routes/panel.pedidos.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -70,6 +72,16 @@ const SolicitarProductIdRoute = SolicitarProductIdRouteImport.update({
   path: '/solicitar/$productId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PanelPedidosIndexRoute = PanelPedidosIndexRouteImport.update({
+  id: '/panel/pedidos/',
+  path: '/panel/pedidos/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PanelPedidosIdRoute = PanelPedidosIdRouteImport.update({
+  id: '/panel/pedidos/$id',
+  path: '/panel/pedidos/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +94,8 @@ export interface FileRoutesByFullPath {
   '/solicitar/$productId': typeof SolicitarProductIdRoute
   '/panel/': typeof PanelIndexRoute
   '/pedidos/': typeof PedidosIndexRoute
+  '/panel/pedidos/$id': typeof PanelPedidosIdRoute
+  '/panel/pedidos/': typeof PanelPedidosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +108,8 @@ export interface FileRoutesByTo {
   '/solicitar/$productId': typeof SolicitarProductIdRoute
   '/panel': typeof PanelIndexRoute
   '/pedidos': typeof PedidosIndexRoute
+  '/panel/pedidos/$id': typeof PanelPedidosIdRoute
+  '/panel/pedidos': typeof PanelPedidosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +123,8 @@ export interface FileRoutesById {
   '/solicitar/$productId': typeof SolicitarProductIdRoute
   '/panel/': typeof PanelIndexRoute
   '/pedidos/': typeof PedidosIndexRoute
+  '/panel/pedidos/$id': typeof PanelPedidosIdRoute
+  '/panel/pedidos/': typeof PanelPedidosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +139,8 @@ export interface FileRouteTypes {
     | '/solicitar/$productId'
     | '/panel/'
     | '/pedidos/'
+    | '/panel/pedidos/$id'
+    | '/panel/pedidos/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +153,8 @@ export interface FileRouteTypes {
     | '/solicitar/$productId'
     | '/panel'
     | '/pedidos'
+    | '/panel/pedidos/$id'
+    | '/panel/pedidos'
   id:
     | '__root__'
     | '/'
@@ -145,6 +167,8 @@ export interface FileRouteTypes {
     | '/solicitar/$productId'
     | '/panel/'
     | '/pedidos/'
+    | '/panel/pedidos/$id'
+    | '/panel/pedidos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,6 +182,8 @@ export interface RootRouteChildren {
   SolicitarProductIdRoute: typeof SolicitarProductIdRoute
   PanelIndexRoute: typeof PanelIndexRoute
   PedidosIndexRoute: typeof PedidosIndexRoute
+  PanelPedidosIdRoute: typeof PanelPedidosIdRoute
+  PanelPedidosIndexRoute: typeof PanelPedidosIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -232,6 +258,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SolicitarProductIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/panel/pedidos/': {
+      id: '/panel/pedidos/'
+      path: '/panel/pedidos'
+      fullPath: '/panel/pedidos/'
+      preLoaderRoute: typeof PanelPedidosIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/panel/pedidos/$id': {
+      id: '/panel/pedidos/$id'
+      path: '/panel/pedidos/$id'
+      fullPath: '/panel/pedidos/$id'
+      preLoaderRoute: typeof PanelPedidosIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -246,7 +286,19 @@ const rootRouteChildren: RootRouteChildren = {
   SolicitarProductIdRoute: SolicitarProductIdRoute,
   PanelIndexRoute: PanelIndexRoute,
   PedidosIndexRoute: PedidosIndexRoute,
+  PanelPedidosIdRoute: PanelPedidosIdRoute,
+  PanelPedidosIndexRoute: PanelPedidosIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
