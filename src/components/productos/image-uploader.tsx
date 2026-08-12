@@ -14,9 +14,9 @@ export function ImageUploader({
   onChange,
   label = "Fotografía del producto",
 }: {
-  value?: string;
+  value?: string | undefined;
   onChange: (dataUrl: string) => void;
-  label?: string;
+  label?: string | undefined;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [estado, setEstado] = useState<Estado>(value ? "listo" : "vacio");

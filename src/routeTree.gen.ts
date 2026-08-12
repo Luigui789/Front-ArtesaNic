@@ -10,8 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CatalogoRouteImport } from './routes/catalogo'
 import { Route as ArtesanoIdRouteImport } from './routes/artesano.$id'
+import { Route as PanelIndexRouteImport } from './routes/panel.index'
+import { Route as PanelProductosRouteImport } from './routes/panel.productos'
 import { Route as PedidosIndexRouteImport } from './routes/pedidos.index'
 import { Route as PedidosIdRouteImport } from './routes/pedidos.$id'
 import { Route as ProductoIdRouteImport } from './routes/producto.$id'
@@ -22,6 +25,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CatalogoRoute = CatalogoRouteImport.update({
   id: '/catalogo',
   path: '/catalogo',
@@ -30,6 +38,16 @@ const CatalogoRoute = CatalogoRouteImport.update({
 const ArtesanoIdRoute = ArtesanoIdRouteImport.update({
   id: '/artesano/$id',
   path: '/artesano/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PanelIndexRoute = PanelIndexRouteImport.update({
+  id: '/panel/',
+  path: '/panel/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PanelProductosRoute = PanelProductosRouteImport.update({
+  id: '/panel/productos',
+  path: '/panel/productos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PedidosIndexRoute = PedidosIndexRouteImport.update({
@@ -55,69 +73,90 @@ const SolicitarProductIdRoute = SolicitarProductIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/catalogo': typeof CatalogoRoute
   '/artesano/$id': typeof ArtesanoIdRoute
+  '/panel/productos': typeof PanelProductosRoute
   '/pedidos/$id': typeof PedidosIdRoute
   '/producto/$id': typeof ProductoIdRoute
   '/solicitar/$productId': typeof SolicitarProductIdRoute
+  '/panel/': typeof PanelIndexRoute
   '/pedidos/': typeof PedidosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/catalogo': typeof CatalogoRoute
   '/artesano/$id': typeof ArtesanoIdRoute
+  '/panel/productos': typeof PanelProductosRoute
   '/pedidos/$id': typeof PedidosIdRoute
   '/producto/$id': typeof ProductoIdRoute
   '/solicitar/$productId': typeof SolicitarProductIdRoute
+  '/panel': typeof PanelIndexRoute
   '/pedidos': typeof PedidosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/catalogo': typeof CatalogoRoute
   '/artesano/$id': typeof ArtesanoIdRoute
+  '/panel/productos': typeof PanelProductosRoute
   '/pedidos/$id': typeof PedidosIdRoute
   '/producto/$id': typeof ProductoIdRoute
   '/solicitar/$productId': typeof SolicitarProductIdRoute
+  '/panel/': typeof PanelIndexRoute
   '/pedidos/': typeof PedidosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
     | '/catalogo'
     | '/artesano/$id'
+    | '/panel/productos'
     | '/pedidos/$id'
     | '/producto/$id'
     | '/solicitar/$productId'
+    | '/panel/'
     | '/pedidos/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth'
     | '/catalogo'
     | '/artesano/$id'
+    | '/panel/productos'
     | '/pedidos/$id'
     | '/producto/$id'
     | '/solicitar/$productId'
+    | '/panel'
     | '/pedidos'
   id:
     | '__root__'
     | '/'
+    | '/auth'
     | '/catalogo'
     | '/artesano/$id'
+    | '/panel/productos'
     | '/pedidos/$id'
     | '/producto/$id'
     | '/solicitar/$productId'
+    | '/panel/'
     | '/pedidos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
   CatalogoRoute: typeof CatalogoRoute
   ArtesanoIdRoute: typeof ArtesanoIdRoute
+  PanelProductosRoute: typeof PanelProductosRoute
   PedidosIdRoute: typeof PedidosIdRoute
   ProductoIdRoute: typeof ProductoIdRoute
   SolicitarProductIdRoute: typeof SolicitarProductIdRoute
+  PanelIndexRoute: typeof PanelIndexRoute
   PedidosIndexRoute: typeof PedidosIndexRoute
 }
 
@@ -128,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/catalogo': {
@@ -142,6 +188,20 @@ declare module '@tanstack/react-router' {
       path: '/artesano/$id'
       fullPath: '/artesano/$id'
       preLoaderRoute: typeof ArtesanoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/panel/': {
+      id: '/panel/'
+      path: '/panel'
+      fullPath: '/panel/'
+      preLoaderRoute: typeof PanelIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/panel/productos': {
+      id: '/panel/productos'
+      path: '/panel/productos'
+      fullPath: '/panel/productos'
+      preLoaderRoute: typeof PanelProductosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pedidos/': {
@@ -177,11 +237,14 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
   CatalogoRoute: CatalogoRoute,
   ArtesanoIdRoute: ArtesanoIdRoute,
+  PanelProductosRoute: PanelProductosRoute,
   PedidosIdRoute: PedidosIdRoute,
   ProductoIdRoute: ProductoIdRoute,
   SolicitarProductIdRoute: SolicitarProductIdRoute,
+  PanelIndexRoute: PanelIndexRoute,
   PedidosIndexRoute: PedidosIndexRoute,
 }
 export const routeTree = rootRouteImport
