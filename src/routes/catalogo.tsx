@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Filter, Search } from "lucide-react";
@@ -65,7 +65,7 @@ export const Route = createFileRoute("/catalogo")({
 
 function Catalogo() {
   const search = Route.useSearch();
-  const navigate = useNavigate({ from: Route.fullPath });
+  const navigate = Route.useNavigate();
   const [texto, setTexto] = useState(search.q ?? "");
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
 
