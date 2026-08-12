@@ -20,31 +20,32 @@ import { listArtisans, listProducts } from "@/services/mock-api";
 import { CATEGORIES, type Category } from "@/types";
 
 interface CatalogSearch {
-  q?: string;
-  categoria?: Category | "todas";
-  precioMin?: number;
-  precioMax?: number;
-  artesanoId?: string;
-  orden?: "recientes" | "precio-asc" | "precio-desc" | "nombre";
-  page?: number;
+  q?: string | undefined;
+  categoria?: Category | "todas" | undefined;
+  precioMin?: number | undefined;
+  precioMax?: number | undefined;
+  artesanoId?: string | undefined;
+  orden?: "recientes" | "precio-asc" | "precio-desc" | "nombre" | undefined;
+  page?: number | undefined;
 }
 
 export const Route = createFileRoute("/catalogo")({
   validateSearch: (search: Record<string, unknown>): CatalogSearch => {
-    const cat = String(search.categoria ?? "todas");
-    const orden = String(search.orden ?? "recientes");
+    const cat = String(search["categoria"] ?? "todas");
+    const orden = String(search["orden"] ?? "recientes");
     return {
-      q: search.q ? String(search.q) : undefined,
+      q: search["q"] ? String(search["q"]) : undefined,
       categoria: (CATEGORIES as readonly string[]).includes(cat) ? (cat as Category) : "todas",
-      precioMin: search.precioMin ? Number(search.precioMin) : undefined,
-      precioMax: search.precioMax ? Number(search.precioMax) : undefined,
-      artesanoId: search.artesanoId ? String(search.artesanoId) : undefined,
+      precioMin: search["precioMin"] ? Number(search["precioMin"]) : undefined,
+      precioMax: search["precioMax"] ? Number(search["precioMax"]) : undefined,
+      artesanoId: search["artesanoId"] ? String(search["artesanoId"]) : undefined,
       orden: ["recientes", "precio-asc", "precio-desc", "nombre"].includes(orden)
         ? (orden as CatalogSearch["orden"])
         : "recientes",
-      page: search.page ? Number(search.page) : 1,
+      page: search["page"] ? Number(search["page"]) : 1,
     };
   },
+
   head: () => ({
     meta: [
       { title: "Catálogo de productos artesanales | Masaya" },

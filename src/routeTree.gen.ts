@@ -10,33 +10,63 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CatalogoRouteImport } from './routes/catalogo'
+import { Route as ArtesanoIdRouteImport } from './routes/artesano.$id'
+import { Route as ProductoIdRouteImport } from './routes/producto.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CatalogoRoute = CatalogoRouteImport.update({
+  id: '/catalogo',
+  path: '/catalogo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ArtesanoIdRoute = ArtesanoIdRouteImport.update({
+  id: '/artesano/$id',
+  path: '/artesano/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductoIdRoute = ProductoIdRouteImport.update({
+  id: '/producto/$id',
+  path: '/producto/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/catalogo': typeof CatalogoRoute
+  '/artesano/$id': typeof ArtesanoIdRoute
+  '/producto/$id': typeof ProductoIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/catalogo': typeof CatalogoRoute
+  '/artesano/$id': typeof ArtesanoIdRoute
+  '/producto/$id': typeof ProductoIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/catalogo': typeof CatalogoRoute
+  '/artesano/$id': typeof ArtesanoIdRoute
+  '/producto/$id': typeof ProductoIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/catalogo' | '/artesano/$id' | '/producto/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/catalogo' | '/artesano/$id' | '/producto/$id'
+  id: '__root__' | '/' | '/catalogo' | '/artesano/$id' | '/producto/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CatalogoRoute: typeof CatalogoRoute
+  ArtesanoIdRoute: typeof ArtesanoIdRoute
+  ProductoIdRoute: typeof ProductoIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +78,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/catalogo': {
+      id: '/catalogo'
+      path: '/catalogo'
+      fullPath: '/catalogo'
+      preLoaderRoute: typeof CatalogoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/artesano/$id': {
+      id: '/artesano/$id'
+      path: '/artesano/$id'
+      fullPath: '/artesano/$id'
+      preLoaderRoute: typeof ArtesanoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/producto/$id': {
+      id: '/producto/$id'
+      path: '/producto/$id'
+      fullPath: '/producto/$id'
+      preLoaderRoute: typeof ProductoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CatalogoRoute: CatalogoRoute,
+  ArtesanoIdRoute: ArtesanoIdRoute,
+  ProductoIdRoute: ProductoIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
