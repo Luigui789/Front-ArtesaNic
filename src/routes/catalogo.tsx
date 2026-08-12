@@ -87,7 +87,7 @@ function Catalogo() {
   });
 
   const set = (patch: Partial<CatalogSearch>) =>
-    void navigate({ to: ".", search: (prev) => ({ ...prev, page: 1, ...patch }) });
+    void navigate({ to: "/catalogo", search: { ...search, page: 1, ...patch } });
 
   const nombreArtesano = (id: string) =>
     artesanos.data?.find((a) => a.id === id)?.nombreTaller ?? "";
@@ -172,7 +172,7 @@ function Catalogo() {
         variant="outline"
         className="w-full touch-target"
         onClick={() =>
-          void navigate({ to: ".", search: () => ({ categoria: "todas", orden: "recientes", page: 1 }) })
+          void navigate({ to: "/catalogo", search: { categoria: "todas", orden: "recientes", page: 1 } })
         }
       >
         Limpiar filtros
@@ -284,8 +284,8 @@ function Catalogo() {
                       className="touch-target"
                       onClick={() =>
                         void navigate({
-                          to: ".",
-                          search: () => ({ categoria: "todas", orden: "recientes", page: 1 }),
+                          to: "/catalogo",
+                          search: { categoria: "todas", orden: "recientes", page: 1 },
                         })
                       }
                     >
@@ -312,8 +312,8 @@ function Catalogo() {
                     disabled={(search.page ?? 1) <= 1}
                     onClick={() =>
                       void navigate({
-                        to: ".",
-                        search: (prev) => ({ ...prev, page: (prev.page ?? 1) - 1 }),
+                        to: "/catalogo",
+                        search: { ...search, page: (search.page ?? 1) - 1 },
                       })
                     }
                   >
@@ -328,8 +328,8 @@ function Catalogo() {
                     disabled={(search.page ?? 1) >= productos.data.totalPages}
                     onClick={() =>
                       void navigate({
-                        to: ".",
-                        search: (prev) => ({ ...prev, page: (prev.page ?? 1) + 1 }),
+                        to: "/catalogo",
+                        search: { ...search, page: (search.page ?? 1) + 1 },
                       })
                     }
                   >
