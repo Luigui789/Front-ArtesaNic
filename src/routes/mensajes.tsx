@@ -11,7 +11,9 @@ import { listOrders, listProducts, DEMO_ARTISAN_ID } from "@/services/mock-api";
 import { chatMode } from "@/lib/order-state";
 import { formatDate } from "@/lib/format";
 import { useSession } from "@/hooks/use-session";
+import { useNotifications } from "@/hooks/use-notifications";
 import { cn } from "@/lib/utils";
+import { useEffect } from "react";
 
 interface MensajesSearch {
   pedido?: string | undefined;
@@ -47,6 +49,7 @@ function MensajesPage() {
   const { pedido: seleccionado } = Route.useSearch();
   const { usuario } = useSession();
   const rol = usuario?.rol ?? "comprador";
+  const { noLeidos, marcarLeido } = useNotifications();
 
   const pedidos = useQuery({
     queryKey: ["mensajes-pedidos", rol],
