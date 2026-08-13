@@ -51,6 +51,7 @@ function Header() {
               className="flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-muted-foreground hover:bg-surface"
             >
               {n.label}
+              {n.to === "/mensajes" ? <NavBadge cantidad={total} /> : null}
             </Link>
           ))}
           <Link
@@ -102,6 +103,7 @@ function Header() {
                   className="flex min-h-11 items-center rounded-lg px-3 text-sm font-medium hover:bg-surface"
                 >
                   {n.label}
+                  {n.to === "/mensajes" ? <NavBadge cantidad={total} /> : null}
                 </Link>
               ),
             )}
