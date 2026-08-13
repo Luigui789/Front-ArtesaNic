@@ -4,6 +4,19 @@ import { LogIn, Menu, PackageSearch, Store, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CurrencySwitcher } from "@/components/common/currency-switcher";
 import { useSession } from "@/hooks/use-session";
+import { useNotifications } from "@/hooks/use-notifications";
+
+function NavBadge({ cantidad }: { cantidad: number }) {
+  if (cantidad <= 0) return null;
+  return (
+    <span
+      aria-label={`${cantidad} mensajes nuevos`}
+      className="ml-1.5 grid min-w-5 place-items-center rounded-full bg-primary px-1.5 text-[11px] font-semibold leading-5 text-primary-foreground"
+    >
+      {cantidad > 9 ? "9+" : cantidad}
+    </span>
+  );
+}
 
 const NAV = [
   { to: "/", label: "Inicio" },
@@ -16,6 +29,7 @@ const NAV = [
 function Header() {
   const [abierto, setAbierto] = useState(false);
   const { usuario, cambiarRol } = useSession();
+  const { total } = useNotifications();
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
@@ -37,6 +51,7 @@ function Header() {
               className="flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-muted-foreground hover:bg-surface"
             >
               {n.label}
+              {n.to === "/mensajes" ? <NavBadge cantidad={total} /> : null}
             </Link>
           ))}
           <Link
@@ -88,6 +103,7 @@ function Header() {
                   className="flex min-h-11 items-center rounded-lg px-3 text-sm font-medium hover:bg-surface"
                 >
                   {n.label}
+                  {n.to === "/mensajes" ? <NavBadge cantidad={total} /> : null}
                 </Link>
               ),
             )}
