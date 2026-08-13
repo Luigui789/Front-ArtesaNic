@@ -9,6 +9,8 @@ const NAV = [
   { to: "/", label: "Inicio" },
   { to: "/catalogo", label: "Catálogo" },
   { to: "/pedidos", label: "Mis pedidos" },
+  { to: "/mensajes", label: "Mensajes" },
+
 ] as const;
 
 function Header() {

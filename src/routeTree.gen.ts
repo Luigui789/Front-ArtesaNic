@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as CatalogoRouteImport } from './routes/catalogo'
+import { Route as MensajesRouteImport } from './routes/mensajes'
 import { Route as ArtesanoIdRouteImport } from './routes/artesano.$id'
 import { Route as PanelIndexRouteImport } from './routes/panel.index'
 import { Route as PanelPerfilRouteImport } from './routes/panel.perfil'
@@ -36,6 +37,11 @@ const AuthRoute = AuthRouteImport.update({
 const CatalogoRoute = CatalogoRouteImport.update({
   id: '/catalogo',
   path: '/catalogo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MensajesRoute = MensajesRouteImport.update({
+  id: '/mensajes',
+  path: '/mensajes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ArtesanoIdRoute = ArtesanoIdRouteImport.update({
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/catalogo': typeof CatalogoRoute
+  '/mensajes': typeof MensajesRoute
   '/artesano/$id': typeof ArtesanoIdRoute
   '/panel/perfil': typeof PanelPerfilRoute
   '/panel/productos': typeof PanelProductosRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/catalogo': typeof CatalogoRoute
+  '/mensajes': typeof MensajesRoute
   '/artesano/$id': typeof ArtesanoIdRoute
   '/panel/perfil': typeof PanelPerfilRoute
   '/panel/productos': typeof PanelProductosRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/catalogo': typeof CatalogoRoute
+  '/mensajes': typeof MensajesRoute
   '/artesano/$id': typeof ArtesanoIdRoute
   '/panel/perfil': typeof PanelPerfilRoute
   '/panel/productos': typeof PanelProductosRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/catalogo'
+    | '/mensajes'
     | '/artesano/$id'
     | '/panel/perfil'
     | '/panel/productos'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/catalogo'
+    | '/mensajes'
     | '/artesano/$id'
     | '/panel/perfil'
     | '/panel/productos'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/catalogo'
+    | '/mensajes'
     | '/artesano/$id'
     | '/panel/perfil'
     | '/panel/productos'
@@ -187,6 +199,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   CatalogoRoute: typeof CatalogoRoute
+  MensajesRoute: typeof MensajesRoute
   ArtesanoIdRoute: typeof ArtesanoIdRoute
   PanelPerfilRoute: typeof PanelPerfilRoute
   PanelProductosRoute: typeof PanelProductosRoute
@@ -220,6 +233,13 @@ declare module '@tanstack/react-router' {
       path: '/catalogo'
       fullPath: '/catalogo'
       preLoaderRoute: typeof CatalogoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mensajes': {
+      id: '/mensajes'
+      path: '/mensajes'
+      fullPath: '/mensajes'
+      preLoaderRoute: typeof MensajesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/artesano/$id': {
@@ -299,6 +319,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   CatalogoRoute: CatalogoRoute,
+  MensajesRoute: MensajesRoute,
   ArtesanoIdRoute: ArtesanoIdRoute,
   PanelPerfilRoute: PanelPerfilRoute,
   PanelProductosRoute: PanelProductosRoute,
