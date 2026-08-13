@@ -1,0 +1,159 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { MessageSquare } from "lucide-react";
+import { SiteLayout } from "@/components/layout/site-layout";
+import { EmptyState, ErrorState } from "@/components/common/states";
+import { OrderChat } from "@/components/pedidos/order-chat";
+import { OrderStatusBadge } from "@/components/pedidos/status-badges";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { listOrders, listProducts, DEMO_ARTISAN_ID } from "@/services/mock-api";
+import { chatMode } from "@/lib/order-state";
+import { formatDate } from "@/lib/format";
+import { useSession } from "@/hooks/use-session";
+import { cn } from "@/lib/utils";
+
+interface MensajesSearch {
+  pedido?: string | undefined;
+}
+
+export const Route = createFileRoute("/mensajes")({
+  validateSearch: (search: Record<string, unknown>): MensajesSearch => ({
+    pedido: typeof search["pedido"] === "string" ? (search["pedido"] as string) : undefined,
+  }),
+  head: () => ({
+    meta: [
+      { title: "Mensajes por pedido | Artesanías de Masaya" },
+      {
+        name: "description",
+        content:
+          "Conversa con el taller artesanal sobre cada pedido bajo demanda: detalles, materiales y coordinación de entrega.",
+      },
+      { property: "og:title", content: "Mensajes por pedido | Artesanías de Masaya" },
+      {
+        property: "og:description",
+        content: "Mensajería simulada asociada a cada pedido artesanal de Masaya.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+    links: [{ rel: "canonical", href: "/mensajes" }],
+  }),
+  component: MensajesPage,
+});
+
+function MensajesPage() {
+  const navigate = useNavigate();
+  const { pedido: seleccionado } = Route.useSearch();
+  const { usuario } = useSession();
+  const rol = usuario?.rol ?? "comprador";
+
+  const pedidos = useQuery({
+    queryKey: ["mensajes-pedidos", rol],
+    queryFn: () =>
+      listOrders(rol === "artesano" ? { rol, artesanoId: DEMO_ARTISAN_ID } : { rol }),
+  });
+  const productos = useQuery({
+    queryKey: ["catalogo-nombres"],
+    queryFn: () => listProducts({ pageSize: 1000 }),
+  });
+
+  const nombreProducto = (id: string) =>
+    productos.data?.items.find((p) => p.id === id)?.nombre ?? "Producto artesanal";
+
+  const conversaciones = (pedidos.data ?? []).filter((o) => chatMode(o.estado) !== "none");
+  const actual =
+    conversaciones.find((o) => o.id === seleccionado) ?? conversaciones[0] ?? undefined;
+
+  const seleccionar = (id: string) =>
+    void navigate({ to: "/mensajes", search: { pedido: id } });
+
+  return (
+    <SiteLayout>
+      <div className="mx-auto max-w-6xl px-4 py-8">
+        <h1 className="font-display text-3xl font-bold">Mensajes</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Cada conversación pertenece a un pedido. La mensajería se habilita cuando el artesano
+          acepta la solicitud.
+        </p>
+
+        {pedidos.isPending ? (
+          <div className="mt-6 grid gap-4 lg:grid-cols-[320px_1fr]">
+            <div className="space-y-3">
+              <Skeleton className="h-20 w-full rounded-xl" />
+              <Skeleton className="h-20 w-full rounded-xl" />
+              <Skeleton className="h-20 w-full rounded-xl" />
+            </div>
+            <Skeleton className="h-96 w-full rounded-xl" />
+          </div>
+        ) : pedidos.isError ? (
+          <div className="mt-6">
+            <ErrorState
+              mensaje="No pudimos cargar tus conversaciones."
+              onRetry={() => void pedidos.refetch()}
+            />
+          </div>
+        ) : conversaciones.length === 0 ? (
+          <div className="mt-6">
+            <EmptyState
+              titulo="Todavía no tienes conversaciones"
+              descripcion="Cuando envíes una solicitud de pedido podrás conversar aquí con el taller artesanal."
+              accion={
+                <Button asChild className="touch-target">
+                  <a href="/catalogo">Explorar el catálogo</a>
+                </Button>
+              }
+            />
+          </div>
+        ) : (
+          <div className="mt-6 grid gap-4 lg:grid-cols-[320px_1fr]">
+            <ul aria-label="Conversaciones" className="space-y-2">
+              {conversaciones.map((o) => {
+                const activo = actual?.id === o.id;
+                return (
+                  <li key={o.id}>
+                    <button
+                      type="button"
+                      onClick={() => seleccionar(o.id)}
+                      aria-current={activo ? "true" : undefined}
+                      className={cn(
+                        "w-full rounded-xl border bg-card p-3 text-left transition-colors hover:bg-surface",
+                        activo && "border-primary/40 bg-primary/5",
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-semibold">{o.codigo}</span>
+                        <OrderStatusBadge estado={o.estado} />
+                      </div>
+                      <p className="mt-1 line-clamp-1 text-sm">{nombreProducto(o.productoId)}</p>
+                      <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <MessageSquare className="size-3.5" aria-hidden="true" />
+                        {formatDate(o.creadoEn)}
+                      </p>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+
+            <div className="space-y-3">
+              {actual ? (
+                <>
+                  <div className="rounded-xl border bg-card px-4 py-3">
+                    <h2 className="font-display text-lg font-semibold">
+                      {actual.codigo} · {nombreProducto(actual.productoId)}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      {rol === "artesano" ? actual.compradorNombre : "Taller artesanal"}
+                    </p>
+                  </div>
+                  <OrderChat pedidoId={actual.id} estado={actual.estado} />
+                </>
+              ) : null}
+            </div>
+          </div>
+        )}
+      </div>
+    </SiteLayout>
+  );
+}
