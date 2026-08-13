@@ -68,8 +68,15 @@ function MensajesPage() {
   const actual =
     conversaciones.find((o) => o.id === seleccionado) ?? conversaciones[0] ?? undefined;
 
-  const seleccionar = (id: string) =>
+  const seleccionar = (id: string) => {
+    marcarLeido(id);
     void navigate({ to: "/mensajes", search: { pedido: id } });
+  };
+
+  // La conversación visible se marca como leída.
+  useEffect(() => {
+    if (actual) marcarLeido(actual.id);
+  }, [actual, marcarLeido]);
 
   return (
     <SiteLayout>
@@ -125,7 +132,17 @@ function MensajesPage() {
                       )}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-semibold">{o.codigo}</span>
+                        <span className="flex items-center gap-1.5 text-sm font-semibold">
+                          {o.codigo}
+                          {(noLeidos[o.id] ?? 0) > 0 ? (
+                            <span
+                              aria-label={`${noLeidos[o.id]} mensajes nuevos`}
+                              className="grid min-w-5 place-items-center rounded-full bg-primary px-1.5 text-[11px] font-semibold leading-5 text-primary-foreground"
+                            >
+                              {noLeidos[o.id]}
+                            </span>
+                          ) : null}
+                        </span>
                         <OrderStatusBadge estado={o.estado} />
                       </div>
                       <p className="mt-1 line-clamp-1 text-sm">{nombreProducto(o.productoId)}</p>
