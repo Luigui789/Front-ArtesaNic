@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { SiteLayout } from "@/components/layout/site-layout";
@@ -30,6 +30,7 @@ import { canCancel } from "@/lib/order-state";
 import { formatDateTime } from "@/lib/format";
 import { useCurrency } from "@/hooks/use-currency";
 import { useSession } from "@/hooks/use-session";
+import { useNotifications } from "@/hooks/use-notifications";
 import type { PaymentMethod } from "@/types";
 
 export const Route = createFileRoute("/pedidos/$id")({
@@ -65,6 +66,8 @@ function DetallePedido() {
   const [motivo, setMotivo] = useState("");
 
   const pedido = useQuery({ queryKey: ["pedido", id], queryFn: () => getOrder(id) });
+  const { marcarLeido } = useNotifications();
+  useEffect(() => marcarLeido(id), [id, marcarLeido]);
   const producto = useQuery({
     queryKey: ["producto", pedido.data?.productoId],
     queryFn: () => getProduct(pedido.data!.productoId),
