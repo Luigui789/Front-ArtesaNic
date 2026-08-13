@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { SessionProvider } from "@/hooks/use-session";
 import { CurrencyProvider } from "@/hooks/use-currency";
+import { NotificationsProvider } from "@/hooks/use-notifications";
 
 function NotFoundComponent() {
   return (
