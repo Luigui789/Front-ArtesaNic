@@ -278,8 +278,8 @@ export function createOrderRequest(input: OrderRequestInput, usuario: string): P
       cantidad: input.cantidad,
       personalizacion: input.personalizacion,
       observaciones: input.observaciones,
-      estado: "Pendiente",
-      estadoPago: "Pendiente de pago",
+      estado: "pendiente",
+      estadoPago: "pendiente",
       precioUnitario: prod.precio,
       costosAdicionales: 0,
       costoEntrega: 0,
@@ -289,7 +289,7 @@ export function createOrderRequest(input: OrderRequestInput, usuario: string): P
           id: `ev-${Date.now()}`,
           tipo: "pedido",
           estadoAnterior: "—",
-          estadoNuevo: "Pendiente",
+          estadoNuevo: "pendiente",
           usuario,
           fecha: nowIso(),
         },
@@ -333,8 +333,8 @@ export function changeOrderStatus(
     }
     const anterior = o.estado;
     o.estado = nuevo;
-    if (nuevo === "Rechazado") o.motivoRechazo = motivo;
-    if (nuevo === "Cancelado") o.motivoCancelacion = motivo;
+    if (nuevo === "rechazado") o.motivoRechazo = motivo;
+    if (nuevo === "cancelado") o.motivoCancelacion = motivo;
     pushEvent(o, "pedido", anterior, nuevo, usuario);
   });
 }
@@ -348,11 +348,11 @@ export interface PaymentInput {
 
 export function registerPayment(id: string, input: PaymentInput, usuario: string): Promise<Order> {
   return mutateOrder(id, usuario, (o) => {
-    if (o.estadoPago !== "Pendiente de pago") {
+    if (o.estadoPago !== "pendiente") {
       throw new Error("Este pedido ya tiene un pago registrado.");
     }
     const anterior = o.estadoPago;
-    o.estadoPago = "Pago registrado";
+    o.estadoPago = "registrado";
     o.pago = { ...input, registradoEn: nowIso() };
     pushEvent(o, "pago", anterior, o.estadoPago, usuario);
   });
@@ -361,7 +361,7 @@ export function registerPayment(id: string, input: PaymentInput, usuario: string
 export function confirmPayment(id: string, usuario: string): Promise<Order> {
   return mutateOrder(id, usuario, (o) => {
     const siguiente = nextPaymentState(o.estadoPago);
-    if (o.estadoPago !== "Pago registrado" || !siguiente) {
+    if (o.estadoPago !== "registrado" || !siguiente) {
       throw new Error("Solo se puede confirmar un pago que ya fue registrado.");
     }
     const anterior = o.estadoPago;
@@ -420,7 +420,7 @@ export function pollNewMessages(pedidoId: string, desde: string): Promise<Messag
   return api(() => {
     const order = store.orders.find((o) => o.id === pedidoId);
     const activo =
-      order && ["Aceptado", "En producción", "Listo para entrega"].includes(order.estado);
+      order && ["aceptado", "en_produccion", "listo_para_entrega"].includes(order.estado);
     if (activo && Math.random() < 0.45) {
       const texto = MENSAJES_ENTRANTES[
         Math.floor(Math.random() * MENSAJES_ENTRANTES.length)
@@ -444,11 +444,11 @@ export function artisanSummary(artesanoId: string) {
   return api(() => {
     const mine = store.orders.filter((o) => o.artesanoId === artesanoId);
     return {
-      solicitudesPendientes: mine.filter((o) => o.estado === "Pendiente").length,
+      solicitudesPendientes: mine.filter((o) => o.estado === "pendiente").length,
       activos: mine.filter((o) =>
-        ["Aceptado", "En producción", "Listo para entrega"].includes(o.estado),
+        ["aceptado", "en_produccion", "listo_para_entrega"].includes(o.estado),
       ).length,
-      pagosPorConfirmar: mine.filter((o) => o.estadoPago === "Pago registrado").length,
+      pagosPorConfirmar: mine.filter((o) => o.estadoPago === "registrado").length,
       porEstado: mine.reduce<Record<string, number>>((acc, o) => {
         acc[o.estado] = (acc[o.estado] ?? 0) + 1;
         return acc;

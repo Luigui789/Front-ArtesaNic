@@ -47,31 +47,36 @@ export interface Product {
   creadoEn: string;
 }
 
+/**
+ * Códigos de dominio. Son estables y viajan por la API; el texto que ve la
+ * persona usuaria vive en `src/lib/labels.ts`. No usar estos valores como
+ * etiqueta visible ni redactar UI a partir de ellos.
+ */
 export const ORDER_STATES = [
-  "Pendiente",
-  "Aceptado",
-  "En producción",
-  "Listo para entrega",
-  "Entregado",
-  "Rechazado",
-  "Cancelado",
+  "pendiente",
+  "aceptado",
+  "en_produccion",
+  "listo_para_entrega",
+  "entregado",
+  "rechazado",
+  "cancelado",
 ] as const;
 export type OrderStatus = (typeof ORDER_STATES)[number];
 
-export const PAYMENT_STATES = [
-  "Pendiente de pago",
-  "Pago registrado",
-  "Pago confirmado",
-] as const;
+export const PAYMENT_STATES = ["pendiente", "registrado", "confirmado"] as const;
 export type PaymentStatus = (typeof PAYMENT_STATES)[number];
 
-export type DeliveryMode =
-  | "Retiro en taller"
-  | "Punto de encuentro"
-  | "Entrega directa por el artesano"
-  | "Otra";
+export const DELIVERY_MODES = [
+  "retiro_en_taller",
+  "punto_de_encuentro",
+  "entrega_directa",
+  "otra",
+] as const;
+export type DeliveryMode = (typeof DELIVERY_MODES)[number];
 
-export type PaymentMethod = "Transferencia" | "Pago contra entrega" | "Otro método";
+/** RF-011 v3.0: no existe el pago contra entrega. */
+export const PAYMENT_METHODS = ["transferencia", "otro"] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 export interface AuditEvent {
   id: string;

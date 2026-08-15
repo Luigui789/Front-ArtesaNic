@@ -40,14 +40,14 @@ import { formatDateTime } from "@/lib/format";
 import { useCurrency } from "@/hooks/use-currency";
 import { useSession } from "@/hooks/use-session";
 import { useDocumentHead } from "@/hooks/use-document-head";
-import type { DeliveryMode, OrderStatus } from "@/types";
+import {
+  DELIVERY_MODE_LABELS,
+  ORDER_STATUS_LABELS,
+  PAYMENT_METHOD_LABELS,
+} from "@/lib/labels";
+import { DELIVERY_MODES, type DeliveryMode, type OrderStatus } from "@/types";
 
-const MODALIDADES: DeliveryMode[] = [
-  "Retiro en taller",
-  "Punto de encuentro",
-  "Entrega directa por el artesano",
-  "Otra",
-];
+const MODALIDADES: DeliveryMode[] = [...DELIVERY_MODES];
 
 export default function GestionPedido() {
   const { id } = useParams<{ id: string }>();
@@ -74,7 +74,7 @@ export default function GestionPedido() {
 
   const [motivo, setMotivo] = useState("");
   const [rechazoAbierto, setRechazoAbierto] = useState(false);
-  const [modalidad, setModalidad] = useState<DeliveryMode>("Retiro en taller");
+  const [modalidad, setModalidad] = useState<DeliveryMode>("retiro_en_taller");
   const [detalle, setDetalle] = useState("");
   const [costo, setCosto] = useState("0");
 
@@ -101,7 +101,7 @@ export default function GestionPedido() {
     onSuccess: (o) => {
       refrescar();
       setRechazoAbierto(false);
-      toast.success(`Pedido actualizado a "${o.estado}"`);
+      toast.success(`Pedido actualizado a "${ORDER_STATUS_LABELS[o.estado]}"`);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -149,7 +149,7 @@ export default function GestionPedido() {
   }
 
   const o = pedido.data;
-  const siguientes = nextOrderStates(o.estado).filter((s) => s !== "Cancelado");
+  const siguientes = nextOrderStates(o.estado).filter((s) => s !== "cancelado");
   const total = o.precioUnitario * o.cantidad + o.costosAdicionales + o.costoEntrega;
 
   return (
@@ -246,7 +246,7 @@ export default function GestionPedido() {
               ) : (
                 <div className="mt-3 space-y-2">
                   {siguientes
-                    .filter((s) => s !== "Rechazado")
+                    .filter((s) => s !== "rechazado")
                     .map((s) => (
                       <Button
                         key={s}
@@ -254,11 +254,13 @@ export default function GestionPedido() {
                         disabled={cambiar.isPending}
                         onClick={() => cambiar.mutate({ estado: s })}
                       >
-                        {s === "Aceptado" ? "Aceptar solicitud" : `Marcar como "${s}"`}
+                        {s === "aceptado"
+                          ? "Aceptar solicitud"
+                          : `Marcar como "${ORDER_STATUS_LABELS[s]}"`}
                       </Button>
                     ))}
 
-                  {siguientes.includes("Rechazado") ? (
+                  {siguientes.includes("rechazado") ? (
                     <Dialog open={rechazoAbierto} onOpenChange={setRechazoAbierto}>
                       <DialogTrigger asChild>
                         <Button variant="outline" className="w-full touch-target">
@@ -285,7 +287,7 @@ export default function GestionPedido() {
                         <Button
                           className="touch-target"
                           disabled={motivo.trim().length < 5 || cambiar.isPending}
-                          onClick={() => cambiar.mutate({ estado: "Rechazado", motivo: motivo.trim() })}
+                          onClick={() => cambiar.mutate({ estado: "rechazado", motivo: motivo.trim() })}
                         >
                           Confirmar rechazo
                         </Button>
@@ -316,7 +318,7 @@ export default function GestionPedido() {
                     <SelectContent>
                       {MODALIDADES.map((m) => (
                         <SelectItem key={m} value={m}>
-                          {m}
+                          {DELIVERY_MODE_LABELS[m]}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -351,7 +353,7 @@ export default function GestionPedido() {
               </form>
               {o.entrega ? (
                 <p className="mt-3 text-sm text-muted-foreground">
-                  Acordado: {o.entrega.modalidad}
+                  Acordado: {DELIVERY_MODE_LABELS[o.entrega.modalidad]}
                   {o.entrega.detalle ? ` — ${o.entrega.detalle}` : ""}
                 </p>
               ) : null}
@@ -369,7 +371,7 @@ export default function GestionPedido() {
               </dl>
               {o.pago ? (
                 <div className="mt-3 space-y-1 text-sm text-muted-foreground">
-                  <p>Método: {o.pago.metodo}</p>
+                  <p>Método: {PAYMENT_METHOD_LABELS[o.pago.metodo]}</p>
                   {o.pago.referencia ? <p>Referencia: {o.pago.referencia}</p> : null}
                   <p>Registrado: {formatDateTime(o.pago.registradoEn)}</p>
                 </div>
@@ -378,7 +380,7 @@ export default function GestionPedido() {
                   El comprador aún no ha registrado el pago.
                 </p>
               )}
-              {o.estadoPago === "Pago registrado" ? (
+              {o.estadoPago === "registrado" ? (
                 <Button
                   className="mt-4 w-full touch-target"
                   disabled={confirmar.isPending}

@@ -13,6 +13,7 @@ import { formatDate } from "@/lib/format";
 import { useCurrency } from "@/hooks/use-currency";
 import { useSession } from "@/hooks/use-session";
 import { useDocumentHead } from "@/hooks/use-document-head";
+import { ORDER_STATUS_LABELS } from "@/lib/labels";
 import { ORDER_STATES, type OrderStatus } from "@/types";
 
 const FILTROS: (OrderStatus | "todos")[] = ["todos", ...ORDER_STATES];
@@ -75,7 +76,7 @@ export default function PedidosTaller() {
           <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
             {FILTROS.map((f) => (
               <TabsTrigger key={f} value={f} className="min-h-9">
-                {f === "todos" ? "Todos" : f}
+                {f === "todos" ? "Todos" : ORDER_STATUS_LABELS[f]}
               </TabsTrigger>
             ))}
           </TabsList>

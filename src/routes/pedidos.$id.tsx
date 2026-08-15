@@ -32,9 +32,10 @@ import { useCurrency } from "@/hooks/use-currency";
 import { useSession } from "@/hooks/use-session";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useDocumentHead } from "@/hooks/use-document-head";
-import type { PaymentMethod } from "@/types";
+import { DELIVERY_MODE_LABELS, PAYMENT_METHOD_LABELS } from "@/lib/labels";
+import { PAYMENT_METHODS, type PaymentMethod } from "@/types";
 
-const METODOS: PaymentMethod[] = ["Transferencia", "Pago contra entrega", "Otro método"];
+const METODOS: PaymentMethod[] = [...PAYMENT_METHODS];
 
 export default function DetallePedido() {
   const { id } = useParams<{ id: string }>();
@@ -58,7 +59,7 @@ export default function DetallePedido() {
     canonical: `/pedidos/${id}`,
   });
 
-  const [metodo, setMetodo] = useState<PaymentMethod>("Transferencia");
+  const [metodo, setMetodo] = useState<PaymentMethod>("transferencia");
   const [referencia, setReferencia] = useState("");
   const [nota, setNota] = useState("");
   const [motivo, setMotivo] = useState("");
@@ -107,7 +108,7 @@ export default function DetallePedido() {
 
   const cancelar = useMutation({
     mutationFn: () =>
-      changeOrderStatus(id!, "Cancelado", usuario?.nombre ?? "Comprador", motivo.trim()),
+      changeOrderStatus(id!, "cancelado", usuario?.nombre ?? "Comprador", motivo.trim()),
     onSuccess: () => {
       refrescar();
       toast.success("Pedido cancelado");
@@ -141,7 +142,9 @@ export default function DetallePedido() {
 
   const o = pedido.data;
   const total = o.precioUnitario * o.cantidad + o.costosAdicionales + o.costoEntrega;
-  const puedePagar = o.estado === "Listo para entrega" && o.estadoPago === "Pendiente de pago";
+  // RF-011 v3.0: el pago se registra una vez que el artesano acepta la solicitud,
+  // y debe confirmarse antes de que el pedido pueda entrar en producción.
+  const puedePagar = o.estado === "aceptado" && o.estadoPago === "pendiente";
 
   return (
     <SiteLayout>
@@ -215,7 +218,7 @@ export default function DetallePedido() {
                   <div>
                     <dt className="font-medium">Entrega</dt>
                     <dd className="text-muted-foreground">
-                      {o.entrega.modalidad}
+                      {DELIVERY_MODE_LABELS[o.entrega.modalidad]}
                       {o.entrega.detalle ? ` — ${o.entrega.detalle}` : ""}
                     </dd>
                   </div>
@@ -273,7 +276,7 @@ export default function DetallePedido() {
               </h2>
               {o.pago ? (
                 <dl className="mt-3 space-y-1 text-sm text-muted-foreground">
-                  <div>Método: {o.pago.metodo}</div>
+                  <div>Método: {PAYMENT_METHOD_LABELS[o.pago.metodo]}</div>
                   {o.pago.referencia ? <div>Referencia: {o.pago.referencia}</div> : null}
                   {o.pago.nota ? <div>Nota: {o.pago.nota}</div> : null}
                   <div>Registrado: {formatDateTime(o.pago.registradoEn)}</div>
@@ -297,7 +300,7 @@ export default function DetallePedido() {
                         <div key={m} className="flex items-center gap-2">
                           <RadioGroupItem id={`metodo-${m}`} value={m} />
                           <Label htmlFor={`metodo-${m}`} className="font-normal">
-                            {m}
+                            {PAYMENT_METHOD_LABELS[m]}
                           </Label>
                         </div>
                       ))}
@@ -330,7 +333,7 @@ export default function DetallePedido() {
                 </form>
               ) : (
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Podrás registrar el pago cuando el pedido esté listo para entrega.
+                  Podrás registrar el pago cuando el taller acepte tu solicitud.
                 </p>
               )}
             </section>

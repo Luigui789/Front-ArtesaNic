@@ -203,7 +203,7 @@ export function buildOrders(products: Product[]): Order[] {
           id: `ev-${n}-1`,
           tipo: "pedido",
           estadoAnterior: "—",
-          estadoNuevo: "Pendiente",
+          estadoNuevo: "pendiente",
           usuario: "Ana Lucía Delgado",
           fecha: iso(10 - n),
         },
@@ -213,41 +213,41 @@ export function buildOrders(products: Product[]): Order[] {
   };
 
   const orders: Order[] = [
-    mk(1, 0, "Pendiente", "Pendiente de pago"),
-    mk(2, 3, "Pendiente", "Pendiente de pago"),
-    mk(3, 6, "Aceptado", "Pendiente de pago", {
-      entrega: { modalidad: "Retiro en taller" },
+    mk(1, 0, "pendiente", "pendiente"),
+    mk(2, 3, "pendiente", "pendiente"),
+    mk(3, 6, "aceptado", "pendiente", {
+      entrega: { modalidad: "retiro_en_taller" },
     }),
-    mk(4, 9, "En producción", "Pago registrado", {
-      entrega: { modalidad: "Punto de encuentro", detalle: "Parque central de Masaya" },
+    mk(4, 9, "en_produccion", "registrado", {
+      entrega: { modalidad: "punto_de_encuentro", detalle: "Parque central de Masaya" },
       pago: {
-        metodo: "Transferencia",
+        metodo: "transferencia",
         referencia: "TRF-98452",
         comprobanteNombre: "comprobante-transferencia.jpg",
         registradoEn: iso(3),
       },
     }),
-    mk(5, 12, "Listo para entrega", "Pago confirmado", {
-      entrega: { modalidad: "Entrega directa por el artesano" },
-      pago: { metodo: "Transferencia", referencia: "TRF-77120", registradoEn: iso(5) },
+    mk(5, 12, "listo_para_entrega", "confirmado", {
+      entrega: { modalidad: "entrega_directa" },
+      pago: { metodo: "transferencia", referencia: "TRF-77120", registradoEn: iso(5) },
     }),
-    mk(6, 15, "Entregado", "Pago confirmado", {
-      entrega: { modalidad: "Retiro en taller" },
-      pago: { metodo: "Pago contra entrega", registradoEn: iso(7) },
+    mk(6, 15, "entregado", "confirmado", {
+      entrega: { modalidad: "retiro_en_taller" },
+      pago: { metodo: "otro", registradoEn: iso(7) },
     }),
-    mk(7, 18, "Rechazado", "Pendiente de pago", {
+    mk(7, 18, "rechazado", "pendiente", {
       motivoRechazo: "En este momento el taller no tiene disponibilidad de material.",
     }),
-    mk(8, 21, "Cancelado", "Pendiente de pago", {
+    mk(8, 21, "cancelado", "pendiente", {
       motivoCancelacion: "La compradora ya no necesita la pieza.",
     }),
   ];
 
   // Historial coherente por pedido.
   for (const o of orders) {
-    const flow: Order["estado"][] = ["Aceptado", "En producción", "Listo para entrega", "Entregado"];
+    const flow: Order["estado"][] = ["aceptado", "en_produccion", "listo_para_entrega", "entregado"];
     const idx = flow.indexOf(o.estado);
-    let prev: string = "Pendiente";
+    let prev: string = "pendiente";
     const steps = idx >= 0 ? flow.slice(0, idx + 1) : [];
     steps.forEach((s, i) => {
       o.historial.push({
@@ -260,32 +260,32 @@ export function buildOrders(products: Product[]): Order[] {
       });
       prev = s;
     });
-    if (o.estado === "Rechazado" || o.estado === "Cancelado") {
+    if (o.estado === "rechazado" || o.estado === "cancelado") {
       o.historial.push({
         id: `${o.id}-t`,
         tipo: "pedido",
         estadoAnterior: prev,
         estadoNuevo: o.estado,
-        usuario: o.estado === "Rechazado" ? "Taller artesanal" : "Ana Lucía Delgado",
+        usuario: o.estado === "rechazado" ? "Taller artesanal" : "Ana Lucía Delgado",
         fecha: iso(2),
       });
     }
-    if (o.estadoPago !== "Pendiente de pago") {
+    if (o.estadoPago !== "pendiente") {
       o.historial.push({
         id: `${o.id}-pay1`,
         tipo: "pago",
-        estadoAnterior: "Pendiente de pago",
-        estadoNuevo: "Pago registrado",
+        estadoAnterior: "pendiente",
+        estadoNuevo: "registrado",
         usuario: "Ana Lucía Delgado",
         fecha: iso(4),
       });
     }
-    if (o.estadoPago === "Pago confirmado") {
+    if (o.estadoPago === "confirmado") {
       o.historial.push({
         id: `${o.id}-pay2`,
         tipo: "pago",
-        estadoAnterior: "Pago registrado",
-        estadoNuevo: "Pago confirmado",
+        estadoAnterior: "registrado",
+        estadoNuevo: "confirmado",
         usuario: "Taller artesanal",
         fecha: iso(3),
       });

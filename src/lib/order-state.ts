@@ -1,22 +1,22 @@
 import type { OrderStatus, PaymentStatus } from "@/types";
 
-/** RF-010: máquina de estados del pedido. */
+/** RF-010: máquina de estados del pedido. Opera sobre códigos, nunca sobre etiquetas. */
 export const ORDER_FLOW: OrderStatus[] = [
-  "Pendiente",
-  "Aceptado",
-  "En producción",
-  "Listo para entrega",
-  "Entregado",
+  "pendiente",
+  "aceptado",
+  "en_produccion",
+  "listo_para_entrega",
+  "entregado",
 ];
 
 const TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  Pendiente: ["Aceptado", "Rechazado"],
-  Aceptado: ["En producción", "Cancelado"],
-  "En producción": ["Listo para entrega", "Cancelado"],
-  "Listo para entrega": ["Entregado"],
-  Entregado: [],
-  Rechazado: [],
-  Cancelado: [],
+  pendiente: ["aceptado", "rechazado"],
+  aceptado: ["en_produccion", "cancelado"],
+  en_produccion: ["listo_para_entrega", "cancelado"],
+  listo_para_entrega: ["entregado"],
+  entregado: [],
+  rechazado: [],
+  cancelado: [],
 };
 
 export function nextOrderStates(estado: OrderStatus): OrderStatus[] {
@@ -33,7 +33,7 @@ export function isTerminal(estado: OrderStatus): boolean {
 
 /** RF-015: solo se puede cancelar en Aceptado y En producción. */
 export function canCancel(estado: OrderStatus): boolean {
-  return estado === "Aceptado" || estado === "En producción";
+  return estado === "aceptado" || estado === "en_produccion";
 }
 
 /** RF-014: reglas del chat asociado al pedido. */
@@ -41,25 +41,21 @@ export type ChatMode = "disabled" | "none" | "active" | "readonly";
 
 export function chatMode(estado: OrderStatus): ChatMode {
   switch (estado) {
-    case "Pendiente":
+    case "pendiente":
       return "disabled";
-    case "Rechazado":
+    case "rechazado":
       return "none";
-    case "Aceptado":
-    case "En producción":
-    case "Listo para entrega":
+    case "aceptado":
+    case "en_produccion":
+    case "listo_para_entrega":
       return "active";
     default:
       return "readonly";
   }
 }
 
-/** RF-011: máquina de estados del pago (independiente del pedido). */
-export const PAYMENT_FLOW: PaymentStatus[] = [
-  "Pendiente de pago",
-  "Pago registrado",
-  "Pago confirmado",
-];
+/** RF-011: máquina de estados del pago. */
+export const PAYMENT_FLOW: PaymentStatus[] = ["pendiente", "registrado", "confirmado"];
 
 export function nextPaymentState(estado: PaymentStatus): PaymentStatus | null {
   const i = PAYMENT_FLOW.indexOf(estado);
