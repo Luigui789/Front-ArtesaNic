@@ -8,17 +8,17 @@ interface State {
 }
 
 export class AppErrorBoundary extends Component<Props, State> {
-  state: State = { error: null };
+  override state: State = { error: null };
 
   static getDerivedStateFromError(error: Error): State {
     return { error };
   }
 
-  componentDidCatch(error: Error) {
+  override componentDidCatch(error: Error) {
     console.error(error);
   }
 
-  render() {
+  override render() {
     if (this.state.error) {
       return (
         <div className="flex min-h-screen items-center justify-center bg-background px-4">

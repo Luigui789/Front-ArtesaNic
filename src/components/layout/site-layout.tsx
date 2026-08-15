@@ -1,10 +1,11 @@
-import { Link } from "react-router";
+import { Link, NavLink } from "react-router";
 import { useState, type ReactNode } from "react";
 import { LogIn, Menu, PackageSearch, Store, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CurrencySwitcher } from "@/components/common/currency-switcher";
 import { useSession } from "@/hooks/use-session";
 import { useNotifications } from "@/hooks/use-notifications";
+import { cn } from "@/lib/utils";
 
 function NavBadge({ cantidad }: { cantidad: number }) {
   if (cantidad <= 0) return null;
@@ -43,16 +44,20 @@ function Header() {
 
         <nav aria-label="Principal" className="ml-auto hidden items-center gap-1 lg:flex">
           {NAV.map((n) => (
-            <Link
+            <NavLink
               key={n.to}
               to={n.to}
-              activeOptions={{ exact: n.to === "/" }}
-              activeProps={{ className: "bg-surface text-foreground" }}
-              className="flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-muted-foreground hover:bg-surface"
+              end={n.to === "/"}
+              className={({ isActive }) =>
+                cn(
+                  "flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-muted-foreground hover:bg-surface",
+                  isActive && "bg-surface text-foreground",
+                )
+              }
             >
               {n.label}
               {n.to === "/mensajes" ? <NavBadge cantidad={total} /> : null}
-            </Link>
+            </NavLink>
           ))}
           <Link
             to="/panel"
