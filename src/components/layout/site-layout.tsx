@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router";
 import { useState, type ReactNode } from "react";
 import { LogIn, Menu, PackageSearch, Store, X } from "lucide-react";
 import { Button } from "@/components/ui/button";

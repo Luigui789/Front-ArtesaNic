@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Clock, Facebook, Instagram, MapPin, Phone, MessageCircle } from "lucide-react";
 import { SiteLayout } from "@/components/layout/site-layout";
@@ -6,11 +6,14 @@ import { ProductCard, ProductCardSkeleton } from "@/components/catalogo/product-
 import { EmptyState, ErrorState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { getArtisan, listMyProducts } from "@/services/mock-api";
+import { useDocumentHead } from "@/hooks/use-document-head";
 
-export const Route = createFileRoute("/artesano/$id")({
-  head: ({ params }) => ({
+export default function PerfilArtesano() {
+  const { id } = useParams<{ id: string }>();
+
+  useDocumentHead({
+    title: "Artesano | Artesanías de Masaya",
     meta: [
-      { title: "Artesano | Artesanías de Masaya" },
       {
         name: "description",
         content:
@@ -18,20 +21,23 @@ export const Route = createFileRoute("/artesano/$id")({
       },
       { property: "og:title", content: "Artesano | Artesanías de Masaya" },
       { property: "og:description", content: "Conoce el taller que elabora cada pieza en Masaya." },
-      { property: "og:url", content: `/artesano/${params.id}` },
+      { property: "og:url", content: `/artesano/${id}` },
     ],
-    links: [{ rel: "canonical", href: `/artesano/${params.id}` }],
-  }),
-  component: PerfilArtesano,
-});
+    canonical: `/artesano/${id}`,
+  });
 
-function PerfilArtesano() {
-  const { id } = Route.useParams();
-  const artesano = useQuery({ queryKey: ["artesano", id], queryFn: () => getArtisan(id) });
+  const artesano = useQuery({
+    queryKey: ["artesano", id],
+    queryFn: () => getArtisan(id!),
+    enabled: !!id,
+  });
   const productos = useQuery({
     queryKey: ["productos-artesano", id],
-    queryFn: () => listMyProducts(id),
+    queryFn: () => listMyProducts(id!),
+    enabled: !!id,
   });
+
+  if (!id) return null;
 
   if (artesano.isError) {
     return (

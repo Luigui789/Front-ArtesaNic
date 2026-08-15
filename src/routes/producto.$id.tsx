@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { ArrowRight, Clock, MapPin, Phone } from "lucide-react";
@@ -18,11 +18,16 @@ import {
 import { getArtisan, getProduct } from "@/services/mock-api";
 import { useCurrency } from "@/hooks/use-currency";
 import { TASA_CAMBIO } from "@/lib/format";
+import { useDocumentHead } from "@/hooks/use-document-head";
 
-export const Route = createFileRoute("/producto/$id")({
-  head: ({ params }) => ({
+export default function DetalleProducto() {
+  const { id } = useParams<{ id: string }>();
+  const { format } = useCurrency();
+  const [imagen, setImagen] = useState(0);
+
+  useDocumentHead({
+    title: "Producto artesanal | Artesanías de Masaya",
     meta: [
-      { title: "Producto artesanal | Artesanías de Masaya" },
       {
         name: "description",
         content:
@@ -30,24 +35,23 @@ export const Route = createFileRoute("/producto/$id")({
       },
       { property: "og:title", content: "Producto artesanal | Artesanías de Masaya" },
       { property: "og:description", content: "Pieza artesanal de Masaya elaborada bajo pedido." },
-      { property: "og:url", content: `/producto/${params.id}` },
+      { property: "og:url", content: `/producto/${id}` },
     ],
-    links: [{ rel: "canonical", href: `/producto/${params.id}` }],
-  }),
-  component: DetalleProducto,
-});
+    canonical: `/producto/${id}`,
+  });
 
-function DetalleProducto() {
-  const { id } = Route.useParams();
-  const { format } = useCurrency();
-  const [imagen, setImagen] = useState(0);
-
-  const producto = useQuery({ queryKey: ["producto", id], queryFn: () => getProduct(id) });
+  const producto = useQuery({
+    queryKey: ["producto", id],
+    queryFn: () => getProduct(id!),
+    enabled: !!id,
+  });
   const artesano = useQuery({
     queryKey: ["artesano", producto.data?.artesanoId],
     queryFn: () => getArtisan(producto.data!.artesanoId),
     enabled: !!producto.data,
   });
+
+  if (!id) return null;
 
   if (producto.isError) {
     return (
@@ -167,7 +171,7 @@ function DetalleProducto() {
 
             <div className="mt-8">
               <Button asChild size="lg" className="w-full touch-target text-base sm:w-auto">
-                <Link to="/solicitar/$productId" params={{ productId: p.id }}>
+                <Link to={`/solicitar/${p.id}`}>
                   Solicitar pedido
                   <ArrowRight className="size-5" aria-hidden="true" />
                 </Link>
@@ -204,8 +208,7 @@ function DetalleProducto() {
                       {artesano.data.telefono}
                     </p>
                     <Link
-                      to="/artesano/$id"
-                      params={{ id: artesano.data.id }}
+                      to={`/artesano/${artesano.data.id}`}
                       className="mt-2 inline-flex text-sm font-medium text-primary hover:underline"
                     >
                       Ver perfil del taller

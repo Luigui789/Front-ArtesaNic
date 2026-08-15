@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { useSearchParams } from "react-router";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Filter, Search } from "lucide-react";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { listArtisans, listProducts } from "@/services/mock-api";
+import { useDocumentHead } from "@/hooks/use-document-head";
 import { CATEGORIES, type Category } from "@/types";
 
 interface CatalogSearch {
@@ -29,26 +30,43 @@ interface CatalogSearch {
   page?: number | undefined;
 }
 
-export const Route = createFileRoute("/catalogo")({
-  validateSearch: (search: Record<string, unknown>): CatalogSearch => {
-    const cat = String(search["categoria"] ?? "todas");
-    const orden = String(search["orden"] ?? "recientes");
-    return {
-      q: search["q"] ? String(search["q"]) : undefined,
-      categoria: (CATEGORIES as readonly string[]).includes(cat) ? (cat as Category) : "todas",
-      precioMin: search["precioMin"] ? Number(search["precioMin"]) : undefined,
-      precioMax: search["precioMax"] ? Number(search["precioMax"]) : undefined,
-      artesanoId: search["artesanoId"] ? String(search["artesanoId"]) : undefined,
-      orden: ["recientes", "precio-asc", "precio-desc", "nombre"].includes(orden)
-        ? (orden as CatalogSearch["orden"])
-        : "recientes",
-      page: search["page"] ? Number(search["page"]) : 1,
-    };
-  },
+function parseCatalogSearch(params: URLSearchParams): CatalogSearch {
+  const cat = params.get("categoria") ?? "todas";
+  const orden = params.get("orden") ?? "recientes";
+  return {
+    q: params.get("q") ?? undefined,
+    categoria: (CATEGORIES as readonly string[]).includes(cat) ? (cat as Category) : "todas",
+    precioMin: params.get("precioMin") ? Number(params.get("precioMin")) : undefined,
+    precioMax: params.get("precioMax") ? Number(params.get("precioMax")) : undefined,
+    artesanoId: params.get("artesanoId") ?? undefined,
+    orden: ["recientes", "precio-asc", "precio-desc", "nombre"].includes(orden)
+      ? (orden as CatalogSearch["orden"])
+      : "recientes",
+    page: params.get("page") ? Number(params.get("page")) : 1,
+  };
+}
 
-  head: () => ({
+function buildSearchParams(search: CatalogSearch): URLSearchParams {
+  const params = new URLSearchParams();
+  if (search.q) params.set("q", search.q);
+  if (search.categoria && search.categoria !== "todas") params.set("categoria", search.categoria);
+  if (search.precioMin != null) params.set("precioMin", String(search.precioMin));
+  if (search.precioMax != null) params.set("precioMax", String(search.precioMax));
+  if (search.artesanoId) params.set("artesanoId", search.artesanoId);
+  if (search.orden && search.orden !== "recientes") params.set("orden", search.orden);
+  if (search.page && search.page !== 1) params.set("page", String(search.page));
+  return params;
+}
+
+export default function Catalogo() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const search = parseCatalogSearch(searchParams);
+  const [texto, setTexto] = useState(search.q ?? "");
+  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
+
+  useDocumentHead({
+    title: "Catálogo de productos artesanales | Masaya",
     meta: [
-      { title: "Catálogo de productos artesanales | Masaya" },
       {
         name: "description",
         content:
@@ -58,16 +76,8 @@ export const Route = createFileRoute("/catalogo")({
       { property: "og:description", content: "Cuero, hamacas, madera, textiles, dulces y más." },
       { property: "og:url", content: "/catalogo" },
     ],
-    links: [{ rel: "canonical", href: "/catalogo" }],
-  }),
-  component: Catalogo,
-});
-
-function Catalogo() {
-  const search = Route.useSearch();
-  const navigate = Route.useNavigate();
-  const [texto, setTexto] = useState(search.q ?? "");
-  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
+    canonical: "/catalogo",
+  });
 
   const artesanos = useQuery({ queryKey: ["artesanos"], queryFn: listArtisans });
   const productos = useQuery({
@@ -87,7 +97,7 @@ function Catalogo() {
   });
 
   const set = (patch: Partial<CatalogSearch>) =>
-    void navigate({ to: "/catalogo", search: { ...search, page: 1, ...patch } });
+    setSearchParams(buildSearchParams({ ...search, page: 1, ...patch }));
 
   const nombreArtesano = (id: string) =>
     artesanos.data?.find((a) => a.id === id)?.nombreTaller ?? "";
@@ -172,7 +182,7 @@ function Catalogo() {
         variant="outline"
         className="w-full touch-target"
         onClick={() =>
-          void navigate({ to: "/catalogo", search: { categoria: "todas", orden: "recientes", page: 1 } })
+          setSearchParams(buildSearchParams({ categoria: "todas", orden: "recientes", page: 1 }))
         }
       >
         Limpiar filtros
@@ -283,10 +293,9 @@ function Catalogo() {
                       variant="outline"
                       className="touch-target"
                       onClick={() =>
-                        void navigate({
-                          to: "/catalogo",
-                          search: { categoria: "todas", orden: "recientes", page: 1 },
-                        })
+                        setSearchParams(
+                          buildSearchParams({ categoria: "todas", orden: "recientes", page: 1 }),
+                        )
                       }
                     >
                       Limpiar filtros
@@ -311,10 +320,7 @@ function Catalogo() {
                     className="touch-target"
                     disabled={(search.page ?? 1) <= 1}
                     onClick={() =>
-                      void navigate({
-                        to: "/catalogo",
-                        search: { ...search, page: (search.page ?? 1) - 1 },
-                      })
+                      setSearchParams(buildSearchParams({ ...search, page: (search.page ?? 1) - 1 }))
                     }
                   >
                     Anterior
@@ -327,10 +333,7 @@ function Catalogo() {
                     className="touch-target"
                     disabled={(search.page ?? 1) >= productos.data.totalPages}
                     onClick={() =>
-                      void navigate({
-                        to: "/catalogo",
-                        search: { ...search, page: (search.page ?? 1) + 1 },
-                      })
+                      setSearchParams(buildSearchParams({ ...search, page: (search.page ?? 1) + 1 }))
                     }
                   >
                     Siguiente

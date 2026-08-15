@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSession } from "@/hooks/use-session";
+import { useDocumentHead } from "@/hooks/use-document-head";
 import type { Role } from "@/types";
 
 const telefono = z
@@ -24,10 +25,10 @@ const esquemaRegistro = z.object({
   clave,
 });
 
-export const Route = createFileRoute("/auth")({
-  head: () => ({
+export default function Auth() {
+  useDocumentHead({
+    title: "Ingresar o crear cuenta | Artesanías de Masaya",
     meta: [
-      { title: "Ingresar o crear cuenta | Artesanías de Masaya" },
       {
         name: "description",
         content:
@@ -37,12 +38,9 @@ export const Route = createFileRoute("/auth")({
       { property: "og:description", content: "Acceso simulado para comprador y artesano." },
       { property: "og:url", content: "/auth" },
     ],
-    links: [{ rel: "canonical", href: "/auth" }],
-  }),
-  component: Auth,
-});
+    canonical: "/auth",
+  });
 
-function Auth() {
   const { ingresar } = useSession();
   const navigate = useNavigate();
   const [rol, setRol] = useState<Role>("comprador");
@@ -64,7 +62,7 @@ function Auth() {
     setErrores({});
     ingresar(rol, modo === "registro" ? nombre : undefined);
     toast.success(modo === "ingreso" ? "Sesión iniciada" : "Cuenta creada");
-    void navigate({ to: rol === "artesano" ? "/panel" : "/catalogo" });
+    void navigate(rol === "artesano" ? "/panel" : "/catalogo");
   };
 
   const campoRol = (

@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router";
 import { MapPin } from "lucide-react";
 import type { Artisan } from "@/types";
 import { Badge } from "@/components/ui/badge";
@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 export function ArtisanCard({ artisan }: { artisan: Artisan }) {
   return (
     <article className="h-full overflow-hidden rounded-xl border bg-card transition-shadow hover:shadow-md">
-      <Link to="/artesano/$id" params={{ id: artisan.id }} className="block h-full">
+      <Link to={`/artesano/${artisan.id}`} className="block h-full">
         <div className="aspect-[16/9] overflow-hidden bg-surface">
           <img
             src={artisan.portadaUrl}

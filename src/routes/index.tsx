@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, ClipboardCheck, Hammer, HandCoins, MessageCircle } from "lucide-react";
 import heroImg from "@/assets/hero-masaya.jpg";
@@ -10,27 +10,7 @@ import { ProductCard, ProductCardSkeleton } from "@/components/catalogo/product-
 import { ArtisanCard } from "@/components/catalogo/artisan-card";
 import { ErrorState } from "@/components/common/states";
 import { featuredArtisans, featuredProducts } from "@/services/mock-api";
-
-export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "Artesanías de Masaya | Inicio" },
-      {
-        name: "description",
-        content:
-          "Descubre el arte y la tradición de Masaya. Solicita productos artesanales bajo pedido directamente a los talleres del municipio.",
-      },
-      { property: "og:title", content: "Artesanías de Masaya | Inicio" },
-      {
-        property: "og:description",
-        content: "Productos artesanales de las PYMEs de Masaya, elaborados bajo pedido.",
-      },
-      { property: "og:url", content: "/" },
-    ],
-    links: [{ rel: "canonical", href: "/" }],
-  }),
-  component: Index,
-});
+import { useDocumentHead } from "@/hooks/use-document-head";
 
 const PASOS = [
   {
@@ -55,7 +35,25 @@ const PASOS = [
   },
 ];
 
-function Index() {
+export default function Index() {
+  useDocumentHead({
+    title: "Artesanías de Masaya | Inicio",
+    meta: [
+      {
+        name: "description",
+        content:
+          "Descubre el arte y la tradición de Masaya. Solicita productos artesanales bajo pedido directamente a los talleres del municipio.",
+      },
+      { property: "og:title", content: "Artesanías de Masaya | Inicio" },
+      {
+        property: "og:description",
+        content: "Productos artesanales de las PYMEs de Masaya, elaborados bajo pedido.",
+      },
+      { property: "og:url", content: "/" },
+    ],
+    canonical: "/",
+  });
+
   const productos = useQuery({ queryKey: ["destacados"], queryFn: featuredProducts });
   const artesanos = useQuery({ queryKey: ["artesanos-destacados"], queryFn: featuredArtisans });
 
@@ -109,8 +107,7 @@ function Index() {
           {CATEGORIES.map((c) => (
             <li key={c}>
               <Link
-                to="/catalogo"
-                search={{ categoria: c }}
+                to={`/catalogo?categoria=${encodeURIComponent(c)}`}
                 className="group block overflow-hidden rounded-xl border bg-card"
               >
                 <div className="aspect-square overflow-hidden bg-surface">

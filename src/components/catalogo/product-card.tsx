@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router";
 import type { Product } from "@/types";
 import { useCurrency } from "@/hooks/use-currency";
 import { Badge } from "@/components/ui/badge";
@@ -7,11 +7,7 @@ export function ProductCard({ product, artisanName }: { product: Product; artisa
   const { format } = useCurrency();
   return (
     <article className="group h-full overflow-hidden rounded-xl border bg-card transition-shadow hover:shadow-md">
-      <Link
-        to="/producto/$id"
-        params={{ id: product.id }}
-        className="block h-full focus-visible:outline-none"
-      >
+      <Link to={`/producto/${product.id}`} className="block h-full focus-visible:outline-none">
         <div className="aspect-[4/3] overflow-hidden bg-surface">
           <img
             src={product.imagenes[0]}
