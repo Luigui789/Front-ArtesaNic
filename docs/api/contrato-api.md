@@ -6,6 +6,8 @@
 
 **Decisiones que lo gobiernan:** [ADR-002 — Acceso a datos y contratos](../adr/0002-acceso-a-datos-y-contratos.md)
 
+**Requisitos que implementa:** [Requisitos funcionales y no funcionales](../requisitos/requisitos.md) — actualizado con RF-010 v2.0, RF-011 v3.0 y RF-015.
+
 Este documento es la **fuente de verdad compartida** entre el frontend (este repositorio) y el backend (repositorio separado). Ninguno de los dos debe asumir nada que no esté aquí.
 
 ---
@@ -171,6 +173,19 @@ Los códigos son la representación en API y base de datos. Las etiquetas son re
 
 > El código `pendiente` aparece tanto en el estado del pedido como en el del pago. No hay ambigüedad porque viajan en campos distintos (`estado` y `estado_pago`) y en el frontend son tipos TypeScript diferentes, pero conviene tenerlo presente al escribir consultas y filtros en el backend.
 
+El flujo es único y lineal: `pendiente → registrado → confirmado`. **No existen pagos parciales ni el esquema de pago dividido 50/50** (RF-011 v3.0).
+
+### 2.2.1 Estado del reembolso (`reembolso.estado`)
+
+Aplica únicamente cuando se cancela un pedido que ya tenía el pago confirmado (RF-015).
+
+| Código | Etiqueta actual |
+|---|---|
+| `pendiente` | Reembolso pendiente |
+| `completado` | Reembolso completado |
+
+> **La plataforma no ejecuta transferencias bancarias**: solo registra que el reembolso es necesario y permite marcarlo como completado. No existen reembolsos parciales.
+
 ### 2.3 Categorías (`categoria`)
 
 Las categorías son un **recurso propio** del backend, no una lista fija en el código del frontend, para que un administrador pueda añadir rubros sin desplegar el frontend (ver [sección 4](#4-categorías)).
@@ -198,8 +213,9 @@ Las categorías son un **recurso propio** del backend, no una lista fija en el c
 | Código | Etiqueta actual |
 |---|---|
 | `transferencia` | Transferencia |
-| `contra_entrega` | Pago contra entrega |
 | `otro` | Otro método |
+
+> **El pago contra entrega no existe en el sistema** (RF-011 v3.0). Es incompatible con la precondición de RF-010, que exige el pago confirmado antes de iniciar la producción: un pedido pagado en el momento de la entrega nunca podría entrar en producción. El prototipo aún lo ofrece como opción y debe retirarse (desviación D-3).
 
 ### 2.6 Rol (`rol`)
 
@@ -419,12 +435,38 @@ La [máquina de estados del frontend](../../src/lib/order-state.ts) es la fuente
 
 ```
 pendiente ──┬──> aceptado ──┬──> en_produccion ──┬──> listo_para_entrega ──> entregado
+            │               │        ▲           │
+            │               │        │           │
+            │               │   ⚠ requiere       │
+            │               │   estado_pago =    │
+            │               │   confirmado       │
             │               │                    │
             │               └──> cancelado <─────┘
             └──> rechazado
 ```
 
 `entregado`, `rechazado` y `cancelado` son estados terminales.
+
+### Precondición de pago (RF-010 v2.0 + RF-011 v3.0)
+
+> **La transición `aceptado → en_produccion` exige que `estado_pago` sea `confirmado`.** El backend rechaza el intento con `409` mientras el pago siga pendiente o solo registrado. Ninguna otra transición depende del estado del pago.
+
+Esta es una **precondición de negocio**, no una fusión de las dos máquinas de estado: los flujos de pedido y de pago siguen siendo independientes en su representación, y el resto de las transiciones no consultan el pago.
+
+El orden que impone es:
+
+```
+aceptado
+   │  el comprador registra el pago        (POST /pedidos/{id}/pago/)
+   ▼
+aceptado + pago registrado
+   │  el artesano confirma la recepción    (POST /pedidos/{id}/pago/confirmar/)
+   ▼
+aceptado + pago confirmado
+   │  ahora sí puede iniciar la producción (POST /pedidos/{id}/estado/)
+   ▼
+en_produccion
+```
 
 ### `GET /pedidos/` 🔒
 
@@ -456,6 +498,7 @@ Detalle, incluido el historial de auditoría. **`404`** si el pedido no pertenec
   "costo_entrega": 0,
   "entrega": { "modalidad": "retiro_en_taller", "detalle": "…" },
   "pago": null,
+  "reembolso": null,
   "motivo_cancelacion": null,
   "motivo_rechazo": null,
   "creado_en": "2026-08-15T10:30:00-06:00",
@@ -508,9 +551,50 @@ Las transiciones con reglas o datos propios son **acciones explícitas**, no un 
 
 `POST /pedidos/{id}/estado/` cubre el avance lineal (`aceptado → en_produccion → listo_para_entrega → entregado`), donde no hay datos adicionales. El backend valida la transición contra la máquina de estados y responde **`409`** si es inválida.
 
+**Caso especial — inicio de producción.** Si el destino es `en_produccion` y el pago no está confirmado, la respuesta es `409` con un código distinguible, para que la interfaz explique la causa real en lugar de un error genérico:
+
+```json
+{
+  "detail": "No se puede iniciar la producción sin el pago confirmado.",
+  "codigo": "pago_no_confirmado"
+}
+```
+
 Todas devuelven **`200`** con el pedido actualizado, de modo que el frontend refresque su caché con la respuesta.
 
 > **Corrección respecto del prototipo:** hoy la interfaz del artesano oculta la cancelación (`panel.pedidos.$id.tsx` filtra `"Cancelado"`), pese a que el RF-015 permite cancelar a ambas partes. El contrato la habilita para los dos roles; la interfaz deberá reflejarlo.
+
+### Reembolso al cancelar un pedido pagado (RF-015)
+
+Cuando se cancela un pedido cuyo `estado_pago` es `confirmado`, el backend **registra automáticamente la necesidad de un reembolso** como parte de la misma operación de cancelación. El comprador no lo solicita y el artesano no lo crea: es una consecuencia del estado.
+
+La respuesta de `POST /pedidos/{id}/cancelar/` incluye entonces el objeto `reembolso`:
+
+```json
+{
+  "id": 81,
+  "estado": "cancelado",
+  "estado_pago": "confirmado",
+  "reembolso": {
+    "estado": "pendiente",
+    "monto": 9780,
+    "registrado_en": "2026-08-15T11:00:00-06:00",
+    "completado_en": null
+  }
+}
+```
+
+`reembolso` es `null` en cualquier pedido que no haya sido cancelado tras un pago confirmado. El `monto` corresponde al total pagado: **no existen reembolsos parciales**.
+
+#### `POST /pedidos/{id}/reembolso/completar/` 🔒🔨
+
+El artesano declara que ya realizó la devolución por fuera de la plataforma. `reembolso.estado`: `pendiente` → `completado`.
+
+**Respuesta `200`** — el pedido actualizado. **`409`** si el pedido no tiene reembolso pendiente.
+
+> **La plataforma no ejecuta transferencias bancarias.** Este endpoint únicamente registra una declaración del artesano, que queda en el historial de auditoría (RNF-008). Es la traducción literal de "registrará el estado del reembolso" del RF-015.
+>
+> **Propuesta a validar:** el modelado del reembolso como objeto anidado en el pedido, y el hecho de que sea el artesano quien lo marque como completado, son decisiones de diseño derivadas del RF-015 pero no dictadas explícitamente por él. Conviene confirmarlas antes de implementar.
 
 ### `PATCH /pedidos/{id}/entrega/` 🔒🔨
 
@@ -528,11 +612,13 @@ Registra la modalidad de entrega. RF-016.
 
 ## 8. Pagos y mensajería
 
-El flujo de pago es **independiente** del estado del pedido (RF-011): registrar o confirmar un pago no altera `estado`, y avanzar el pedido no exige que el pago esté confirmado.
+El pago y el pedido son **máquinas de estado separadas**: registrar o confirmar un pago no modifica `estado`. Existe una única dependencia entre ellas, en un solo sentido — la precondición de RF-010: **no se puede iniciar la producción sin el pago confirmado** (ver [sección 7](#7-pedidos)).
 
 ### `POST /pedidos/{id}/pago/` 🔒👤
 
 El comprador registra su pago. `estado_pago`: `pendiente` → `registrado`.
+
+**Estado requerido del pedido:** `aceptado` (RF-011 v3.0). El backend responde `409` si el pedido está en cualquier otro estado.
 
 **Petición** — `multipart/form-data` cuando se adjunta comprobante:
 
@@ -545,13 +631,15 @@ El comprador registra su pago. `estado_pago`: `pendiente` → `registrado`.
 
 > **Cambio respecto del prototipo:** hoy solo se guarda `comprobanteNombre`, una cadena con el nombre del archivo. El contrato contempla el **archivo real**. Su almacenamiento y control de acceso son responsabilidad del backend (RNF-004): el comprobante solo debe ser accesible para el comprador y el artesano del pedido.
 
-**Errores** — `409` si el pedido ya tiene un pago registrado.
+**Errores** — `409` si el pedido ya tiene un pago registrado o si no está en `aceptado`.
 
-> **Cuestión abierta:** el prototipo solo permite registrar el pago cuando el pedido está en `listo_para_entrega`, mientras que el RF-011 habla de un pedido `aceptado`. Es la pregunta abierta n.º 1 de la auditoría técnica y **debe resolverse antes de implementar**.
+> **Resuelto:** el prototipo solo permite registrar el pago en `listo_para_entrega`; el RF-011 v3.0 fija `aceptado`. Prevalece el requisito (desviación D-1).
 
 ### `POST /pedidos/{id}/pago/confirmar/` 🔒🔨
 
 El artesano confirma la recepción. `estado_pago`: `registrado` → `confirmado`. **`409`** si no hay pago registrado.
+
+Confirmar el pago **no avanza el pedido automáticamente**: solo habilita que el artesano pueda hacerlo. El paso a `en_produccion` sigue siendo una acción explícita suya.
 
 ### `GET /pedidos/{id}/mensajes/` 🔒
 
@@ -581,6 +669,8 @@ El frontend sondea cada 15 segundos el chat y cada 20 las notificaciones (RNF-01
 Envía un mensaje. `{"texto": "…"}`. El autor se deriva de la identidad autenticada.
 
 El backend **rechaza con `409`** los mensajes en pedidos cuyo estado no admite conversación: `pendiente` (aún no habilitada), `rechazado` (nunca se habilita), `entregado` y `cancelado` (solo lectura).
+
+> **Restricción de acceso (RF-013 / RN-06):** los mensajes de un pedido son accesibles **únicamente** para su comprador y su artesano. El rol administrador **no puede leerlos**, ni por la API ni desde Django Admin. El modelo de mensajes debe quedar excluido del registro en el panel de administración.
 
 ### `GET /artesanos/me/resumen/` 🔒🔨
 
@@ -645,6 +735,10 @@ Cambios que este contrato implica en el código existente. **No se ejecuta ningu
 | `src/components/productos/image-uploader.tsx` | Envía archivo al backend en vez de producir un DataURL | Medio |
 | `src/services/mock-api.ts` | Se sustituye por servicios de dominio sobre un cliente HTTP | Alto |
 | `src/data/seed.ts` | Desaparece como fuente de datos | Alto |
+| `src/routes/pedidos.$id.tsx` | `puedePagar` pasa de exigir "Listo para entrega" a "Aceptado" (D-1) | Bajo |
+| `src/lib/order-state.ts` + `mock-api.ts` | `canTransition` / `changeOrderStatus` incorporan la precondición de pago confirmado para entrar en producción (D-2) | Medio |
+| `src/types/index.ts` | Se retira `"Pago contra entrega"` de `PaymentMethod` (D-3) | Bajo |
+| `src/types/index.ts` + UI de pedido | Se añade el objeto `reembolso` al pedido y su visualización (D-5) | Medio — funcionalidad nueva |
 
 > **Observación sobre el orden de trabajo:** los cambios de tipos (identificadores y códigos de enumeración) afectan al mock tanto como al futuro cliente HTTP. Conviene aplicarlos **antes** de sustituir la capa de servicios, para que el mock siga siendo utilizable durante la transición y el compilador de TypeScript actúe como red de seguridad en un cambio a la vez.
 
@@ -654,9 +748,10 @@ Cambios que este contrato implica en el código existente. **No se ejecuta ningu
 
 Deben resolverse antes o durante la implementación del backend:
 
-1. **¿Desde qué estado puede registrarse el pago?** El RF-011 dice `aceptado`; el prototipo exige `listo_para_entrega`. Contradicción heredada de la auditoría técnica (pregunta abierta n.º 1).
-2. **Mecanismo de autenticación** (JWT frente a sesión, y dónde se almacenan las credenciales en el cliente). Decisión arquitectónica siguiente.
-3. **Aprobación de talleres.** El RF-013 menciona que el administrador aprueba el registro de nuevos artesanos; el contrato aún no define cómo se refleja ese estado en la API.
-4. **Tasa de cambio configurable.** El RF-007 la describe configurable por el administrador; hoy es una constante del frontend. Requeriría un endpoint si se implementa.
-5. **Panel de administración (RF-013).** Se prevé resolver con Django Admin, fuera de esta API. Conviene confirmarlo.
-6. **Política de imágenes.** Número máximo por producto, dimensiones de salida tras la compresión con Pillow y si se generan miniaturas.
+1. **Mecanismo de autenticación** (JWT frente a sesión, y dónde se almacenan las credenciales en el cliente). Decisión arquitectónica siguiente. El RF-004 apunta a `djangorestframework-simplejwt`.
+2. **Aprobación de talleres.** El RF-013 establece que el administrador aprueba el registro de nuevos artesanos, pero el contrato aún no define cómo se refleja ese estado en la API: si un taller no aprobado aparece en `GET /artesanos/`, si puede publicar productos, y qué recibe al iniciar sesión.
+3. **Modelado del reembolso.** La forma propuesta en la sección 7 (objeto anidado en el pedido, marcado como completado por el artesano) deriva del RF-015 pero no está dictada por él. Requiere confirmación.
+4. **Tasa de cambio configurable.** El RF-007 la describe configurable por el administrador; hoy es la constante `TASA_CAMBIO` del frontend. Requeriría un endpoint de configuración.
+5. **Política de imágenes.** Número máximo por producto, dimensiones de salida tras la compresión con Pillow y si se generan miniaturas.
+6. **Acceso a los comprobantes de pago.** El RNF-004 exige control de acceso sin URL públicas descargables. Falta definir el mecanismo: ¿un endpoint autenticado que sirva el archivo, o URL firmadas con caducidad?
+7. **Catálogo de reglas de negocio.** El RF-013 cita la regla **RN-06** (el administrador no puede leer los mensajes del chat), pero el catálogo de reglas RN-xx no está incorporado al repositorio. Sin él, la trazabilidad queda incompleta y hay restricciones que la API no puede verificar.
