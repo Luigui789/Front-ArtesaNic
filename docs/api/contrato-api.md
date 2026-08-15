@@ -82,6 +82,12 @@ Regla general, sin excepciones:
 
 > **El cliente nunca envía su propia identidad, su rol ni el identificador de su taller.** El backend los deriva siempre de la petición autenticada (`request.user`). Un cuerpo o parámetro que contenga `rol`, `usuario`, `comprador_id` o `artesano_id` propio debe ser **ignorado o rechazado** por el backend.
 
+Y una segunda regla, sobre la autorización a nivel de objeto:
+
+> **Toda operación sobre un recurso identificado por su `id` debe verificar que quien la solicita es parte legítima de ese recurso.** No basta con exigir autenticación: un pedido solo es accesible para su comprador y su artesano; un producto solo es editable por el taller que lo publicó. El identificador en la URL **nunca** es prueba de autorización.
+>
+> Esta verificación es responsabilidad exclusiva del backend y debe ejecutarse **aunque el frontend ya haya ocultado el control correspondiente**. Las guardas de ruta del cliente son experiencia de usuario, no seguridad (ver [ADR-003](../adr/0003-autenticacion-y-autorizacion.md)).
+
 En cada endpoint se indica:
 
 | Marca | Significado |
@@ -228,7 +234,16 @@ Las categorías son un **recurso propio** del backend, no una lista fija en el c
 
 ## 3. Autenticación y sesión
 
-> El mecanismo concreto se decidirá en un ADR aparte. Las rutas siguientes fijan la **forma** del contrato; los detalles de tokens quedan pendientes.
+> Mecanismo decidido en [ADR-003](../adr/0003-autenticacion-y-autorizacion.md): **token de acceso en memoria del cliente, token de renovación en cookie `HttpOnly`/`Secure`/`SameSite` emitida por el backend.** El frontend nunca lee ni escribe el token de renovación.
+
+### Transporte de credenciales
+
+| Elemento | Dónde vive | Quién lo maneja |
+|---|---|---|
+| Token de acceso | Memoria de JavaScript | Frontend, en la cabecera `Authorization: Bearer …` |
+| Token de renovación | Cookie `HttpOnly`, `Secure`, `SameSite` | Backend; el navegador la envía sola |
+
+Como el token de renovación viaja en cookie, **los endpoints `POST /auth/refrescar/` y `POST /auth/logout/` requieren protección CSRF**. El resto de la API se autentica por cabecera `Bearer`, que el navegador no adjunta automáticamente y por tanto no es susceptible a CSRF.
 
 ### `POST /auth/registro/` 🔓
 
@@ -247,7 +262,7 @@ Registra una persona usuaria. RF-004.
 
 El teléfono es el identificador de acceso (8 dígitos, formato nicaragüense). Cuando `rol` es `artesano`, el backend crea también el taller asociado en estado pendiente de aprobación (RF-013).
 
-**Respuesta `201`** — datos de sesión (forma exacta pendiente del ADR de autenticación) más el perfil.
+**Respuesta `201`** — igual que la de `POST /auth/login/`.
 
 **Errores** — `400` si el teléfono ya está registrado o el formato es inválido.
 
@@ -259,15 +274,52 @@ El teléfono es el identificador de acceso (8 dígitos, formato nicaragüense). 
 { "telefono": "85551234", "password": "…" }
 ```
 
-`rol` **no** se envía: el backend lo conoce por la cuenta. Esto corrige el comportamiento actual del prototipo, donde el rol se elige en el formulario.
+`rol` **no** se envía: el backend lo conoce por la cuenta. Esto corrige el comportamiento actual del prototipo, donde el rol se elige en un selector del formulario.
 
-**Respuesta `200`** — credenciales de sesión más el perfil.
+**Respuesta `200`**
+
+```json
+{
+  "access": "eyJhbGciOi…",
+  "usuario": {
+    "id": 4,
+    "nombre": "Ana Lucía Delgado",
+    "telefono": "85551234",
+    "rol": "artesano",
+    "artesano_id": 1
+  }
+}
+```
+
+Además, el backend adjunta la cabecera `Set-Cookie` con el token de renovación:
+
+```
+Set-Cookie: refresh=…; HttpOnly; Secure; SameSite=Lax; Path=/api/v1/auth/
+```
+
+> **El token de renovación no aparece en el cuerpo de la respuesta.** Si apareciera, el frontend podría leerlo y guardarlo, que es justo lo que el ADR-003 evita.
 
 **Errores** — `401` con mensaje genérico, sin revelar si el teléfono existe.
 
+### `POST /auth/refrescar/` 🔓 (requiere cookie + CSRF)
+
+Emite un nuevo token de acceso a partir de la cookie de renovación. No lleva cuerpo: el navegador envía la cookie automáticamente.
+
+**Respuesta `200`** — `{ "access": "…" }`, y una nueva cookie si la renovación es rotativa.
+
+**Errores** — `401` si la cookie falta, caducó o fue revocada. El frontend lo interpreta como sesión terminada.
+
+### `POST /auth/logout/` 🔒 (requiere cookie + CSRF)
+
+Invalida la sesión y **borra la cookie de renovación**. El frontend descarta además el token de acceso que tiene en memoria.
+
+**Respuesta `204`.**
+
 ### `GET /auth/perfil/` 🔒
 
-Devuelve la identidad autenticada. **Sustituye a la constante `DEMO_ARTISAN_ID` y al usuario codificado en `src/hooks/use-session.tsx`.**
+Devuelve la identidad autenticada. Se invoca **al arrancar la aplicación** para reconstruir la sesión, ya que el token de acceso no sobrevive a una recarga.
+
+**Sustituye a la constante `DEMO_ARTISAN_ID` y al usuario codificado en `src/hooks/use-session.tsx`.**
 
 **Respuesta `200`**
 
@@ -282,6 +334,27 @@ Devuelve la identidad autenticada. **Sustituye a la constante `DEMO_ARTISAN_ID` 
 ```
 
 `artesano_id` es `null` cuando el rol es `comprador`. **Este campo es la única fuente legítima del identificador del taller en el frontend.**
+
+> **Ausente no significa «por defecto».** Un `artesano_id` nulo indica que esa persona no es artesana, y el frontend debe deshabilitar las funcionalidades de taller. Nunca sustituirlo por un valor de reserva, que es el defecto actual del prototipo (`usuario?.artesanoId ?? DEMO_ARTISAN_ID`).
+
+### Secuencia completa
+
+```
+Inicio de sesión
+   POST /auth/login/  →  access (memoria) + cookie de renovación
+        │
+        ▼
+Peticiones a la API
+   Authorization: Bearer <access>
+        │
+        ├── 200 → normal
+        └── 401 → POST /auth/refrescar/ → reintentar una vez
+                        │
+                        └── 401 → sesión terminada, ir a /auth
+
+Recarga de la página
+   GET /auth/perfil/  →  identidad reconstruida (o sesión anónima)
+```
 
 ---
 
@@ -730,7 +803,10 @@ Cambios que este contrato implica en el código existente. **No se ejecuta ningu
 | `src/components/pedidos/status-badges.tsx`, `timelines.tsx` | Muestran la etiqueta traducida, no el valor | Medio |
 | `src/routes/catalogo.tsx` | `?categoria=` viaja como código; el selector se puebla desde `/categorias/` | Medio |
 | `src/hooks/use-session.tsx` | Se elimina `DEMO_ARTISAN_ID`; la identidad viene de `GET /auth/perfil/` | Alto |
-| `src/routes/auth.tsx` | El rol deja de elegirse en el formulario de ingreso | Medio |
+| `src/routes/auth.tsx` | El rol deja de elegirse en el formulario de ingreso; las credenciales se envían de verdad | Medio |
+| Panel del artesano (4 archivos) | Se elimina el patrón `usuario?.artesanoId ?? DEMO_ARTISAN_ID` | Alto — es una escalada de privilegios |
+| Nuevo: guardas de ruta | `/panel/*` exige sesión con rol artesano (solo experiencia de usuario) | Nuevo |
+| Nuevo: cliente HTTP | Token de acceso en memoria, cabecera `Bearer`, renovación ante `401` sin disparar peticiones duplicadas | Nuevo |
 | `src/routes/panel.pedidos.$id.tsx` | Se habilita la cancelación para el artesano (RF-015) | Bajo |
 | `src/components/productos/image-uploader.tsx` | Envía archivo al backend en vez de producir un DataURL | Medio |
 | `src/services/mock-api.ts` | Se sustituye por servicios de dominio sobre un cliente HTTP | Alto |
@@ -748,7 +824,7 @@ Cambios que este contrato implica en el código existente. **No se ejecuta ningu
 
 Deben resolverse antes o durante la implementación del backend:
 
-1. **Mecanismo de autenticación** (JWT frente a sesión, y dónde se almacenan las credenciales en el cliente). Decisión arquitectónica siguiente. El RF-004 apunta a `djangorestframework-simplejwt`.
+1. **Detalles de los tokens.** Caducidad del token de acceso y del de renovación, si la renovación es rotativa, y si el cierre de sesión mantiene una lista de revocados. El mecanismo general ya está resuelto en el [ADR-003](../adr/0003-autenticacion-y-autorizacion.md).
 2. **Aprobación de talleres.** El RF-013 establece que el administrador aprueba el registro de nuevos artesanos, pero el contrato aún no define cómo se refleja ese estado en la API: si un taller no aprobado aparece en `GET /artesanos/`, si puede publicar productos, y qué recibe al iniciar sesión.
 3. **Modelado del reembolso.** La forma propuesta en la sección 7 (objeto anidado en el pedido, marcado como completado por el artesano) deriva del RF-015 pero no está dictada por él. Requiere confirmación.
 4. **Tasa de cambio configurable.** El RF-007 la describe configurable por el administrador; hoy es la constante `TASA_CAMBIO` del frontend. Requeriría un endpoint de configuración.
