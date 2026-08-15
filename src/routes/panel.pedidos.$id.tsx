@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -39,6 +39,7 @@ import { nextOrderStates } from "@/lib/order-state";
 import { formatDateTime } from "@/lib/format";
 import { useCurrency } from "@/hooks/use-currency";
 import { useSession } from "@/hooks/use-session";
+import { useDocumentHead } from "@/hooks/use-document-head";
 import type { DeliveryMode, OrderStatus } from "@/types";
 
 const MODALIDADES: DeliveryMode[] = [
@@ -48,10 +49,16 @@ const MODALIDADES: DeliveryMode[] = [
   "Otra",
 ];
 
-export const Route = createFileRoute("/panel/pedidos/$id")({
-  head: ({ params }) => ({
+export default function GestionPedido() {
+  const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
+  const { format } = useCurrency();
+  const { usuario } = useSession();
+  const autor = usuario?.nombre ?? "Artesano";
+
+  useDocumentHead({
+    title: "Gestión del pedido | Panel del artesano",
     meta: [
-      { title: "Gestión del pedido | Panel del artesano" },
       {
         name: "description",
         content:
@@ -59,20 +66,11 @@ export const Route = createFileRoute("/panel/pedidos/$id")({
       },
       { property: "og:title", content: "Gestión del pedido | Panel del artesano" },
       { property: "og:description", content: "Control del flujo del pedido bajo demanda." },
-      { property: "og:url", content: `/panel/pedidos/${params.id}` },
+      { property: "og:url", content: `/panel/pedidos/${id}` },
       { name: "robots", content: "noindex" },
     ],
-    links: [{ rel: "canonical", href: `/panel/pedidos/${params.id}` }],
-  }),
-  component: GestionPedido,
-});
-
-function GestionPedido() {
-  const { id } = Route.useParams();
-  const queryClient = useQueryClient();
-  const { format } = useCurrency();
-  const { usuario } = useSession();
-  const autor = usuario?.nombre ?? "Artesano";
+    canonical: `/panel/pedidos/${id}`,
+  });
 
   const [motivo, setMotivo] = useState("");
   const [rechazoAbierto, setRechazoAbierto] = useState(false);
@@ -80,7 +78,11 @@ function GestionPedido() {
   const [detalle, setDetalle] = useState("");
   const [costo, setCosto] = useState("0");
 
-  const pedido = useQuery({ queryKey: ["pedido", id], queryFn: () => getOrder(id) });
+  const pedido = useQuery({
+    queryKey: ["pedido", id],
+    queryFn: () => getOrder(id!),
+    enabled: !!id,
+  });
   const producto = useQuery({
     queryKey: ["producto", pedido.data?.productoId],
     queryFn: () => getProduct(pedido.data!.productoId),
@@ -95,7 +97,7 @@ function GestionPedido() {
 
   const cambiar = useMutation({
     mutationFn: (v: { estado: OrderStatus; motivo?: string }) =>
-      changeOrderStatus(id, v.estado, autor, v.motivo),
+      changeOrderStatus(id!, v.estado, autor, v.motivo),
     onSuccess: (o) => {
       refrescar();
       setRechazoAbierto(false);
@@ -105,7 +107,7 @@ function GestionPedido() {
   });
 
   const confirmar = useMutation({
-    mutationFn: () => confirmPayment(id, autor),
+    mutationFn: () => confirmPayment(id!, autor),
     onSuccess: () => {
       refrescar();
       toast.success("Pago confirmado");
@@ -114,13 +116,16 @@ function GestionPedido() {
   });
 
   const entrega = useMutation({
-    mutationFn: () => setDelivery(id, modalidad, detalle.trim() || undefined, Number(costo) || 0, autor),
+    mutationFn: () =>
+      setDelivery(id!, modalidad, detalle.trim() || undefined, Number(costo) || 0, autor),
     onSuccess: () => {
       refrescar();
       toast.success("Datos de entrega guardados");
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  if (!id) return null;
 
   if (pedido.isError) {
     return (

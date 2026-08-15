@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ClipboardList, Hammer, Package, Wallet } from "lucide-react";
 import { SiteLayout } from "@/components/layout/site-layout";
@@ -10,11 +10,12 @@ import { artisanSummary, DEMO_ARTISAN_ID, listOrders, listProducts } from "@/ser
 import { formatDate } from "@/lib/format";
 import { useCurrency } from "@/hooks/use-currency";
 import { useSession } from "@/hooks/use-session";
+import { useDocumentHead } from "@/hooks/use-document-head";
 
-export const Route = createFileRoute("/panel/")({
-  head: () => ({
+export default function Panel() {
+  useDocumentHead({
+    title: "Panel del artesano | Artesanías de Masaya",
     meta: [
-      { title: "Panel del artesano | Artesanías de Masaya" },
       {
         name: "description",
         content:
@@ -25,12 +26,9 @@ export const Route = createFileRoute("/panel/")({
       { property: "og:url", content: "/panel" },
       { name: "robots", content: "noindex" },
     ],
-    links: [{ rel: "canonical", href: "/panel" }],
-  }),
-  component: Panel,
-});
+    canonical: "/panel",
+  });
 
-function Panel() {
   const { usuario } = useSession();
   const { format } = useCurrency();
   const artesanoId = usuario?.artesanoId ?? DEMO_ARTISAN_ID;
@@ -134,9 +132,7 @@ function Panel() {
                       </div>
                     </div>
                     <Button asChild variant="outline" className="touch-target shrink-0">
-                      <Link to="/panel/pedidos/$id" params={{ id: o.id }}>
-                        Gestionar
-                      </Link>
+                      <Link to={`/panel/pedidos/${o.id}`}>Gestionar</Link>
                     </Button>
                   </div>
                 </article>

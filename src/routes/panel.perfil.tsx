@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DEMO_ARTISAN_ID, getArtisan, updateArtisan } from "@/services/mock-api";
 import { useSession } from "@/hooks/use-session";
+import { useDocumentHead } from "@/hooks/use-document-head";
 
 const esquema = z.object({
   nombreTaller: z.string().trim().min(3, "Escribe el nombre del taller.").max(80, "Máximo 80 caracteres."),
@@ -22,25 +23,6 @@ const esquema = z.object({
   horario: z.string().trim().min(5, "Indica el horario de atención.").max(120, "Máximo 120 caracteres."),
   telefono: z.string().trim().regex(/^[0-9]{4}[ -]?[0-9]{4}$/, "Teléfono de 8 dígitos."),
   whatsapp: z.string().trim().regex(/^[0-9]{4}[ -]?[0-9]{4}$/, "WhatsApp de 8 dígitos."),
-});
-
-export const Route = createFileRoute("/panel/perfil")({
-  head: () => ({
-    meta: [
-      { title: "Perfil del taller | Panel del artesano" },
-      {
-        name: "description",
-        content:
-          "Actualiza la información pública de tu taller: historia, ubicación, horario y datos de contacto.",
-      },
-      { property: "og:title", content: "Perfil del taller | Panel del artesano" },
-      { property: "og:description", content: "Perfilamiento del taller artesanal de Masaya." },
-      { property: "og:url", content: "/panel/perfil" },
-      { name: "robots", content: "noindex" },
-    ],
-    links: [{ rel: "canonical", href: "/panel/perfil" }],
-  }),
-  component: PerfilTaller,
 });
 
 type Campos = z.infer<typeof esquema>;
@@ -55,7 +37,23 @@ const VACIO: Campos = {
   whatsapp: "",
 };
 
-function PerfilTaller() {
+export default function PerfilTaller() {
+  useDocumentHead({
+    title: "Perfil del taller | Panel del artesano",
+    meta: [
+      {
+        name: "description",
+        content:
+          "Actualiza la información pública de tu taller: historia, ubicación, horario y datos de contacto.",
+      },
+      { property: "og:title", content: "Perfil del taller | Panel del artesano" },
+      { property: "og:description", content: "Perfilamiento del taller artesanal de Masaya." },
+      { property: "og:url", content: "/panel/perfil" },
+      { name: "robots", content: "noindex" },
+    ],
+    canonical: "/panel/perfil",
+  });
+
   const { usuario } = useSession();
   const queryClient = useQueryClient();
   const artesanoId = usuario?.artesanoId ?? DEMO_ARTISAN_ID;
@@ -178,9 +176,7 @@ function PerfilTaller() {
                 {guardar.isPending ? "Guardando…" : "Guardar cambios"}
               </Button>
               <Button asChild type="button" variant="outline" className="touch-target">
-                <Link to="/artesano/$id" params={{ id: artesanoId }}>
-                  Ver perfil público
-                </Link>
+                <Link to={`/artesano/${artesanoId}`}>Ver perfil público</Link>
               </Button>
             </div>
           </form>

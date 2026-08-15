@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
@@ -12,12 +12,15 @@ import { DEMO_ARTISAN_ID, listOrders, listProducts } from "@/services/mock-api";
 import { formatDate } from "@/lib/format";
 import { useCurrency } from "@/hooks/use-currency";
 import { useSession } from "@/hooks/use-session";
+import { useDocumentHead } from "@/hooks/use-document-head";
 import { ORDER_STATES, type OrderStatus } from "@/types";
 
-export const Route = createFileRoute("/panel/pedidos/")({
-  head: () => ({
+const FILTROS: (OrderStatus | "todos")[] = ["todos", ...ORDER_STATES];
+
+export default function PedidosTaller() {
+  useDocumentHead({
+    title: "Pedidos del taller | Panel del artesano",
     meta: [
-      { title: "Pedidos del taller | Panel del artesano" },
       {
         name: "description",
         content:
@@ -28,14 +31,9 @@ export const Route = createFileRoute("/panel/pedidos/")({
       { property: "og:url", content: "/panel/pedidos" },
       { name: "robots", content: "noindex" },
     ],
-    links: [{ rel: "canonical", href: "/panel/pedidos" }],
-  }),
-  component: PedidosTaller,
-});
+    canonical: "/panel/pedidos",
+  });
 
-const FILTROS: (OrderStatus | "todos")[] = ["todos", ...ORDER_STATES];
-
-function PedidosTaller() {
   const { usuario } = useSession();
   const { format } = useCurrency();
   const artesanoId = usuario?.artesanoId ?? DEMO_ARTISAN_ID;
@@ -114,9 +112,7 @@ function PedidosTaller() {
                     </div>
                   </div>
                   <Button asChild className="touch-target shrink-0">
-                    <Link to="/panel/pedidos/$id" params={{ id: o.id }}>
-                      Gestionar
-                    </Link>
+                    <Link to={`/panel/pedidos/${o.id}`}>Gestionar</Link>
                   </Button>
                 </div>
               </article>

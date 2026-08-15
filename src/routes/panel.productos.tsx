@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -34,6 +34,7 @@ import {
 } from "@/services/mock-api";
 import { useCurrency } from "@/hooks/use-currency";
 import { useSession } from "@/hooks/use-session";
+import { useDocumentHead } from "@/hooks/use-document-head";
 import { CATEGORIES, type Category, type Product } from "@/types";
 
 const esquema = z.object({
@@ -49,10 +50,11 @@ const esquema = z.object({
     .max(600, "Máximo 600 caracteres."),
 });
 
-export const Route = createFileRoute("/panel/productos")({
-  head: () => ({
+
+export default function MisProductos() {
+  useDocumentHead({
+    title: "Mis productos | Panel del artesano",
     meta: [
-      { title: "Mis productos | Panel del artesano" },
       {
         name: "description",
         content:
@@ -63,12 +65,9 @@ export const Route = createFileRoute("/panel/productos")({
       { property: "og:url", content: "/panel/productos" },
       { name: "robots", content: "noindex" },
     ],
-    links: [{ rel: "canonical", href: "/panel/productos" }],
-  }),
-  component: MisProductos,
-});
+    canonical: "/panel/productos",
+  });
 
-function MisProductos() {
   const { usuario } = useSession();
   const { format } = useCurrency();
   const queryClient = useQueryClient();
