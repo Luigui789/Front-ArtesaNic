@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { MessageSquare } from "lucide-react";
 import { SiteLayout } from "@/components/layout/site-layout";
@@ -12,20 +12,20 @@ import { chatMode } from "@/lib/order-state";
 import { formatDate } from "@/lib/format";
 import { useSession } from "@/hooks/use-session";
 import { useNotifications } from "@/hooks/use-notifications";
+import { useDocumentHead } from "@/hooks/use-document-head";
 import { cn } from "@/lib/utils";
 import { useEffect } from "react";
 
-interface MensajesSearch {
-  pedido?: string | undefined;
-}
+export default function MensajesPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const seleccionado = searchParams.get("pedido") ?? undefined;
+  const { usuario } = useSession();
+  const rol = usuario?.rol ?? "comprador";
+  const { noLeidos, marcarLeido } = useNotifications();
 
-export const Route = createFileRoute("/mensajes")({
-  validateSearch: (search: Record<string, unknown>): MensajesSearch => ({
-    pedido: typeof search["pedido"] === "string" ? (search["pedido"] as string) : undefined,
-  }),
-  head: () => ({
+  useDocumentHead({
+    title: "Mensajes por pedido | Artesanías de Masaya",
     meta: [
-      { title: "Mensajes por pedido | Artesanías de Masaya" },
       {
         name: "description",
         content:
@@ -39,17 +39,8 @@ export const Route = createFileRoute("/mensajes")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
-    links: [{ rel: "canonical", href: "/mensajes" }],
-  }),
-  component: MensajesPage,
-});
-
-function MensajesPage() {
-  const navigate = useNavigate();
-  const { pedido: seleccionado } = Route.useSearch();
-  const { usuario } = useSession();
-  const rol = usuario?.rol ?? "comprador";
-  const { noLeidos, marcarLeido } = useNotifications();
+    canonical: "/mensajes",
+  });
 
   const pedidos = useQuery({
     queryKey: ["mensajes-pedidos", rol],
@@ -70,7 +61,7 @@ function MensajesPage() {
 
   const seleccionar = (id: string) => {
     marcarLeido(id);
-    void navigate({ to: "/mensajes", search: { pedido: id } });
+    setSearchParams({ pedido: id });
   };
 
   // La conversación visible se marca como leída.

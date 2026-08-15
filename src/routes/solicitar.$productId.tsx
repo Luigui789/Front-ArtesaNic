@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { z } from "zod";
@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { createOrderRequest, getProduct } from "@/services/mock-api";
 import { useCurrency } from "@/hooks/use-currency";
 import { useSession } from "@/hooks/use-session";
+import { useDocumentHead } from "@/hooks/use-document-head";
 
 const esquema = z.object({
   cantidad: z
@@ -28,10 +29,16 @@ const esquema = z.object({
   observaciones: z.string().trim().max(300, "Máximo 300 caracteres."),
 });
 
-export const Route = createFileRoute("/solicitar/$productId")({
-  head: ({ params }) => ({
+export default function SolicitarPedido() {
+  const { productId } = useParams<{ productId: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { format } = useCurrency();
+  const { usuario } = useSession();
+
+  useDocumentHead({
+    title: "Solicitar pedido personalizado | Artesanías de Masaya",
     meta: [
-      { title: "Solicitar pedido personalizado | Artesanías de Masaya" },
       {
         name: "description",
         content:
@@ -42,31 +49,26 @@ export const Route = createFileRoute("/solicitar/$productId")({
         property: "og:description",
         content: "Comercio bajo demanda: el artesano evalúa tu solicitud antes de producir.",
       },
-      { property: "og:url", content: `/solicitar/${params.productId}` },
+      { property: "og:url", content: `/solicitar/${productId}` },
     ],
-    links: [{ rel: "canonical", href: `/solicitar/${params.productId}` }],
-  }),
-  component: SolicitarPedido,
-});
-
-function SolicitarPedido() {
-  const { productId } = Route.useParams();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { format } = useCurrency();
-  const { usuario } = useSession();
+    canonical: `/solicitar/${productId}`,
+  });
 
   const [cantidad, setCantidad] = useState(1);
   const [personalizacion, setPersonalizacion] = useState("");
   const [observaciones, setObservaciones] = useState("");
   const [errores, setErrores] = useState<Record<string, string>>({});
 
-  const producto = useQuery({ queryKey: ["producto", productId], queryFn: () => getProduct(productId) });
+  const producto = useQuery({
+    queryKey: ["producto", productId],
+    queryFn: () => getProduct(productId!),
+    enabled: !!productId,
+  });
 
   const crear = useMutation({
     mutationFn: () =>
       createOrderRequest(
-        { productoId: productId, cantidad, personalizacion, observaciones },
+        { productoId: productId!, cantidad, personalizacion, observaciones },
         usuario?.nombre ?? "Comprador",
       ),
     onSuccess: (order) => {
@@ -74,10 +76,12 @@ function SolicitarPedido() {
       toast.success(`Solicitud ${order.codigo} enviada al taller`, {
         description: "El artesano la revisará y te responderá desde el pedido.",
       });
-      void navigate({ to: "/pedidos/$id", params: { id: order.id } });
+      void navigate(`/pedidos/${order.id}`);
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  if (!productId) return null;
 
   const enviar = (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,8 +113,7 @@ function SolicitarPedido() {
     <SiteLayout>
       <div className="mx-auto max-w-5xl px-4 py-8">
         <Link
-          to="/producto/$id"
-          params={{ id: productId }}
+          to={`/producto/${productId}`}
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
@@ -213,9 +216,7 @@ function SolicitarPedido() {
                 {crear.isPending ? "Enviando solicitud…" : "Enviar solicitud"}
               </Button>
               <Button asChild type="button" variant="outline" size="lg" className="touch-target">
-                <Link to="/producto/$id" params={{ id: productId }}>
-                  Cancelar
-                </Link>
+                <Link to={`/producto/${productId}`}>Cancelar</Link>
               </Button>
             </div>
           </form>

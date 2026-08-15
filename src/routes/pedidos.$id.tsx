@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -31,12 +31,20 @@ import { formatDateTime } from "@/lib/format";
 import { useCurrency } from "@/hooks/use-currency";
 import { useSession } from "@/hooks/use-session";
 import { useNotifications } from "@/hooks/use-notifications";
+import { useDocumentHead } from "@/hooks/use-document-head";
 import type { PaymentMethod } from "@/types";
 
-export const Route = createFileRoute("/pedidos/$id")({
-  head: ({ params }) => ({
+const METODOS: PaymentMethod[] = ["Transferencia", "Pago contra entrega", "Otro método"];
+
+export default function DetallePedido() {
+  const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
+  const { format } = useCurrency();
+  const { usuario } = useSession();
+
+  useDocumentHead({
+    title: "Detalle del pedido | Artesanías de Masaya",
     meta: [
-      { title: "Detalle del pedido | Artesanías de Masaya" },
       {
         name: "description",
         content:
@@ -44,30 +52,26 @@ export const Route = createFileRoute("/pedidos/$id")({
       },
       { property: "og:title", content: "Detalle del pedido | Artesanías de Masaya" },
       { property: "og:description", content: "Estado, pago y entrega de tu pedido artesanal." },
-      { property: "og:url", content: `/pedidos/${params.id}` },
+      { property: "og:url", content: `/pedidos/${id}` },
       { name: "robots", content: "noindex" },
     ],
-    links: [{ rel: "canonical", href: `/pedidos/${params.id}` }],
-  }),
-  component: DetallePedido,
-});
-
-const METODOS: PaymentMethod[] = ["Transferencia", "Pago contra entrega", "Otro método"];
-
-function DetallePedido() {
-  const { id } = Route.useParams();
-  const queryClient = useQueryClient();
-  const { format } = useCurrency();
-  const { usuario } = useSession();
+    canonical: `/pedidos/${id}`,
+  });
 
   const [metodo, setMetodo] = useState<PaymentMethod>("Transferencia");
   const [referencia, setReferencia] = useState("");
   const [nota, setNota] = useState("");
   const [motivo, setMotivo] = useState("");
 
-  const pedido = useQuery({ queryKey: ["pedido", id], queryFn: () => getOrder(id) });
+  const pedido = useQuery({
+    queryKey: ["pedido", id],
+    queryFn: () => getOrder(id!),
+    enabled: !!id,
+  });
   const { marcarLeido } = useNotifications();
-  useEffect(() => marcarLeido(id), [id, marcarLeido]);
+  useEffect(() => {
+    if (id) marcarLeido(id);
+  }, [id, marcarLeido]);
   const producto = useQuery({
     queryKey: ["producto", pedido.data?.productoId],
     queryFn: () => getProduct(pedido.data!.productoId),
@@ -82,7 +86,7 @@ function DetallePedido() {
   const pagar = useMutation({
     mutationFn: () =>
       registerPayment(
-        id,
+        id!,
         {
           metodo,
           referencia: referencia.trim() || undefined,
@@ -102,13 +106,16 @@ function DetallePedido() {
   });
 
   const cancelar = useMutation({
-    mutationFn: () => changeOrderStatus(id, "Cancelado", usuario?.nombre ?? "Comprador", motivo.trim()),
+    mutationFn: () =>
+      changeOrderStatus(id!, "Cancelado", usuario?.nombre ?? "Comprador", motivo.trim()),
     onSuccess: () => {
       refrescar();
       toast.success("Pedido cancelado");
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  if (!id) return null;
 
   if (pedido.isError) {
     return (

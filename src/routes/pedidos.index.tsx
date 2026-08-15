@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { SiteLayout } from "@/components/layout/site-layout";
@@ -11,12 +11,15 @@ import { listOrders, listProducts } from "@/services/mock-api";
 import { formatDate } from "@/lib/format";
 import { useCurrency } from "@/hooks/use-currency";
 import { useSession } from "@/hooks/use-session";
+import { useDocumentHead } from "@/hooks/use-document-head";
 import { ORDER_STATES, type OrderStatus } from "@/types";
 
-export const Route = createFileRoute("/pedidos/")({
-  head: () => ({
+const FILTROS: (OrderStatus | "todos")[] = ["todos", ...ORDER_STATES];
+
+export default function MisPedidos() {
+  useDocumentHead({
+    title: "Mis pedidos | Artesanías de Masaya",
     meta: [
-      { title: "Mis pedidos | Artesanías de Masaya" },
       {
         name: "description",
         content:
@@ -26,14 +29,9 @@ export const Route = createFileRoute("/pedidos/")({
       { property: "og:description", content: "Seguimiento de tus pedidos bajo demanda en Masaya." },
       { property: "og:url", content: "/pedidos" },
     ],
-    links: [{ rel: "canonical", href: "/pedidos" }],
-  }),
-  component: MisPedidos,
-});
+    canonical: "/pedidos",
+  });
 
-const FILTROS: (OrderStatus | "todos")[] = ["todos", ...ORDER_STATES];
-
-function MisPedidos() {
   const { usuario } = useSession();
   const { format } = useCurrency();
   const [estado, setEstado] = useState<OrderStatus | "todos">("todos");
@@ -106,9 +104,7 @@ function MisPedidos() {
                     </div>
                   </div>
                   <Button asChild variant="outline" className="touch-target shrink-0">
-                    <Link to="/pedidos/$id" params={{ id: o.id }}>
-                      Ver detalle
-                    </Link>
+                    <Link to={`/pedidos/${o.id}`}>Ver detalle</Link>
                   </Button>
                 </div>
               </article>
