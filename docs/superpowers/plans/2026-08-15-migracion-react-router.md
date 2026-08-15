@@ -22,7 +22,7 @@
 
 ## Respuestas a los 18 puntos solicitados
 
-1. **Dependencias que se agregarían:** `react-router` (última versión estable 7.x — confirmar con `bun info react-router` al ejecutar, no fijar aquí un número de versión que pueda quedar desactualizado).
+1. **Dependencias que se agregarían:** `react-router` (última versión estable al momento de ejecutar). **Resultado real:** se instaló `react-router@8.3.0`.
 2. **Dependencias que se eliminarían:** `@tanstack/react-router`, `@tanstack/react-start`, `@tanstack/router-plugin` (dependencies); `nitro`, `@lovable.dev/vite-tanstack-config` (devDependencies). Ver riesgo de Lovable en la sección 17 antes de quitar el wrapper de Lovable.
 3. **Archivos que se modificarían:** los 14 archivos de `src/routes/*.tsx`, `src/components/layout/site-layout.tsx`, `src/components/catalogo/product-card.tsx`, `src/components/catalogo/artisan-card.tsx`, `vite.config.ts`, `package.json`. Ver tabla completa más abajo.
 4. **Archivos que se eliminarían:** `src/router.tsx`, `src/routes/__root.tsx`, `src/routeTree.gen.ts`, `src/start.ts`, `src/server.ts`.

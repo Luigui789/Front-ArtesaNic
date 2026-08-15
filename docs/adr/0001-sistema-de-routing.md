@@ -33,7 +33,7 @@ La razón principal **no es Django**. Es que, sobre el código real auditado, Ta
 
 | Se retira | Se reemplaza por |
 |---|---|
-| `@tanstack/react-router` | `react-router` |
+| `@tanstack/react-router` | `react-router` (versión instalada: **8.3.0**) |
 | `@tanstack/react-start` | *(sin reemplazo — no se usaba su capacidad real)* |
 | `@tanstack/router-plugin` | *(sin reemplazo — no se genera árbol de rutas en build)* |
 | `nitro` | *(sin reemplazo — build estático de Vite)* |

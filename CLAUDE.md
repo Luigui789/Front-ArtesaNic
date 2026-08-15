@@ -1,5 +1,24 @@
 # 1. Entorno de desarrollo
 
+## Stack real del frontend
+
+| Capa | Tecnología |
+|---|---|
+| Lenguaje | TypeScript (modo estricto) |
+| UI | React 19 |
+| Enrutamiento | **React Router 8** (`react-router`) |
+| Datos / caché | **TanStack Query 5** (`@tanstack/react-query`) |
+| Formularios | React Hook Form + Zod |
+| Estilos | Tailwind CSS v4 + shadcn/ui + Radix UI |
+| Build | Vite 8 (salida SPA estática en `dist/`) |
+| Gestor de paquetes | pnpm |
+
+El proyecto **no usa** TanStack Start, TanStack Router, Nitro, Cloudflare Workers ni renderizado en servidor (SSR). Esa infraestructura fue retirada deliberadamente; ver [ADR-001](docs/adr/0001-sistema-de-routing.md). No reintroducirla sin una nueva decisión arquitectónica registrada.
+
+> **No confundir TanStack Router con TanStack Query.** Son paquetes independientes. Se retiró el primero; el segundo es la capa de datos del proyecto y se conserva.
+
+El árbol de rutas se declara explícitamente en `src/app/App.tsx`. **No** hay enrutamiento por convención de nombre de archivo: los nombres con puntos en `src/routes/` (por ejemplo `panel.pedidos.$id.tsx`) son un vestigio de la plantilla original y no afectan la URL. Ver [`src/routes/README.md`](src/routes/README.md).
+
 ## Gestor de paquetes
 
 Este proyecto utiliza **pnpm**. No utilizar `bun` ni `npm` para instalar, agregar o eliminar dependencias, ya que generarían archivos de bloqueo paralelos e inconsistentes con `pnpm-lock.yaml`.
