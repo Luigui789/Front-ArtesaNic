@@ -63,15 +63,35 @@ NO implementar todavía dentro de este repositorio:
 
 ## Arquitectura objetivo del proyecto
 
-El sistema completo tendrá una arquitectura desacoplada:
+El sistema completo tendrá una arquitectura desacoplada. Cada capa resuelve una responsabilidad distinta:
 
-Frontend React + TypeScript
-        ↓
-API REST
-        ↓
-Django REST Framework
-        ↓
-SQL Server
+```text
+                    FRONTEND
+┌─────────────────────────────────────────┐
+│ React + TypeScript                      │
+│                                         │
+│ React Router 8.3.0   → navegación       │
+│        ↓                                │
+│ Vistas / componentes                    │
+│        ↓                                │
+│ TanStack Query       → caché y estado   │
+│        ↓               de servidor      │
+│ Servicios de acceso a datos             │
+│        ↓                                │
+│ Mock API (actual)                       │
+└───────────────────┬─────────────────────┘
+                    │
+                    │ FUTURO HTTP/JSON
+                    ▼
+┌─────────────────────────────────────────┐
+│ BACKEND                                 │
+│ Django REST Framework → recursos HTTP   │
+│        ↓                                │
+│ SQL Server                              │
+└─────────────────────────────────────────┘
+```
+
+**El router no es una capa de comunicación con el backend.** React Router resuelve únicamente la navegación entre vistas; TanStack Query resuelve la obtención, caché y estado de los datos de servidor; Django REST Framework expone los recursos vía HTTP/JSON. Son responsabilidades diferentes y ejes independientes: no documentar la arquitectura como una cadena `React → React Router → Django`.
 
 El backend Django/DRF será desarrollado de manera separada.
 
