@@ -46,7 +46,7 @@ export default function Panel() {
     queryFn: () => listProducts({ pageSize: 1000 }),
   });
 
-  const nombreProducto = (id: string) =>
+  const nombreProducto = (id: number) =>
     productos.data?.items.find((p) => p.id === id)?.nombre ?? "Producto artesanal";
 
   const tarjetas = [

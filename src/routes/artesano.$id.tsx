@@ -7,9 +7,12 @@ import { EmptyState, ErrorState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { getArtisan, listMyProducts } from "@/services/mock-api";
 import { useDocumentHead } from "@/hooks/use-document-head";
+import { parseRouteId } from "@/lib/route-id";
+import { NotFound } from "@/app/not-found";
 
 export default function PerfilArtesano() {
-  const { id } = useParams<{ id: string }>();
+  const { id: idParam } = useParams<{ id: string }>();
+  const id = parseRouteId(idParam);
 
   useDocumentHead({
     title: "Artesano | Artesanías de Masaya",
@@ -29,15 +32,15 @@ export default function PerfilArtesano() {
   const artesano = useQuery({
     queryKey: ["artesano", id],
     queryFn: () => getArtisan(id!),
-    enabled: !!id,
+    enabled: id !== undefined,
   });
   const productos = useQuery({
     queryKey: ["productos-artesano", id],
     queryFn: () => listMyProducts(id!),
-    enabled: !!id,
+    enabled: id !== undefined,
   });
 
-  if (!id) return null;
+  if (id === undefined) return <NotFound />;
 
   if (artesano.isError) {
     return (
@@ -86,7 +89,7 @@ export default function PerfilArtesano() {
             <h1 className="truncate font-display text-2xl font-bold sm:text-3xl">{a.nombreTaller}</h1>
             <p className="text-sm text-muted-foreground">A cargo de {a.responsable}</p>
             <Badge variant="outline" className="mt-2 border-secondary/40 text-secondary">
-              {a.rubro}
+              {a.rubro.nombre}
             </Badge>
           </div>
         </header>

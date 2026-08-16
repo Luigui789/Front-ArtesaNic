@@ -1,26 +1,29 @@
-export const CATEGORIES = [
-  "Cuero y calzado",
-  "Hamacas",
-  "Madera",
-  "Textiles",
-  "Dulces",
-  "Otros",
-] as const;
-
-export type Category = (typeof CATEGORIES)[number];
+/**
+ * Recurso propio del backend (`GET /categorias/`), no una lista fija del
+ * frontend: un administrador puede añadir rubros sin desplegar la interfaz.
+ *
+ * Se anida completo en lectura y viaja solo por `codigo` en escritura, en los
+ * filtros y en la URL. `nombre` es la etiqueta presentable; `codigo` es el
+ * valor estable del dominio.
+ */
+export interface Category {
+  id: number;
+  codigo: string;
+  nombre: string;
+}
 
 export type Role = "comprador" | "artesano";
 
 export interface User {
-  id: string;
+  id: number;
   nombre: string;
   telefono: string;
   rol: Role;
-  artesanoId?: string;
+  artesanoId?: number;
 }
 
 export interface Artisan {
-  id: string;
+  id: number;
   nombreTaller: string;
   responsable: string;
   historia: string;
@@ -36,13 +39,13 @@ export interface Artisan {
 }
 
 export interface Product {
-  id: string;
+  id: number;
   nombre: string;
   precio: number; // en córdobas
   categoria: Category;
   descripcion: string;
   imagenes: string[];
-  artesanoId: string;
+  artesanoId: number;
   disponible: boolean;
   creadoEn: string;
 }
@@ -79,7 +82,7 @@ export const PAYMENT_METHODS = ["transferencia", "otro"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 export interface AuditEvent {
-  id: string;
+  id: number;
   tipo: "pedido" | "pago";
   estadoAnterior: string;
   estadoNuevo: string;
@@ -88,8 +91,8 @@ export interface AuditEvent {
 }
 
 export interface Message {
-  id: string;
-  pedidoId: string;
+  id: number;
+  pedidoId: number;
   autor: Role;
   autorNombre: string;
   texto: string;
@@ -97,11 +100,12 @@ export interface Message {
 }
 
 export interface Order {
-  id: string;
+  id: number;
+  /** Código de negocio visible ("PM-1009"), no un identificador. */
   codigo: string;
-  productoId: string;
-  artesanoId: string;
-  compradorId: string;
+  productoId: number;
+  artesanoId: number;
+  compradorId: number;
   compradorNombre: string;
   cantidad: number;
   personalizacion: string;

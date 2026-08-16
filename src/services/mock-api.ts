@@ -5,12 +5,13 @@
  */
 import {
   buildArtisans,
+  buildCategories,
   buildMessages,
   buildOrders,
   buildProducts,
-  CATEGORY_IMAGE,
   MENSAJES_ENTRANTES,
 } from "@/data/seed";
+import { CATEGORY_IMAGE } from "@/lib/category-images";
 import { canTransition, nextPaymentState } from "@/lib/order-state";
 import type {
   Artisan,
@@ -24,15 +25,37 @@ import type {
   Role,
 } from "@/types";
 
-const artisans = buildArtisans();
+const categories = buildCategories();
+const artisans = buildArtisans(categories);
 const products = buildProducts(artisans);
 const orders = buildOrders(products);
 const messages = buildMessages();
 
-const store = { artisans, products, orders, messages };
+const store = { categories, artisans, products, orders, messages };
 
-/** Artesano cuyo panel se demuestra en el prototipo. */
-export const DEMO_ARTISAN_ID = "art-1";
+/** Taller cuyo panel se demuestra en el prototipo. */
+export const DEMO_ARTISAN_ID = 1;
+
+/**
+ * Persona usuaria del prototipo. Identifica a la persona, no al taller: en la
+ * sesión de artesano conviven `DEMO_USER_ID` (quien actúa) y `DEMO_ARTISAN_ID`
+ * (el taller sobre el que actúa), y no deben confundirse.
+ */
+export const DEMO_USER_ID = 4;
+
+/**
+ * El mock ocupa el lugar del backend: aquí los identificadores se asignan como
+ * lo haría el servidor (enteros crecientes). La interfaz nunca los construye.
+ */
+function secuencia(desde: number) {
+  let actual = desde;
+  return () => ++actual;
+}
+
+const nuevoProductoId = secuencia(products.length);
+const nuevoPedidoId = secuencia(orders.length);
+const nuevoMensajeId = secuencia(messages.length);
+const nuevoEventoId = secuencia(orders.reduce((n, o) => n + o.historial.length, 0));
 
 const delay = (ms = 350 + Math.random() * 350) => new Promise((r) => setTimeout(r, ms));
 
@@ -53,14 +76,22 @@ async function api<T>(fn: () => T, ms?: number): Promise<T> {
 
 const nowIso = () => new Date().toISOString();
 
+// ---------- Categorías (RF-003) ----------
+
+/** Equivale a `GET /categorias/`: colección completa, sin paginar. */
+export function listCategories(): Promise<Category[]> {
+  return api(() => store.categories, 200);
+}
+
 // ---------- Catálogo ----------
 
 export interface CatalogFilters {
   q?: string | undefined;
-  categoria?: Category | "todas" | undefined;
+  /** Código de categoría. `undefined` significa "sin filtro". */
+  categoria?: string | undefined;
   precioMin?: number | undefined;
   precioMax?: number | undefined;
-  artesanoId?: string | undefined;
+  artesanoId?: number | undefined;
   orden?: "recientes" | "precio-asc" | "precio-desc" | "nombre" | undefined;
   page?: number | undefined;
   pageSize?: number | undefined;
@@ -78,7 +109,7 @@ export function listProducts(filters: CatalogFilters = {}): Promise<Paginated<Pr
   return api(() => {
     const {
       q = "",
-      categoria = "todas",
+      categoria,
       precioMin,
       precioMax,
       artesanoId,
@@ -89,7 +120,7 @@ export function listProducts(filters: CatalogFilters = {}): Promise<Paginated<Pr
 
     let items = store.products.filter((p) => {
       if (q && !p.nombre.toLowerCase().includes(q.toLowerCase())) return false;
-      if (categoria !== "todas" && p.categoria !== categoria) return false;
+      if (categoria && p.categoria.codigo !== categoria) return false;
       if (precioMin != null && p.precio < precioMin) return false;
       if (precioMax != null && p.precio > precioMax) return false;
       if (artesanoId && p.artesanoId !== artesanoId) return false;
@@ -121,7 +152,7 @@ export function listProducts(filters: CatalogFilters = {}): Promise<Paginated<Pr
   });
 }
 
-export function getProduct(id: string): Promise<Product> {
+export function getProduct(id: number): Promise<Product> {
   return api(() => {
     const p = store.products.find((x) => x.id === id);
     if (!p) throw new Error("No encontramos este producto.");
@@ -141,7 +172,7 @@ export function listArtisans(): Promise<Artisan[]> {
   return api(() => store.artisans);
 }
 
-export function getArtisan(id: string): Promise<Artisan> {
+export function getArtisan(id: number): Promise<Artisan> {
   return api(() => {
     const a = store.artisans.find((x) => x.id === id);
     if (!a) throw new Error("No encontramos este artesano.");
@@ -152,7 +183,9 @@ export function getArtisan(id: string): Promise<Artisan> {
 export function countByCategory(): Promise<Record<string, number>> {
   return api(() => {
     const out: Record<string, number> = {};
-    for (const p of store.products) out[p.categoria] = (out[p.categoria] ?? 0) + 1;
+    for (const p of store.products) {
+      out[p.categoria.codigo] = (out[p.categoria.codigo] ?? 0) + 1;
+    }
     return out;
   }, 200);
 }
@@ -162,24 +195,33 @@ export function countByCategory(): Promise<Record<string, number>> {
 export interface ProductInput {
   nombre: string;
   precio: number;
-  categoria: Category;
+  /** Código de categoría: en escritura el contrato recibe el código, no el objeto. */
+  categoria: string;
   descripcion: string;
   imagen?: string | undefined;
 }
 
-export function listMyProducts(artesanoId: string): Promise<Product[]> {
+/** El servidor resuelve el código recibido contra su catálogo de categorías. */
+function resolverCategoria(codigo: string): Category {
+  const categoria = store.categories.find((c) => c.codigo === codigo);
+  if (!categoria) throw new Error("La categoría indicada no existe.");
+  return categoria;
+}
+
+export function listMyProducts(artesanoId: number): Promise<Product[]> {
   return api(() => store.products.filter((p) => p.artesanoId === artesanoId));
 }
 
-export function createProduct(artesanoId: string, input: ProductInput): Promise<Product> {
+export function createProduct(artesanoId: number, input: ProductInput): Promise<Product> {
   return api(() => {
+    const categoria = resolverCategoria(input.categoria);
     const nuevo: Product = {
-      id: `prod-n-${Date.now()}`,
+      id: nuevoProductoId(),
       nombre: input.nombre,
       precio: input.precio,
-      categoria: input.categoria,
+      categoria,
       descripcion: input.descripcion,
-      imagenes: [input.imagen || CATEGORY_IMAGE[input.categoria]],
+      imagenes: [input.imagen || (CATEGORY_IMAGE[categoria.codigo] as string)],
       artesanoId,
       disponible: true,
       creadoEn: nowIso(),
@@ -189,20 +231,20 @@ export function createProduct(artesanoId: string, input: ProductInput): Promise<
   }, 700);
 }
 
-export function updateProduct(id: string, input: ProductInput): Promise<Product> {
+export function updateProduct(id: number, input: ProductInput): Promise<Product> {
   return api(() => {
     const p = store.products.find((x) => x.id === id);
     if (!p) throw new Error("No encontramos este producto.");
     p.nombre = input.nombre;
     p.precio = input.precio;
-    p.categoria = input.categoria;
+    p.categoria = resolverCategoria(input.categoria);
     p.descripcion = input.descripcion;
     if (input.imagen) p.imagenes = [input.imagen, ...p.imagenes.slice(1)];
     return p;
   }, 700);
 }
 
-export function updateArtisan(id: string, data: Partial<Artisan>): Promise<Artisan> {
+export function updateArtisan(id: number, data: Partial<Artisan>): Promise<Artisan> {
   return api(() => {
     const a = store.artisans.find((x) => x.id === id);
     if (!a) throw new Error("No encontramos el taller.");
@@ -233,7 +275,7 @@ export function processImage(file: File): Promise<string> {
 
 export function listOrders(params: {
   rol: Role;
-  artesanoId?: string;
+  artesanoId?: number;
   estado?: OrderStatus | "todos" | undefined;
 }): Promise<Order[]> {
   return api(() => {
@@ -248,7 +290,7 @@ export function listOrders(params: {
   });
 }
 
-export function getOrder(id: string): Promise<Order> {
+export function getOrder(id: number): Promise<Order> {
   return api(() => {
     const o = store.orders.find((x) => x.id === id);
     if (!o) throw new Error("No encontramos este pedido.");
@@ -257,7 +299,7 @@ export function getOrder(id: string): Promise<Order> {
 }
 
 export interface OrderRequestInput {
-  productoId: string;
+  productoId: number;
   cantidad: number;
   personalizacion: string;
   observaciones: string;
@@ -269,11 +311,11 @@ export function createOrderRequest(input: OrderRequestInput, usuario: string): P
     if (!prod) throw new Error("No encontramos este producto.");
     const n = store.orders.length + 1;
     const order: Order = {
-      id: `ped-n-${Date.now()}`,
+      id: nuevoPedidoId(),
       codigo: `PM-${1000 + n}`,
       productoId: prod.id,
       artesanoId: prod.artesanoId,
-      compradorId: "user-comprador",
+      compradorId: DEMO_USER_ID,
       compradorNombre: usuario,
       cantidad: input.cantidad,
       personalizacion: input.personalizacion,
@@ -286,7 +328,7 @@ export function createOrderRequest(input: OrderRequestInput, usuario: string): P
       creadoEn: nowIso(),
       historial: [
         {
-          id: `ev-${Date.now()}`,
+          id: nuevoEventoId(),
           tipo: "pedido",
           estadoAnterior: "—",
           estadoNuevo: "pendiente",
@@ -300,7 +342,7 @@ export function createOrderRequest(input: OrderRequestInput, usuario: string): P
   }, 800);
 }
 
-function mutateOrder(id: string, usuario: string, fn: (o: Order) => void): Promise<Order> {
+function mutateOrder(id: number, usuario: string, fn: (o: Order) => void): Promise<Order> {
   return api(() => {
     const o = store.orders.find((x) => x.id === id);
     if (!o) throw new Error("No encontramos este pedido.");
@@ -312,7 +354,7 @@ function mutateOrder(id: string, usuario: string, fn: (o: Order) => void): Promi
 
 function pushEvent(o: Order, tipo: "pedido" | "pago", anterior: string, nuevo: string, usuario: string) {
   o.historial.push({
-    id: `ev-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    id: nuevoEventoId(),
     tipo,
     estadoAnterior: anterior,
     estadoNuevo: nuevo,
@@ -322,7 +364,7 @@ function pushEvent(o: Order, tipo: "pedido" | "pago", anterior: string, nuevo: s
 }
 
 export function changeOrderStatus(
-  id: string,
+  id: number,
   nuevo: OrderStatus,
   usuario: string,
   motivo?: string,
@@ -346,7 +388,7 @@ export interface PaymentInput {
   nota?: string | undefined;
 }
 
-export function registerPayment(id: string, input: PaymentInput, usuario: string): Promise<Order> {
+export function registerPayment(id: number, input: PaymentInput, usuario: string): Promise<Order> {
   return mutateOrder(id, usuario, (o) => {
     if (o.estadoPago !== "pendiente") {
       throw new Error("Este pedido ya tiene un pago registrado.");
@@ -358,7 +400,7 @@ export function registerPayment(id: string, input: PaymentInput, usuario: string
   });
 }
 
-export function confirmPayment(id: string, usuario: string): Promise<Order> {
+export function confirmPayment(id: number, usuario: string): Promise<Order> {
   return mutateOrder(id, usuario, (o) => {
     const siguiente = nextPaymentState(o.estadoPago);
     if (o.estadoPago !== "registrado" || !siguiente) {
@@ -371,7 +413,7 @@ export function confirmPayment(id: string, usuario: string): Promise<Order> {
 }
 
 export function setDelivery(
-  id: string,
+  id: number,
   modalidad: DeliveryMode,
   detalle: string | undefined,
   costoEntrega: number,
@@ -385,7 +427,7 @@ export function setDelivery(
 
 // ---------- Mensajería (RF-014) ----------
 
-export function listMessages(pedidoId: string): Promise<Message[]> {
+export function listMessages(pedidoId: number): Promise<Message[]> {
   return api(
     () =>
       store.messages
@@ -396,14 +438,14 @@ export function listMessages(pedidoId: string): Promise<Message[]> {
 }
 
 export function sendMessage(
-  pedidoId: string,
+  pedidoId: number,
   autor: Role,
   autorNombre: string,
   texto: string,
 ): Promise<Message> {
   return api(() => {
     const msg: Message = {
-      id: `msg-${Date.now()}`,
+      id: nuevoMensajeId(),
       pedidoId,
       autor,
       autorNombre,
@@ -416,7 +458,7 @@ export function sendMessage(
 }
 
 /** RNF-010: cada consulta del polling puede traer únicamente mensajes nuevos. */
-export function pollNewMessages(pedidoId: string, desde: string): Promise<Message[]> {
+export function pollNewMessages(pedidoId: number, desde: string): Promise<Message[]> {
   return api(() => {
     const order = store.orders.find((o) => o.id === pedidoId);
     const activo =
@@ -426,7 +468,7 @@ export function pollNewMessages(pedidoId: string, desde: string): Promise<Messag
         Math.floor(Math.random() * MENSAJES_ENTRANTES.length)
       ] as string;
       store.messages.push({
-        id: `msg-${Date.now()}`,
+        id: nuevoMensajeId(),
         pedidoId,
         autor: "artesano",
         autorNombre: "Taller artesanal",
@@ -440,7 +482,7 @@ export function pollNewMessages(pedidoId: string, desde: string): Promise<Messag
 
 // ---------- Panel del artesano ----------
 
-export function artisanSummary(artesanoId: string) {
+export function artisanSummary(artesanoId: number) {
   return api(() => {
     const mine = store.orders.filter((o) => o.artesanoId === artesanoId);
     return {

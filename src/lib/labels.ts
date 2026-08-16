@@ -60,11 +60,16 @@ export function auditStateLabel(tipo: "pedido" | "pago", codigo: string): string
 }
 
 /**
- * Las categorías conservan por ahora su texto como valor (fase C pendiente:
- * pasarán a ser una entidad servida por `GET /categorias/`). Esta función existe
- * para que los componentes ya consulten la etiqueta a través de esta capa y no
- * haya que tocarlos de nuevo cuando llegue ese cambio.
+ * Traduce un código de categoría a su etiqueta.
+ *
+ * Solo para consumidores que tienen el **código aislado** —el valor de la URL o
+ * el de un control de formulario—. Donde ya se dispone de un `Category`
+ * completo se usa `categoria.nombre` directamente: esta función no existe para
+ * ocultar que el objeto ya trae su etiqueta.
+ *
+ * Devuelve el propio código cuando no se encuentra, porque el catálogo acepta
+ * códigos desconocidos en la URL sin validarlos contra la lista.
  */
-export function categoryLabel(categoria: Category): string {
-  return categoria;
+export function categoryLabel(codigo: string, categorias: Category[]): string {
+  return categorias.find((c) => c.codigo === codigo)?.nombre ?? codigo;
 }

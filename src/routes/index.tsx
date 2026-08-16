@@ -2,14 +2,13 @@ import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, ClipboardCheck, Hammer, HandCoins, MessageCircle } from "lucide-react";
 import heroImg from "@/assets/hero-masaya.jpg";
-import { CATEGORY_IMAGE } from "@/data/seed";
-import { CATEGORIES } from "@/types";
+import { CATEGORY_IMAGE } from "@/lib/category-images";
 import { Button } from "@/components/ui/button";
 import { SiteLayout } from "@/components/layout/site-layout";
 import { ProductCard, ProductCardSkeleton } from "@/components/catalogo/product-card";
 import { ArtisanCard } from "@/components/catalogo/artisan-card";
 import { ErrorState } from "@/components/common/states";
-import { featuredArtisans, featuredProducts } from "@/services/mock-api";
+import { featuredArtisans, featuredProducts, listCategories } from "@/services/mock-api";
 import { useDocumentHead } from "@/hooks/use-document-head";
 
 const PASOS = [
@@ -54,6 +53,7 @@ export default function Index() {
     canonical: "/",
   });
 
+  const categorias = useQuery({ queryKey: ["categorias"], queryFn: listCategories });
   const productos = useQuery({ queryKey: ["destacados"], queryFn: featuredProducts });
   const artesanos = useQuery({ queryKey: ["artesanos-destacados"], queryFn: featuredArtisans });
 
@@ -96,38 +96,55 @@ export default function Index() {
       </section>
 
       {/* Categorías */}
-      <section className="mx-auto max-w-7xl px-4 py-12" aria-labelledby="titulo-categorias">
-        <h2 id="titulo-categorias" className="font-display text-2xl font-bold sm:text-3xl">
-          Rubros artesanales
-        </h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Explora por el rubro local que más te interesa.
-        </p>
-        <ul className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-          {CATEGORIES.map((c) => (
-            <li key={c}>
-              <Link
-                to={`/catalogo?categoria=${encodeURIComponent(c)}`}
-                className="group block overflow-hidden rounded-xl border bg-card"
-              >
-                <div className="aspect-square overflow-hidden bg-surface">
-                  <img
-                    src={CATEGORY_IMAGE[c]}
-                    alt={c}
-                    loading="lazy"
-                    width={1024}
-                    height={768}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                </div>
-                <span className="flex min-h-11 items-center justify-center px-2 text-center text-sm font-medium">
-                  {c}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {/*
+        Sección de descubrimiento: si las categorías no cargan se oculta por
+        completo, en lugar de plantar un estado de error en la portada.
+      */}
+      {categorias.isError ? null : (
+        <section className="mx-auto max-w-7xl px-4 py-12" aria-labelledby="titulo-categorias">
+          <h2 id="titulo-categorias" className="font-display text-2xl font-bold sm:text-3xl">
+            Rubros artesanales
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Explora por el rubro local que más te interesa.
+          </p>
+          <ul className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+            {categorias.isPending
+              ? Array.from({ length: 6 }).map((_, i) => (
+                  <li key={i}>
+                    <div className="overflow-hidden rounded-xl border bg-card">
+                      <div className="aspect-square animate-pulse bg-surface" />
+                      <div className="flex min-h-11 items-center justify-center px-2">
+                        <div className="h-4 w-20 animate-pulse rounded bg-surface" />
+                      </div>
+                    </div>
+                  </li>
+                ))
+              : categorias.data.map((c) => (
+                  <li key={c.id}>
+                    <Link
+                      to={`/catalogo?categoria=${c.codigo}`}
+                      className="group block overflow-hidden rounded-xl border bg-card"
+                    >
+                      <div className="aspect-square overflow-hidden bg-surface">
+                        <img
+                          src={CATEGORY_IMAGE[c.codigo]}
+                          alt={c.nombre}
+                          loading="lazy"
+                          width={1024}
+                          height={768}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      </div>
+                      <span className="flex min-h-11 items-center justify-center px-2 text-center text-sm font-medium">
+                        {c.nombre}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+          </ul>
+        </section>
+      )}
 
       {/* Productos destacados */}
       <section className="mx-auto max-w-7xl px-4 py-8" aria-labelledby="titulo-destacados">

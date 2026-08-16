@@ -1,22 +1,20 @@
-import { CATEGORIES, type Artisan, type Category, type Order, type Product, type Message } from "@/types";
-import catCuero from "@/assets/cat-cuero.jpg";
-import catHamacas from "@/assets/cat-hamacas.jpg";
-import catMadera from "@/assets/cat-madera.jpg";
-import catTextiles from "@/assets/cat-textiles.jpg";
-import catDulces from "@/assets/cat-dulces.jpg";
-import catOtros from "@/assets/cat-otros.jpg";
+import type { Artisan, Category, Order, Product, Message } from "@/types";
+import { CATEGORY_IMAGE } from "@/lib/category-images";
 import taller from "@/assets/taller.jpg";
 
-export const CATEGORY_IMAGE: Record<Category, string> = {
-  "Cuero y calzado": catCuero,
-  Hamacas: catHamacas,
-  Madera: catMadera,
-  Textiles: catTextiles,
-  Dulces: catDulces,
-  Otros: catOtros,
-};
-
 export const TALLER_IMAGE = taller;
+
+/** Catálogo de rubros que sirve `GET /categorias/` (contrato §2.3 y §4). */
+export function buildCategories(): Category[] {
+  return [
+    { id: 1, codigo: "cuero_y_calzado", nombre: "Cuero y calzado" },
+    { id: 2, codigo: "hamacas", nombre: "Hamacas" },
+    { id: 3, codigo: "madera", nombre: "Madera" },
+    { id: 4, codigo: "textiles", nombre: "Textiles" },
+    { id: 5, codigo: "dulces", nombre: "Dulces" },
+    { id: 6, codigo: "otros", nombre: "Otros" },
+  ];
+}
 
 /** Generador determinista simple (mulberry32) para datos mock reproducibles. */
 function rng(seed: number) {
@@ -70,39 +68,40 @@ const APELLIDOS = [
 
 const TALLER_PREFIX = ["Taller", "Artesanías", "Casa", "Obrador", "Manos de"];
 
-const PRODUCTOS_POR_CATEGORIA: Record<Category, string[]> = {
-  "Cuero y calzado": [
+/** Indexado por el `codigo` de la categoría. */
+const PRODUCTOS_POR_CATEGORIA: Record<string, string[]> = {
+  cuero_y_calzado: [
     "Sandalias de cuero natural",
     "Bolso repujado a mano",
     "Cinturón de cuero grabado",
     "Cartera artesanal",
     "Zapatos de cuero cosidos a mano",
   ],
-  Hamacas: [
+  hamacas: [
     "Hamaca matrimonial de algodón",
     "Hamaca individual multicolor",
     "Hamaca silla colgante",
     "Hamaca con fleco tejido",
   ],
-  Madera: [
+  madera: [
     "Cuenco tallado de guanacaste",
     "Bandeja de madera de pochote",
     "Figura tallada tradicional",
     "Juego de cucharas de madera",
   ],
-  Textiles: [
+  textiles: [
     "Blusa bordada a mano",
     "Mantel bordado tradicional",
     "Camino de mesa tejido",
     "Bolso de tela bordada",
   ],
-  Dulces: [
+  dulces: [
     "Cajetas de leche artesanales",
     "Dulce de coco tradicional",
     "Surtido de cajetas de Masaya",
     "Melcochas artesanales",
   ],
-  Otros: [
+  otros: [
     "Jarrón de barro pintado",
     "Cesta tejida de mimbre",
     "Máscara de agüizote",
@@ -112,20 +111,20 @@ const PRODUCTOS_POR_CATEGORIA: Record<Category, string[]> = {
 
 const ACABADOS = ["", " — acabado natural", " — edición del taller", " — pieza grande", " — pieza pequeña"];
 
-export function buildArtisans(): Artisan[] {
+export function buildArtisans(categorias: Category[]): Artisan[] {
   const r = rng(42);
   const list: Artisan[] = [];
   for (let i = 0; i < 50; i++) {
-    const rubro = CATEGORIES[i % CATEGORIES.length] as Category;
+    const rubro = categorias[i % categorias.length] as Category;
     const nombre = pick(r, NOMBRES);
     const apellido = pick(r, APELLIDOS);
     const taller = `${pick(r, TALLER_PREFIX)} ${apellido}`;
     list.push({
-      id: `art-${i + 1}`,
+      id: i + 1,
       nombreTaller: taller,
       responsable: `${nombre} ${apellido}`,
-      historia: `El ${taller.toLowerCase()} nació en ${1970 + Math.floor(r() * 45)} en Masaya. La familia ${apellido} aprendió el oficio de ${rubro.toLowerCase()} de generación en generación y hoy sigue trabajando cada pieza a mano, con materiales de la zona.`,
-      descripcion: `Piezas de ${rubro.toLowerCase()} elaboradas a mano en Masaya, bajo pedido y con posibilidad de personalización.`,
+      historia: `El ${taller.toLowerCase()} nació en ${1970 + Math.floor(r() * 45)} en Masaya. La familia ${apellido} aprendió el oficio de ${rubro.nombre.toLowerCase()} de generación en generación y hoy sigue trabajando cada pieza a mano, con materiales de la zona.`,
+      descripcion: `Piezas de ${rubro.nombre.toLowerCase()} elaboradas a mano en Masaya, bajo pedido y con posibilidad de personalización.`,
       rubro,
       ubicacion: `${pick(r, BARRIOS)}, Masaya`,
       horario: "Lunes a sábado, 8:00 a.m. – 5:00 p.m.",
@@ -135,7 +134,7 @@ export function buildArtisans(): Artisan[] {
         facebook: `facebook.com/${taller.toLowerCase().replace(/\s+/g, "")}`,
         instagram: `@${taller.toLowerCase().replace(/\s+/g, "")}`,
       },
-      fotoUrl: CATEGORY_IMAGE[rubro],
+      fotoUrl: CATEGORY_IMAGE[rubro.codigo] as string,
       portadaUrl: TALLER_IMAGE,
     });
   }
@@ -148,16 +147,16 @@ export function buildProducts(artisans: Artisan[]): Product[] {
   for (let i = 0; i < 500; i++) {
     const artesano = artisans[i % artisans.length] as Artisan;
     const categoria = artesano.rubro;
-    const base = pick(r, PRODUCTOS_POR_CATEGORIA[categoria]);
+    const base = pick(r, PRODUCTOS_POR_CATEGORIA[categoria.codigo] as string[]);
     const nombre = `${base}${pick(r, ACABADOS)}`;
     const precio = Math.round((250 + r() * 4750) / 10) * 10;
     list.push({
-      id: `prod-${i + 1}`,
+      id: i + 1,
       nombre,
       precio,
       categoria,
       descripcion: `${nombre}. Pieza elaborada a mano en ${artesano.nombreTaller}, ${artesano.ubicacion}. Se produce bajo pedido, por lo que puede solicitarse con medidas, colores o detalles personalizados. Tiempo estimado de elaboración: ${3 + Math.floor(r() * 12)} días.`,
-      imagenes: [CATEGORY_IMAGE[categoria], TALLER_IMAGE],
+      imagenes: [CATEGORY_IMAGE[categoria.codigo] as string, TALLER_IMAGE],
       artesanoId: artesano.id,
       disponible: r() > 0.08,
       creadoEn: new Date(Date.now() - Math.floor(r() * 240) * 86400000).toISOString(),
@@ -170,7 +169,23 @@ const now = Date.now();
 const iso = (daysAgo: number, hour = 10) =>
   new Date(now - daysAgo * 86400000 + hour * 3600000).toISOString();
 
+/**
+ * Identificador del usuario del dataset de demostración. Coincide con
+ * `DEMO_USER_ID` de `src/services/mock-api.ts`; el seed no puede importarlo
+ * desde ahí porque el mock ya importa este módulo.
+ */
+const USUARIO_DEMO_ID = 4;
+
+/**
+ * Los eventos de auditoría llevan identificador global, como en el contrato
+ * (§7, `historial[]`). Se reinicia en cada construcción para que el dataset
+ * siga siendo determinista.
+ */
+let ultimoEventoId = 0;
+const nuevoEventoId = () => ++ultimoEventoId;
+
 export function buildOrders(products: Product[]): Order[] {
+  ultimoEventoId = 0;
   const p = (i: number) => products[i] as Product;
   const mk = (
     n: number,
@@ -182,11 +197,11 @@ export function buildOrders(products: Product[]): Order[] {
     const prod = p(prodIndex);
     const cantidad = 1 + (n % 3);
     return {
-      id: `ped-${n}`,
+      id: n,
       codigo: `PM-${1000 + n}`,
       productoId: prod.id,
       artesanoId: prod.artesanoId,
-      compradorId: "user-comprador",
+      compradorId: USUARIO_DEMO_ID,
       compradorNombre: "Ana Lucía Delgado",
       cantidad,
       personalizacion:
@@ -200,7 +215,7 @@ export function buildOrders(products: Product[]): Order[] {
       creadoEn: iso(10 - n),
       historial: [
         {
-          id: `ev-${n}-1`,
+          id: nuevoEventoId(),
           tipo: "pedido",
           estadoAnterior: "—",
           estadoNuevo: "pendiente",
@@ -251,7 +266,7 @@ export function buildOrders(products: Product[]): Order[] {
     const steps = idx >= 0 ? flow.slice(0, idx + 1) : [];
     steps.forEach((s, i) => {
       o.historial.push({
-        id: `${o.id}-p${i}`,
+        id: nuevoEventoId(),
         tipo: "pedido",
         estadoAnterior: prev,
         estadoNuevo: s,
@@ -262,7 +277,7 @@ export function buildOrders(products: Product[]): Order[] {
     });
     if (o.estado === "rechazado" || o.estado === "cancelado") {
       o.historial.push({
-        id: `${o.id}-t`,
+        id: nuevoEventoId(),
         tipo: "pedido",
         estadoAnterior: prev,
         estadoNuevo: o.estado,
@@ -272,7 +287,7 @@ export function buildOrders(products: Product[]): Order[] {
     }
     if (o.estadoPago !== "pendiente") {
       o.historial.push({
-        id: `${o.id}-pay1`,
+        id: nuevoEventoId(),
         tipo: "pago",
         estadoAnterior: "pendiente",
         estadoNuevo: "registrado",
@@ -282,7 +297,7 @@ export function buildOrders(products: Product[]): Order[] {
     }
     if (o.estadoPago === "confirmado") {
       o.historial.push({
-        id: `${o.id}-pay2`,
+        id: nuevoEventoId(),
         tipo: "pago",
         estadoAnterior: "registrado",
         estadoNuevo: "confirmado",
@@ -298,24 +313,24 @@ export function buildOrders(products: Product[]): Order[] {
 export function buildMessages(): Message[] {
   return [
     {
-      id: "msg-1",
-      pedidoId: "ped-4",
+      id: 1,
+      pedidoId: 4,
       autor: "artesano",
       autorNombre: "Taller artesanal",
       texto: "Buenos días, ya empezamos la pieza. ¿Confirma el color café oscuro?",
       fecha: iso(3, 9),
     },
     {
-      id: "msg-2",
-      pedidoId: "ped-4",
+      id: 2,
+      pedidoId: 4,
       autor: "comprador",
       autorNombre: "Ana Lucía Delgado",
       texto: "Sí, café oscuro está perfecto. Gracias.",
       fecha: iso(3, 11),
     },
     {
-      id: "msg-3",
-      pedidoId: "ped-5",
+      id: 3,
+      pedidoId: 5,
       autor: "artesano",
       autorNombre: "Taller artesanal",
       texto: "Su pedido ya está listo. Puedo entregarlo el jueves por la tarde.",

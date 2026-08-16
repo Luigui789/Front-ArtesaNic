@@ -20,7 +20,7 @@ export function ArtisanCard({ artisan }: { artisan: Artisan }) {
         <div className="space-y-2 p-4">
           <h3 className="text-base font-semibold">{artisan.nombreTaller}</h3>
           <Badge variant="outline" className="border-secondary/40 text-secondary">
-            {artisan.rubro}
+            {artisan.rubro.nombre}
           </Badge>
           <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <MapPin className="size-4 shrink-0" aria-hidden="true" />

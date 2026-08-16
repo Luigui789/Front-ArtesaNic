@@ -14,6 +14,8 @@ import { createOrderRequest, getProduct } from "@/services/mock-api";
 import { useCurrency } from "@/hooks/use-currency";
 import { useSession } from "@/hooks/use-session";
 import { useDocumentHead } from "@/hooks/use-document-head";
+import { parseRouteId } from "@/lib/route-id";
+import { NotFound } from "@/app/not-found";
 
 const esquema = z.object({
   cantidad: z
@@ -30,7 +32,8 @@ const esquema = z.object({
 });
 
 export default function SolicitarPedido() {
-  const { productId } = useParams<{ productId: string }>();
+  const { productId: productIdParam } = useParams<{ productId: string }>();
+  const productId = parseRouteId(productIdParam);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { format } = useCurrency();
@@ -62,7 +65,7 @@ export default function SolicitarPedido() {
   const producto = useQuery({
     queryKey: ["producto", productId],
     queryFn: () => getProduct(productId!),
-    enabled: !!productId,
+    enabled: productId !== undefined,
   });
 
   const crear = useMutation({
@@ -81,7 +84,7 @@ export default function SolicitarPedido() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (!productId) return null;
+  if (productId === undefined) return <NotFound />;
 
   const enviar = (e: React.FormEvent) => {
     e.preventDefault();
@@ -233,7 +236,7 @@ export default function SolicitarPedido() {
                   />
                   <div className="min-w-0">
                     <p className="line-clamp-2 text-sm font-medium">{p.nombre}</p>
-                    <p className="text-sm text-muted-foreground">{p.categoria}</p>
+                    <p className="text-sm text-muted-foreground">{p.categoria.nombre}</p>
                   </div>
                 </div>
                 <dl className="mt-4 space-y-2 border-t pt-4 text-sm">

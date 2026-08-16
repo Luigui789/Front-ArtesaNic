@@ -20,7 +20,7 @@ export function ProductCard({ product, artisanName }: { product: Product; artisa
         </div>
         <div className="space-y-2 p-4">
           <Badge variant="outline" className="border-secondary/40 text-secondary">
-            {product.categoria}
+            {product.categoria.nombre}
           </Badge>
           <h3 className="line-clamp-2 text-base font-semibold leading-snug">{product.nombre}</h3>
           {artisanName ? (

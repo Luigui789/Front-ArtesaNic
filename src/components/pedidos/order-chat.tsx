@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 const POLL_MS = 15000; // RNF-010
 
 /** RF-014: mensajería asociada exclusivamente a un pedido. */
-export function OrderChat({ pedidoId, estado }: { pedidoId: string; estado: OrderStatus }) {
+export function OrderChat({ pedidoId, estado }: { pedidoId: number; estado: OrderStatus }) {
   const modo = chatMode(estado);
   const queryClient = useQueryClient();
   const { usuario } = useSession();

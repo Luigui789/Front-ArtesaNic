@@ -29,13 +29,14 @@ import {
 import {
   createProduct,
   DEMO_ARTISAN_ID,
+  listCategories,
   listMyProducts,
   updateProduct,
 } from "@/services/mock-api";
 import { useCurrency } from "@/hooks/use-currency";
 import { useSession } from "@/hooks/use-session";
 import { useDocumentHead } from "@/hooks/use-document-head";
-import { CATEGORIES, type Category, type Product } from "@/types";
+import type { Product } from "@/types";
 
 const esquema = z.object({
   nombre: z.string().trim().min(3, "El nombre debe tener al menos 3 caracteres.").max(80, "Máximo 80 caracteres."),
@@ -43,6 +44,8 @@ const esquema = z.object({
     .number({ message: "Ingresa un precio válido." })
     .positive("El precio debe ser mayor que cero.")
     .max(500000, "Precio demasiado alto."),
+  // El rubro deja de tener valor por defecto, así que pasa a validarse.
+  categoria: z.string().min(1, "Selecciona un rubro."),
   descripcion: z
     .string()
     .trim()
@@ -77,11 +80,13 @@ export default function MisProductos() {
   const [editando, setEditando] = useState<Product | null>(null);
   const [nombre, setNombre] = useState("");
   const [precio, setPrecio] = useState("");
-  const [categoria, setCategoria] = useState<Category>("Cuero y calzado");
+  // Código de categoría; vacío significa "sin elegir", no un valor por defecto.
+  const [categoria, setCategoria] = useState<string>("");
   const [descripcion, setDescripcion] = useState("");
   const [imagen, setImagen] = useState<string | undefined>(undefined);
   const [errores, setErrores] = useState<Record<string, string>>({});
 
+  const categorias = useQuery({ queryKey: ["categorias"], queryFn: listCategories });
   const productos = useQuery({
     queryKey: ["mis-productos", artesanoId],
     queryFn: () => listMyProducts(artesanoId),
@@ -91,7 +96,7 @@ export default function MisProductos() {
     setEditando(p ?? null);
     setNombre(p?.nombre ?? "");
     setPrecio(p ? String(p.precio) : "");
-    setCategoria(p?.categoria ?? "Cuero y calzado");
+    setCategoria(p?.categoria.codigo ?? "");
     setDescripcion(p?.descripcion ?? "");
     setImagen(p?.imagenes[0]);
     setErrores({});
@@ -99,8 +104,13 @@ export default function MisProductos() {
   };
 
   const guardar = useMutation({
-    mutationFn: (input: { nombre: string; precio: number; descripcion: string }) => {
-      const payload = { ...input, categoria, imagen };
+    mutationFn: (input: {
+      nombre: string;
+      precio: number;
+      categoria: string;
+      descripcion: string;
+    }) => {
+      const payload = { ...input, imagen };
       return editando ? updateProduct(editando.id, payload) : createProduct(artesanoId, payload);
     },
     onSuccess: () => {
@@ -114,7 +124,7 @@ export default function MisProductos() {
 
   const enviar = (e: React.FormEvent) => {
     e.preventDefault();
-    const r = esquema.safeParse({ nombre, precio: Number(precio), descripcion });
+    const r = esquema.safeParse({ nombre, precio: Number(precio), categoria, descripcion });
     if (!r.success) {
       const map: Record<string, string> = {};
       for (const issue of r.error.issues) map[String(issue.path[0])] = issue.message;
@@ -179,7 +189,7 @@ export default function MisProductos() {
                     className="aspect-[4/3] w-full object-cover"
                   />
                   <div className="p-4">
-                    <p className="text-xs text-muted-foreground">{p.categoria}</p>
+                    <p className="text-xs text-muted-foreground">{p.categoria.nombre}</p>
                     <h2 className="mt-1 line-clamp-2 font-medium">{p.nombre}</h2>
                     <p className="mt-1 font-semibold text-primary">{format(p.precio)}</p>
                     <Button
@@ -246,18 +256,31 @@ export default function MisProductos() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="p-categoria">Rubro *</Label>
-                <Select value={categoria} onValueChange={(v) => setCategoria(v as Category)}>
-                  <SelectTrigger id="p-categoria" className="min-h-11">
-                    <SelectValue />
+                <Select
+                  value={categoria}
+                  onValueChange={setCategoria}
+                  disabled={!categorias.data}
+                >
+                  <SelectTrigger
+                    id="p-categoria"
+                    className="min-h-11"
+                    aria-invalid={!!errores["categoria"]}
+                  >
+                    <SelectValue placeholder="Seleccione una categoría" />
                   </SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
+                    {categorias.data?.map((c) => (
+                      <SelectItem key={c.id} value={c.codigo}>
+                        {c.nombre}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {errores["categoria"] ? (
+                  <p role="alert" className="text-sm text-destructive">
+                    {errores["categoria"]}
+                  </p>
+                ) : null}
               </div>
             </div>
 

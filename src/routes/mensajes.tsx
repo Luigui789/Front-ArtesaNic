@@ -13,12 +13,14 @@ import { formatDate } from "@/lib/format";
 import { useSession } from "@/hooks/use-session";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useDocumentHead } from "@/hooks/use-document-head";
+import { parseRouteId } from "@/lib/route-id";
 import { cn } from "@/lib/utils";
 import { useEffect } from "react";
 
 export default function MensajesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const seleccionado = searchParams.get("pedido") ?? undefined;
+  // Un identificador inválido no es un 404: se cae en la primera conversación.
+  const seleccionado = parseRouteId(searchParams.get("pedido"));
   const { usuario } = useSession();
   const rol = usuario?.rol ?? "comprador";
   const { noLeidos, marcarLeido } = useNotifications();
@@ -52,16 +54,16 @@ export default function MensajesPage() {
     queryFn: () => listProducts({ pageSize: 1000 }),
   });
 
-  const nombreProducto = (id: string) =>
+  const nombreProducto = (id: number) =>
     productos.data?.items.find((p) => p.id === id)?.nombre ?? "Producto artesanal";
 
   const conversaciones = (pedidos.data ?? []).filter((o) => chatMode(o.estado) !== "none");
   const actual =
     conversaciones.find((o) => o.id === seleccionado) ?? conversaciones[0] ?? undefined;
 
-  const seleccionar = (id: string) => {
+  const seleccionar = (id: number) => {
     marcarLeido(id);
-    setSearchParams({ pedido: id });
+    setSearchParams({ pedido: String(id) });
   };
 
   // La conversación visible se marca como leída.

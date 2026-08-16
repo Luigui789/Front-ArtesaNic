@@ -34,11 +34,14 @@ import { useNotifications } from "@/hooks/use-notifications";
 import { useDocumentHead } from "@/hooks/use-document-head";
 import { DELIVERY_MODE_LABELS, PAYMENT_METHOD_LABELS } from "@/lib/labels";
 import { PAYMENT_METHODS, type PaymentMethod } from "@/types";
+import { parseRouteId } from "@/lib/route-id";
+import { NotFound } from "@/app/not-found";
 
 const METODOS: PaymentMethod[] = [...PAYMENT_METHODS];
 
 export default function DetallePedido() {
-  const { id } = useParams<{ id: string }>();
+  const { id: idParam } = useParams<{ id: string }>();
+  const id = parseRouteId(idParam);
   const queryClient = useQueryClient();
   const { format } = useCurrency();
   const { usuario } = useSession();
@@ -67,11 +70,11 @@ export default function DetallePedido() {
   const pedido = useQuery({
     queryKey: ["pedido", id],
     queryFn: () => getOrder(id!),
-    enabled: !!id,
+    enabled: id !== undefined,
   });
   const { marcarLeido } = useNotifications();
   useEffect(() => {
-    if (id) marcarLeido(id);
+    if (id !== undefined) marcarLeido(id);
   }, [id, marcarLeido]);
   const producto = useQuery({
     queryKey: ["producto", pedido.data?.productoId],
@@ -116,7 +119,7 @@ export default function DetallePedido() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (!id) return null;
+  if (id === undefined) return <NotFound />;
 
   if (pedido.isError) {
     return (

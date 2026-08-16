@@ -19,9 +19,12 @@ import { getArtisan, getProduct } from "@/services/mock-api";
 import { useCurrency } from "@/hooks/use-currency";
 import { TASA_CAMBIO } from "@/lib/format";
 import { useDocumentHead } from "@/hooks/use-document-head";
+import { parseRouteId } from "@/lib/route-id";
+import { NotFound } from "@/app/not-found";
 
 export default function DetalleProducto() {
-  const { id } = useParams<{ id: string }>();
+  const { id: idParam } = useParams<{ id: string }>();
+  const id = parseRouteId(idParam);
   const { format } = useCurrency();
   const [imagen, setImagen] = useState(0);
 
@@ -43,7 +46,7 @@ export default function DetalleProducto() {
   const producto = useQuery({
     queryKey: ["producto", id],
     queryFn: () => getProduct(id!),
-    enabled: !!id,
+    enabled: id !== undefined,
   });
   const artesano = useQuery({
     queryKey: ["artesano", producto.data?.artesanoId],
@@ -51,7 +54,7 @@ export default function DetalleProducto() {
     enabled: !!producto.data,
   });
 
-  if (!id) return null;
+  if (id === undefined) return <NotFound />;
 
   if (producto.isError) {
     return (
@@ -140,7 +143,7 @@ export default function DetalleProducto() {
 
           <div>
             <Badge variant="outline" className="border-secondary/40 text-secondary">
-              {p.categoria}
+              {p.categoria.nombre}
             </Badge>
             <h1 className="mt-3 font-display text-3xl font-bold">{p.nombre}</h1>
 

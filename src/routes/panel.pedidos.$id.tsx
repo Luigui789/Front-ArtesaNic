@@ -46,11 +46,14 @@ import {
   PAYMENT_METHOD_LABELS,
 } from "@/lib/labels";
 import { DELIVERY_MODES, type DeliveryMode, type OrderStatus } from "@/types";
+import { parseRouteId } from "@/lib/route-id";
+import { NotFound } from "@/app/not-found";
 
 const MODALIDADES: DeliveryMode[] = [...DELIVERY_MODES];
 
 export default function GestionPedido() {
-  const { id } = useParams<{ id: string }>();
+  const { id: idParam } = useParams<{ id: string }>();
+  const id = parseRouteId(idParam);
   const queryClient = useQueryClient();
   const { format } = useCurrency();
   const { usuario } = useSession();
@@ -81,7 +84,7 @@ export default function GestionPedido() {
   const pedido = useQuery({
     queryKey: ["pedido", id],
     queryFn: () => getOrder(id!),
-    enabled: !!id,
+    enabled: id !== undefined,
   });
   const producto = useQuery({
     queryKey: ["producto", pedido.data?.productoId],
@@ -125,7 +128,7 @@ export default function GestionPedido() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (!id) return null;
+  if (id === undefined) return <NotFound />;
 
   if (pedido.isError) {
     return (
