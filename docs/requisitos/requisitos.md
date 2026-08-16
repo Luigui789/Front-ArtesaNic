@@ -31,7 +31,7 @@
 | Autores | Luis Gutiérrez, Heidi Piña |
 | Fuentes | Buenas prácticas de arquitectura de software |
 | Dependencias | RF-001 |
-| Descripción | El sistema debe comprimir las imágenes subidas y almacenar únicamente la ruta de acceso (URL) en SQL Server, guardando el archivo físico en el sistema de archivos del servidor. |
+| Descripción | El sistema debe comprimir las imágenes subidas y almacenar únicamente la ruta de acceso (URL) en la base de datos, guardando el archivo físico en el sistema de archivos del servidor. |
 | Importancia | Alta |
 | Urgencia | Alta |
 | Estado | Aprobado |
@@ -405,7 +405,7 @@ Diferencias entre estos requisitos y el código actual de `masaya-artisan-connec
 | D-4 | RF-015 | La interfaz del artesano (`src/routes/panel.pedidos.$id.tsx`) oculta la opción de cancelar | Habilitar la cancelación para ambos roles |
 | D-5 | RF-015 | No existe ningún concepto de reembolso | Modelar el registro del reembolso tras cancelar un pedido pagado |
 | D-6 | RF-004 | La sesión es un usuario fijo en `src/hooks/use-session.tsx` con la constante `DEMO_ARTISAN_ID`; el rol se elige en el formulario | Autenticación real; el rol proviene de la cuenta |
-| D-7 | RF-002 | `processImage()` convierte a base64 en el cliente sin comprimir | Compresión en el servidor con Pillow; almacenar ruta en SQL Server |
+| D-7 | RF-002 | `processImage()` convierte a base64 en el cliente sin comprimir | Compresión en el servidor con Pillow; almacenar ruta en PostgreSQL |
 | D-8 | RF-007 | La tasa de cambio es la constante `TASA_CAMBIO` en `src/lib/format.ts` | Configurable por el administrador |
 | D-9 | RF-013 | No existe rol de administrador ni panel | Django Admin, con el alcance acotado del RF-013 |
 | D-10 | RNF-004 | Solo se guarda `comprobanteNombre` (el nombre del archivo), no el archivo | Almacenar el comprobante con control de acceso |

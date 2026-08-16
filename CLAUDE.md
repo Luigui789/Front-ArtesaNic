@@ -56,10 +56,13 @@ NO implementar todavía dentro de este repositorio:
 
 - Django;
 - Django REST Framework;
-- SQL Server;
+- PostgreSQL;
 - base de datos;
 - migraciones;
-- infraestructura backend.
+- infraestructura backend;
+- Docker.
+
+Todo lo anterior pertenece al repositorio `Back-Artesanic`; ver [ADR-004](docs/adr/0004-ubicacion-del-backend.md). **No crear un directorio `backend/` en este repositorio.**
 
 ## Arquitectura objetivo del proyecto
 
@@ -84,16 +87,16 @@ El sistema completo tendrá una arquitectura desacoplada. Cada capa resuelve una
                     │ FUTURO HTTP/JSON
                     ▼
 ┌─────────────────────────────────────────┐
-│ BACKEND                                 │
+│ BACKEND  (repositorio Back-Artesanic)   │
 │ Django REST Framework → recursos HTTP   │
 │        ↓                                │
-│ SQL Server                              │
+│ PostgreSQL                              │
 └─────────────────────────────────────────┘
 ```
 
 **El router no es una capa de comunicación con el backend.** React Router resuelve únicamente la navegación entre vistas; TanStack Query resuelve la obtención, caché y estado de los datos de servidor; Django REST Framework expone los recursos vía HTTP/JSON. Son responsabilidades diferentes y ejes independientes: no documentar la arquitectura como una cadena `React → React Router → Django`.
 
-El backend Django/DRF será desarrollado de manera separada.
+El backend Django/DRF se desarrolla en un repositorio independiente, `Back-Artesanic`, contenedorizado con Docker y sobre PostgreSQL. La única superficie de acoplamiento entre ambos repositorios es el contrato de API. Ver [ADR-004](docs/adr/0004-ubicacion-del-backend.md) y [ADR-005](docs/adr/0005-infraestructura-y-persistencia.md).
 
 El frontend debe diseñarse de forma que pueda sustituir los servicios mock por servicios HTTP reales sin necesidad de reescribir la interfaz completa.
 

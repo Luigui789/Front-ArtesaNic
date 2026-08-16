@@ -62,7 +62,7 @@ Los estados, categorías y modalidades viajan como **códigos estables** en `sna
 { "estado": "en_produccion" }
 ```
 
-El texto que ve la persona usuaria ("En producción") vive **solo en la capa de presentación del frontend**. Esto permite corregir la redacción de una etiqueta sin migrar datos en SQL Server ni romper el contrato.
+El texto que ve la persona usuaria ("En producción") vive **solo en la capa de presentación del frontend**. Esto permite corregir la redacción de una etiqueta sin migrar datos en la base de datos ni romper el contrato.
 
 Ver el catálogo completo en la [sección 2](#2-catálogos-de-códigos).
 

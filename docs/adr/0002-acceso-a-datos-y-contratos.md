@@ -6,6 +6,13 @@
 
 **Decisión previa relacionada:** [ADR-001 — Sistema de routing](0001-sistema-de-routing.md)
 
+> **Sustituciones posteriores.** Este ADR menciona **SQL Server** como motor de persistencia y sitúa el backend «en un repositorio separado» sin nombrarlo. Ambos puntos fueron revisados después:
+>
+> - El motor de persistencia es **PostgreSQL** desde el [ADR-005](0005-infraestructura-y-persistencia.md).
+> - El repositorio del backend es **`Back-Artesanic`**, según el [ADR-004](0004-ubicacion-del-backend.md).
+>
+> El texto original se conserva sin modificar, porque registra la decisión tal como se tomó. Las menciones a SQL Server que siguen deben leerse como el estado anterior, no como la arquitectura vigente. La decisión central de este ADR —dónde ocurre la transformación de contratos y qué papel juega el mock— **no queda afectada**.
+
 ## Contexto
 
 El frontend obtiene hoy todos sus datos de [`src/services/mock-api.ts`](../../src/services/mock-api.ts), un módulo que simula una API REST (latencia artificial, errores provocados, mutaciones) sobre un almacén en memoria construido desde [`src/data/seed.ts`](../../src/data/seed.ts). El sistema final consumirá una API REST provista por Django REST Framework sobre SQL Server, desarrollada en un repositorio separado.
