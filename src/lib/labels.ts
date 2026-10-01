@@ -6,12 +6,16 @@
  * ni romper el contrato. Ningún componente debe mostrar un código directamente.
  */
 import type {
+  AuditEvent,
   Category,
   DeliveryMode,
+  OrderOption,
   OrderStatus,
   PaymentMethod,
   PaymentStatus,
   Role,
+  UnitMovementType,
+  UnitType,
 } from "@/types";
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
@@ -27,14 +31,40 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
   pendiente: "Pendiente de pago",
   registrado: "Pago registrado",
+  observado: "Pago observado",
   confirmado: "Pago confirmado",
+  no_recibido: "Pago no recibido",
 };
 
+/**
+ * El código `retiro_en_taller` pertenece al contrato y no cambia aquí; la
+ * etiqueta usa «recoger el pedido en el taller» (D27).
+ */
 export const DELIVERY_MODE_LABELS: Record<DeliveryMode, string> = {
-  retiro_en_taller: "Retiro en taller",
+  retiro_en_taller: "Recoger en el taller",
   punto_de_encuentro: "Punto de encuentro",
-  entrega_directa: "Entrega directa por el artesano",
-  otra: "Otra",
+  entrega_directa: "Entrega por el artesano",
+  otra: "Otra modalidad",
+};
+
+export const UNIT_TYPE_LABELS: Record<UnitType, string> = {
+  pieza_unica: "Pieza única",
+  existencias: "Con existencias",
+};
+
+export const ORDER_OPTION_LABELS: Record<OrderOption, string> = {
+  estandar: "Sin modificaciones",
+  personalizada: "Con personalización",
+};
+
+export const UNIT_MOVEMENT_LABELS: Record<UnitMovementType, string> = {
+  alta: "Alta",
+  ajuste: "Ajuste",
+  reserva: "Reserva",
+  consumo: "Entrega",
+  pendiente_clasificacion: "Pendiente de clasificación",
+  liberacion: "Vuelve a estar disponible",
+  baja: "Baja",
 };
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
@@ -53,11 +83,18 @@ export const ROLE_LABELS: Record<Role, string> = {
  * de pago. Un valor sin traducción conocida (como el "—" del evento inicial) se
  * devuelve tal cual.
  */
-export function auditStateLabel(tipo: "pedido" | "pago", codigo: string): string {
+export function auditStateLabel(tipo: AuditEvent["tipo"], codigo: string): string {
   const dict: Record<string, string> =
-    tipo === "pedido" ? ORDER_STATUS_LABELS : PAYMENT_STATUS_LABELS;
+    tipo === "pedido" ? ORDER_STATUS_LABELS : tipo === "pago" ? PAYMENT_STATUS_LABELS : {};
   return dict[codigo] ?? codigo;
 }
+
+export const AUDIT_TYPE_LABELS: Record<AuditEvent["tipo"], string> = {
+  pedido: "Pedido",
+  pago: "Pago",
+  entrega: "Entrega",
+  unidades: "Unidades",
+};
 
 /**
  * Traduce un código de categoría a su etiqueta.

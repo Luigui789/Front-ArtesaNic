@@ -1,12 +1,13 @@
 import { Ban, Check, Circle, XCircle } from "lucide-react";
-import type { AuditEvent, OrderStatus } from "@/types";
-import { ORDER_FLOW } from "@/lib/order-state";
-import { auditStateLabel, ORDER_STATUS_LABELS } from "@/lib/labels";
+import type { AuditEvent, OrderOption, OrderStatus } from "@/types";
+import { orderFlow } from "@/lib/order-state";
+import { auditStateLabel, AUDIT_TYPE_LABELS, ORDER_STATUS_LABELS } from "@/lib/labels";
 import { formatDate, formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /** RF-010: línea de tiempo del pedido con pasos completados, actual y pendientes. */
-export function OrderTimeline({ estado }: { estado: OrderStatus }) {
+export function OrderTimeline({ estado, opcion }: { estado: OrderStatus; opcion: OrderOption }) {
+  const ORDER_FLOW = orderFlow(opcion);
   const terminalNegativo = estado === "rechazado" || estado === "cancelado";
   const actualIndex = terminalNegativo ? -1 : ORDER_FLOW.indexOf(estado);
 
@@ -28,7 +29,11 @@ export function OrderTimeline({ estado }: { estado: OrderStatus }) {
                   )}
                   aria-hidden="true"
                 >
-                  {completado ? <Check className="size-4" /> : <Circle className="size-2.5 fill-current" />}
+                  {completado ? (
+                    <Check className="size-4" />
+                  ) : (
+                    <Circle className="size-2.5 fill-current" />
+                  )}
                 </span>
                 {i < ORDER_FLOW.length - 1 ? (
                   <span
@@ -49,6 +54,10 @@ export function OrderTimeline({ estado }: { estado: OrderStatus }) {
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {completado ? "Completado" : actual ? "Paso actual" : "Pendiente"}
+                  {/* RF-010: precondición visible, sin mezclar el estado del pago con el del pedido. */}
+                  {paso === "en_produccion" && !completado && !actual && !terminalNegativo
+                    ? " · inicia cuando el pago está confirmado"
+                    : null}
                 </p>
               </div>
             </li>
@@ -88,7 +97,7 @@ export function AuditTimeline({ eventos }: { eventos: AuditEvent[] }) {
         <li key={e.id} className="rounded-lg border bg-card p-3">
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="rounded bg-surface px-2 py-0.5 text-xs font-medium uppercase tracking-wide">
-              {e.tipo === "pedido" ? "Pedido" : "Pago"}
+              {AUDIT_TYPE_LABELS[e.tipo]}
             </span>
             <span className="text-muted-foreground">
               {auditStateLabel(e.tipo, e.estadoAnterior)}
@@ -96,6 +105,7 @@ export function AuditTimeline({ eventos }: { eventos: AuditEvent[] }) {
             <span aria-hidden="true">→</span>
             <span className="font-medium">{auditStateLabel(e.tipo, e.estadoNuevo)}</span>
           </div>
+          {e.detalle ? <p className="mt-1 break-words text-sm">{e.detalle}</p> : null}
           <p className="mt-1 text-xs text-muted-foreground">
             {e.usuario} · {formatDate(e.fecha)} · {formatTime(e.fecha)}
           </p>

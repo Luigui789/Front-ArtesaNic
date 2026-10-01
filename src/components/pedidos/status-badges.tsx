@@ -1,4 +1,13 @@
-import { Ban, CheckCircle2, Clock, Hammer, PackageCheck, ThumbsUp, XCircle } from "lucide-react";
+import {
+  Ban,
+  CheckCircle2,
+  Clock,
+  Hammer,
+  PackageCheck,
+  Receipt,
+  ThumbsUp,
+  XCircle,
+} from "lucide-react";
 import type { OrderStatus, PaymentStatus } from "@/types";
 import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS } from "@/lib/labels";
 import { cn } from "@/lib/utils";
@@ -23,9 +32,14 @@ const ORDER_STYLE: Record<OrderStatus, { icon: typeof Clock; className: string }
 };
 
 const PAYMENT_STYLE: Record<PaymentStatus, { icon: typeof Clock; className: string }> = {
+  observado: { icon: Receipt, className: "bg-accent/25 text-accent-foreground border-accent/50" },
+  no_recibido: {
+    icon: XCircle,
+    className: "bg-destructive/10 text-destructive border-destructive/30",
+  },
   pendiente: { icon: Clock, className: "bg-surface text-surface-foreground border-border" },
   registrado: {
-    icon: PackageCheck,
+    icon: Receipt,
     className: "bg-accent/25 text-accent-foreground border-accent/50",
   },
   confirmado: { icon: CheckCircle2, className: "bg-success/10 text-success border-success/30" },
@@ -45,7 +59,7 @@ function BaseBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1 text-sm font-medium",
         className,
       )}
     >
@@ -91,12 +105,17 @@ export function StatusPair({
   estado: OrderStatus;
   estadoPago: PaymentStatus;
 }) {
+  // Cada etiqueta viaja junto a su insignia para que, al envolver la línea, no se separen.
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="text-xs uppercase tracking-wide text-muted-foreground">Pedido</span>
-      <OrderStatusBadge estado={estado} />
-      <span className="text-xs uppercase tracking-wide text-muted-foreground">Pago</span>
-      <PaymentStatusBadge estado={estadoPago} />
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <span className="inline-flex items-center gap-2">
+        <span className="text-xs uppercase tracking-wide text-muted-foreground">Pedido</span>
+        <OrderStatusBadge estado={estado} />
+      </span>
+      <span className="inline-flex items-center gap-2">
+        <span className="text-xs uppercase tracking-wide text-muted-foreground">Pago</span>
+        <PaymentStatusBadge estado={estadoPago} />
+      </span>
     </div>
   );
 }

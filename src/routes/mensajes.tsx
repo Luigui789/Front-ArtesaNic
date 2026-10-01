@@ -1,4 +1,4 @@
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { MessageSquare } from "lucide-react";
 import { SiteLayout } from "@/components/layout/site-layout";
@@ -7,7 +7,7 @@ import { OrderChat } from "@/components/pedidos/order-chat";
 import { OrderStatusBadge } from "@/components/pedidos/status-badges";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { listOrders, listProducts, DEMO_ARTISAN_ID } from "@/services/mock-api";
+import { getArtisan, listOrders, listProducts, DEMO_ARTISAN_ID } from "@/services/mock-api";
 import { chatMode } from "@/lib/order-state";
 import { formatDate } from "@/lib/format";
 import { useSession } from "@/hooks/use-session";
@@ -31,7 +31,7 @@ export default function MensajesPage() {
       {
         name: "description",
         content:
-          "Conversa con el taller artesanal sobre cada pedido bajo demanda: detalles, materiales y coordinación de entrega.",
+          "Conversa con el taller artesanal sobre cada pedido: detalles, materiales y coordinación de entrega.",
       },
       { property: "og:title", content: "Mensajes por pedido | Artesanías de Masaya" },
       {
@@ -60,6 +60,12 @@ export default function MensajesPage() {
   const conversaciones = (pedidos.data ?? []).filter((o) => chatMode(o.estado) !== "none");
   const actual =
     conversaciones.find((o) => o.id === seleccionado) ?? conversaciones[0] ?? undefined;
+
+  const taller = useQuery({
+    queryKey: ["artesano", actual?.artesanoId],
+    queryFn: () => getArtisan(actual!.artesanoId),
+    enabled: rol === "comprador" && !!actual,
+  });
 
   const seleccionar = (id: number) => {
     marcarLeido(id);
@@ -103,7 +109,7 @@ export default function MensajesPage() {
               descripcion="Cuando envíes una solicitud de pedido podrás conversar aquí con el taller artesanal."
               accion={
                 <Button asChild className="touch-target">
-                  <a href="/catalogo">Explorar el catálogo</a>
+                  <Link to="/catalogo">Explorar el catálogo</Link>
                 </Button>
               }
             />
@@ -157,7 +163,9 @@ export default function MensajesPage() {
                       {actual.codigo} · {nombreProducto(actual.productoId)}
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                      {rol === "artesano" ? actual.compradorNombre : "Taller artesanal"}
+                      {rol === "artesano"
+                        ? actual.compradorNombre
+                        : (taller.data?.nombreTaller ?? "Taller artesanal")}
                     </p>
                   </div>
                   <OrderChat pedidoId={actual.id} estado={actual.estado} />

@@ -76,7 +76,7 @@ export default function Catalogo() {
       {
         name: "description",
         content:
-          "Explora productos artesanales de Masaya por rubro, precio y taller. Cada pieza se elabora bajo pedido.",
+          "Explora productos artesanales de Masaya por rubro, precio y taller, y solicítalos directamente al taller.",
       },
       { property: "og:title", content: "Catálogo de productos artesanales | Masaya" },
       { property: "og:description", content: "Cuero, hamacas, madera, textiles, dulces y más." },
@@ -105,6 +105,12 @@ export default function Catalogo() {
 
   const set = (patch: Partial<CatalogSearch>) =>
     setSearchParams(buildSearchParams({ ...search, page: 1, ...patch }));
+
+  // Vacía también el texto de búsqueda; los campos de precio se reinician por su `key`.
+  const limpiar = () => {
+    setTexto("");
+    setSearchParams(buildSearchParams({}));
+  };
 
   const nombreArtesano = (id: number) =>
     artesanos.data?.find((a) => a.id === id)?.nombreTaller ?? "";
@@ -140,6 +146,7 @@ export default function Catalogo() {
               Desde
             </Label>
             <Input
+              key={`min-${search.precioMin ?? ""}`}
               id="precio-min"
               type="number"
               inputMode="numeric"
@@ -154,6 +161,7 @@ export default function Catalogo() {
               Hasta
             </Label>
             <Input
+              key={`max-${search.precioMax ?? ""}`}
               id="precio-max"
               type="number"
               inputMode="numeric"
@@ -187,13 +195,7 @@ export default function Catalogo() {
         </Select>
       </div>
 
-      <Button
-        variant="outline"
-        className="w-full touch-target"
-        onClick={() =>
-          setSearchParams(buildSearchParams({ categoria: undefined, orden: "recientes", page: 1 }))
-        }
-      >
+      <Button variant="outline" className="w-full touch-target" onClick={limpiar}>
         Limpiar filtros
       </Button>
     </div>
@@ -204,7 +206,7 @@ export default function Catalogo() {
       <div className="mx-auto max-w-7xl px-4 py-8">
         <h1 className="font-display text-3xl font-bold">Catálogo</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Todas las piezas se elaboran bajo pedido en talleres de Masaya.
+          Piezas de los talleres artesanales de Masaya. Filtra por rubro, precio o taller.
         </p>
 
         <form
@@ -298,15 +300,7 @@ export default function Catalogo() {
                   titulo="No encontramos productos"
                   descripcion="Prueba con otra palabra, cambia de categoría o limpia los filtros."
                   accion={
-                    <Button
-                      variant="outline"
-                      className="touch-target"
-                      onClick={() =>
-                        setSearchParams(
-                          buildSearchParams({ categoria: undefined, orden: "recientes", page: 1 }),
-                        )
-                      }
-                    >
+                    <Button variant="outline" className="touch-target" onClick={limpiar}>
                       Limpiar filtros
                     </Button>
                   }

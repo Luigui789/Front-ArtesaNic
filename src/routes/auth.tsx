@@ -136,13 +136,18 @@ export default function Auth() {
         <p className="mt-1 text-sm text-muted-foreground">
           Prototipo de demostración: los datos son simulados y no se envían a ningún servidor.
         </p>
+        <p className="mt-3 rounded-lg border bg-surface p-3 text-sm text-muted-foreground">
+          El selector «Vista de demostración» de la cabecera es una herramienta del prototipo para
+          alternar entre las vistas de comprador y artesano. No inicia sesión ni verifica identidad:
+          en el sistema real, el acceso se hace en esta pantalla y el rol lo asigna el servidor.
+        </p>
 
         <Tabs defaultValue="ingreso" className="mt-8">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="ingreso" className="min-h-10">
+            <TabsTrigger value="ingreso" className="min-h-11">
               Ingresar
             </TabsTrigger>
-            <TabsTrigger value="registro" className="min-h-10">
+            <TabsTrigger value="registro" className="min-h-11">
               Crear cuenta
             </TabsTrigger>
           </TabsList>

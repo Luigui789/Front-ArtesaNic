@@ -1,7 +1,7 @@
 /**
  * Capa de servicios MOCK.
- * Simula una API REST (latencia, errores, mutaciones) sobre un store en memoria.
- * Puede reemplazarse por llamadas reales a Django REST Framework sin tocar la UI.
+ * Simula operaciones sobre un store con instantáneas locales en IndexedDB.
+ * Las extensiones de esta demo requieren homologación y contrato antes de Django.
  */
 import {
   buildArtisans,
@@ -9,10 +9,18 @@ import {
   buildMessages,
   buildOrders,
   buildProducts,
-  MENSAJES_ENTRANTES,
+  applyScenarioUnits,
+  RESPONSABLE_TALLER_DEMO,
+  TALLER_DEMO_ID,
 } from "@/data/seed";
 import { CATEGORY_IMAGE } from "@/lib/category-images";
-import { canTransition, nextPaymentState } from "@/lib/order-state";
+import { DELIVERY_MODE_LABELS } from "@/lib/labels";
+import { canCancel, canTransition, requiresConfirmedPayment } from "@/lib/order-state";
+import { availableUnits, maxRequestable } from "@/lib/units";
+import { orderTotal } from "@/lib/order-amounts";
+import { imageFileError, readAsDataUrl } from "@/lib/image-files";
+import { borrarInstantanea, guardarInstantanea, leerInstantanea } from "./mock-persistence";
+import { DELIVERY_MODES, PAYMENT_METHODS, UNIT_TYPES } from "@/types";
 import type {
   Artisan,
   Category,
@@ -23,18 +31,32 @@ import type {
   PaymentMethod,
   Product,
   Role,
+  UnitType,
+  UnitMovement,
+  OrderOption,
+  PaymentAttemptStatus,
+  User,
 } from "@/types";
 
 const categories = buildCategories();
 const artisans = buildArtisans(categories);
 const products = buildProducts(artisans);
-const orders = buildOrders(products);
+const { orders, receiptFiles } = buildOrders(products);
 const messages = buildMessages();
+const movements = applyScenarioUnits(products, orders);
 
-const store = { categories, artisans, products, orders, messages };
+let store = { categories, artisans, products, orders, messages, receiptFiles, movements };
+const initial = structuredClone(store);
+const ready = leerInstantanea<typeof store>().then((saved) => {
+  if (saved) store = saved;
+});
+let queue: Promise<unknown> = Promise.resolve();
 
 /** Taller cuyo panel se demuestra en el prototipo. */
-export const DEMO_ARTISAN_ID = 1;
+export const DEMO_ARTISAN_ID = TALLER_DEMO_ID;
+
+/** Persona responsable del taller demo: nombre de la sesión de artesano. */
+export const DEMO_ARTISAN_RESPONSABLE = RESPONSABLE_TALLER_DEMO;
 
 /**
  * Persona usuaria del prototipo. Identifica a la persona, no al taller: en la
@@ -47,17 +69,14 @@ export const DEMO_USER_ID = 4;
  * El mock ocupa el lugar del backend: aquí los identificadores se asignan como
  * lo haría el servidor (enteros crecientes). La interfaz nunca los construye.
  */
-function secuencia(desde: number) {
-  let actual = desde;
-  return () => ++actual;
-}
+const nextId = (items: { id: number }[]) => Math.max(0, ...items.map((x) => x.id)) + 1;
+const nuevoProductoId = () => nextId(store.products);
+const nuevoPedidoId = () => nextId(store.orders);
+const nuevoMensajeId = () => nextId(store.messages);
+const nuevoEventoId = () => nextId(store.orders.flatMap((o) => o.historial));
 
-const nuevoProductoId = secuencia(products.length);
-const nuevoPedidoId = secuencia(orders.length);
-const nuevoMensajeId = secuencia(messages.length);
-const nuevoEventoId = secuencia(orders.reduce((n, o) => n + o.historial.length, 0));
-
-const delay = (ms = 350 + Math.random() * 350) => new Promise((r) => setTimeout(r, ms));
+/** Latencia simulada fija: la demostración debe comportarse igual en cada ensayo. */
+const delay = (ms = 450) => new Promise((r) => setTimeout(r, ms));
 
 let failNext = false;
 /** Permite demostrar el estado de error / "Reintentar" (RNF-006). */
@@ -65,13 +84,36 @@ export function simularFalloProximaPeticion() {
   failNext = true;
 }
 
-async function api<T>(fn: () => T, ms?: number): Promise<T> {
+async function api<T>(fn: () => T, ms?: number, write = false): Promise<T> {
+  await ready;
   await delay(ms);
   if (failNext) {
     failNext = false;
     throw new Error("No pudimos conectar con el servicio. Intenta de nuevo.");
   }
-  return structuredClone(fn());
+  const operation = queue.then(async () => {
+    const before = write ? structuredClone(store) : undefined;
+    try {
+      const result = structuredClone(fn());
+      if (write) await guardarInstantanea(store);
+      return result;
+    } catch (error) {
+      if (before) store = before;
+      throw error;
+    }
+  });
+  queue = operation.catch(() => undefined);
+  return operation;
+}
+
+export async function resetDemo(): Promise<void> {
+  await ready;
+  const operation = queue.then(async () => {
+    await borrarInstantanea();
+    store = structuredClone(initial);
+  });
+  queue = operation.catch(() => undefined);
+  await operation;
 }
 
 const nowIso = () => new Date().toISOString();
@@ -199,6 +241,62 @@ export interface ProductInput {
   categoria: string;
   descripcion: string;
   imagen?: string | undefined;
+  tipoUnidades: UnitType;
+  existenciasFisicas: number;
+  admitePersonalizacion: boolean;
+  motivoAjuste?: string | undefined;
+}
+
+function validateProduct(input: ProductInput, previous?: Product) {
+  if (!UNIT_TYPES.includes(input.tipoUnidades)) throw new Error("Selecciona el tipo de unidades.");
+  if (
+    !input.nombre.trim() ||
+    !input.descripcion.trim() ||
+    !Number.isFinite(input.precio) ||
+    input.precio <= 0
+  )
+    throw new Error("Revisa el nombre, descripción y precio del producto.");
+  const n = input.existenciasFisicas;
+  if (!Number.isSafeInteger(n) || n < (previous ? 0 : 1))
+    throw new Error("Las existencias deben ser un entero válido.");
+  if (input.tipoUnidades === "pieza_unica" && n > 1)
+    throw new Error("Una pieza única admite una sola unidad.");
+  if (previous && n < previous.unidadesReservadas + previous.unidadesPorClasificar)
+    throw new Error("No puedes reducir las existencias por debajo de las unidades comprometidas.");
+  if (
+    previous &&
+    (n !== previous.existenciasFisicas || input.tipoUnidades !== previous.tipoUnidades) &&
+    !input.motivoAjuste?.trim()
+  )
+    throw new Error("Indica el motivo del ajuste de unidades.");
+}
+
+function movement(
+  p: Product,
+  tipo: UnitMovement["tipo"],
+  cantidad: number,
+  antes: number,
+  usuario: string,
+  motivo?: string,
+  pedidoCodigo?: string,
+) {
+  p.unidadesDisponibles = availableUnits(p);
+  store.movements.push({
+    id: nextId(store.movements),
+    productoId: p.id,
+    tipo,
+    cantidad,
+    existenciasAntes: antes,
+    existenciasDespues: p.existenciasFisicas,
+    usuario,
+    fecha: nowIso(),
+    motivo,
+    pedidoCodigo,
+  });
+}
+
+export function listUnitMovements(productoId: number): Promise<UnitMovement[]> {
+  return api(() => store.movements.filter((m) => m.productoId === productoId));
 }
 
 /** El servidor resuelve el código recibido contra su catálogo de categorías. */
@@ -212,63 +310,88 @@ export function listMyProducts(artesanoId: number): Promise<Product[]> {
   return api(() => store.products.filter((p) => p.artesanoId === artesanoId));
 }
 
-export function createProduct(artesanoId: number, input: ProductInput): Promise<Product> {
-  return api(() => {
-    const categoria = resolverCategoria(input.categoria);
-    const nuevo: Product = {
-      id: nuevoProductoId(),
-      nombre: input.nombre,
-      precio: input.precio,
-      categoria,
-      descripcion: input.descripcion,
-      imagenes: [input.imagen || (CATEGORY_IMAGE[categoria.codigo] as string)],
-      artesanoId,
-      disponible: true,
-      creadoEn: nowIso(),
-    };
-    store.products.unshift(nuevo);
-    return nuevo;
-  }, 700);
+export function createProduct(
+  artesanoId: number,
+  input: ProductInput,
+  usuario = DEMO_ARTISAN_RESPONSABLE,
+): Promise<Product> {
+  return api(
+    () => {
+      validateProduct(input);
+      const categoria = resolverCategoria(input.categoria);
+      const nuevo: Product = {
+        id: nuevoProductoId(),
+        nombre: input.nombre,
+        precio: input.precio,
+        categoria,
+        descripcion: input.descripcion,
+        imagenes: [input.imagen || (CATEGORY_IMAGE[categoria.codigo] as string)],
+        artesanoId,
+        disponible: true,
+        creadoEn: nowIso(),
+        tipoUnidades: input.tipoUnidades,
+        admitePersonalizacion: input.admitePersonalizacion,
+        existenciasFisicas: input.existenciasFisicas,
+        unidadesReservadas: 0,
+        unidadesPorClasificar: 0,
+        unidadesDisponibles: input.existenciasFisicas,
+      };
+      store.products.unshift(nuevo);
+      movement(nuevo, "alta", nuevo.existenciasFisicas, 0, usuario, "Publicación del producto");
+      return nuevo;
+    },
+    700,
+    true,
+  );
 }
 
-export function updateProduct(id: number, input: ProductInput): Promise<Product> {
-  return api(() => {
-    const p = store.products.find((x) => x.id === id);
-    if (!p) throw new Error("No encontramos este producto.");
-    p.nombre = input.nombre;
-    p.precio = input.precio;
-    p.categoria = resolverCategoria(input.categoria);
-    p.descripcion = input.descripcion;
-    if (input.imagen) p.imagenes = [input.imagen, ...p.imagenes.slice(1)];
-    return p;
-  }, 700);
+export function updateProduct(
+  id: number,
+  input: ProductInput,
+  usuario = DEMO_ARTISAN_RESPONSABLE,
+): Promise<Product> {
+  return api(
+    () => {
+      const p = store.products.find((x) => x.id === id);
+      if (!p) throw new Error("No encontramos este producto.");
+      validateProduct(input, p);
+      const antes = p.existenciasFisicas;
+      const changed = antes !== input.existenciasFisicas || p.tipoUnidades !== input.tipoUnidades;
+      p.nombre = input.nombre;
+      p.precio = input.precio;
+      p.categoria = resolverCategoria(input.categoria);
+      p.descripcion = input.descripcion;
+      p.tipoUnidades = input.tipoUnidades;
+      p.admitePersonalizacion = input.admitePersonalizacion;
+      p.existenciasFisicas = input.existenciasFisicas;
+      p.unidadesDisponibles = availableUnits(p);
+      if (changed)
+        movement(p, "ajuste", input.existenciasFisicas - antes, antes, usuario, input.motivoAjuste);
+      if (input.imagen) p.imagenes = [input.imagen, ...p.imagenes.slice(1)];
+      return p;
+    },
+    700,
+    true,
+  );
 }
 
 export function updateArtisan(id: number, data: Partial<Artisan>): Promise<Artisan> {
-  return api(() => {
-    const a = store.artisans.find((x) => x.id === id);
-    if (!a) throw new Error("No encontramos el taller.");
-    Object.assign(a, data);
-    return a;
-  }, 600);
+  return api(
+    () => {
+      const a = store.artisans.find((x) => x.id === id);
+      if (!a) throw new Error("No encontramos el taller.");
+      Object.assign(a, data);
+      return a;
+    },
+    600,
+    true,
+  );
 }
 
 /** RF-002: simulación del procesamiento/optimización de la imagen. */
 export function processImage(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    if (!file.type.startsWith("image/")) {
-      reject(new Error("El archivo debe ser una imagen (JPG o PNG)."));
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      reject(new Error("La imagen es muy pesada. Usa una de menos de 5 MB."));
-      return;
-    }
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("No pudimos leer la imagen. Intenta con otra."));
-    reader.onload = () => setTimeout(() => resolve(String(reader.result)), 1200);
-    reader.readAsDataURL(file);
-  });
+  const error = imageFileError(file);
+  return error ? Promise.reject(new Error(error)) : readAsDataUrl(file);
 }
 
 // ---------- Pedidos ----------
@@ -303,56 +426,105 @@ export interface OrderRequestInput {
   cantidad: number;
   personalizacion: string;
   observaciones: string;
+  opcion: OrderOption;
+  entregaPreferida: Order["entregaPreferida"];
 }
 
 export function createOrderRequest(input: OrderRequestInput, usuario: string): Promise<Order> {
-  return api(() => {
-    const prod = store.products.find((p) => p.id === input.productoId);
-    if (!prod) throw new Error("No encontramos este producto.");
-    const n = store.orders.length + 1;
-    const order: Order = {
-      id: nuevoPedidoId(),
-      codigo: `PM-${1000 + n}`,
-      productoId: prod.id,
-      artesanoId: prod.artesanoId,
-      compradorId: DEMO_USER_ID,
-      compradorNombre: usuario,
-      cantidad: input.cantidad,
-      personalizacion: input.personalizacion,
-      observaciones: input.observaciones,
-      estado: "pendiente",
-      estadoPago: "pendiente",
-      precioUnitario: prod.precio,
-      costosAdicionales: 0,
-      costoEntrega: 0,
-      creadoEn: nowIso(),
-      historial: [
-        {
-          id: nuevoEventoId(),
-          tipo: "pedido",
-          estadoAnterior: "—",
-          estadoNuevo: "pendiente",
-          usuario,
-          fecha: nowIso(),
+  return api(
+    () => {
+      const prod = store.products.find((p) => p.id === input.productoId);
+      if (!prod) throw new Error("No encontramos este producto.");
+      validateQuantity(prod, input.cantidad);
+      if (!["estandar", "personalizada"].includes(input.opcion))
+        throw new Error("Selecciona una opción de solicitud.");
+      if (
+        input.opcion === "personalizada" &&
+        (!prod.admitePersonalizacion || input.personalizacion.trim().length < 10)
+      )
+        throw new Error("Revisa los detalles de personalización.");
+      if (!DELIVERY_MODES.includes(input.entregaPreferida?.modalidad))
+        throw new Error("Selecciona la modalidad de entrega preferida.");
+      const requiereUbicacion = ["punto_de_encuentro", "entrega_directa"].includes(
+        input.entregaPreferida.modalidad,
+      );
+      const ubicacion = input.entregaPreferida.ubicacion?.trim();
+      if (requiereUbicacion && (!ubicacion || ubicacion.length > 200))
+        throw new Error(
+          "Indica la ubicación donde quieres recibir el pedido (hasta 200 caracteres).",
+        );
+      const n = store.orders.length + 1;
+      const order: Order = {
+        id: nuevoPedidoId(),
+        codigo: `PM-${1000 + n}`,
+        productoId: prod.id,
+        artesanoId: prod.artesanoId,
+        compradorId: DEMO_USER_ID,
+        compradorNombre: usuario,
+        cantidad: input.cantidad,
+        opcion: input.opcion,
+        personalizacion: input.opcion === "personalizada" ? input.personalizacion.trim() : "",
+        entregaPreferida: {
+          ...input.entregaPreferida,
+          ubicacion: requiereUbicacion ? ubicacion : undefined,
         },
-      ],
-    };
-    store.orders.unshift(order);
-    return order;
-  }, 800);
+        pagos: [],
+        observaciones: input.observaciones,
+        estado: "pendiente",
+        estadoPago: "pendiente",
+        precioUnitario: prod.precio,
+        costosAdicionales: 0,
+        costoEntrega: 0,
+        creadoEn: nowIso(),
+        historial: [
+          {
+            id: nuevoEventoId(),
+            tipo: "pedido",
+            estadoAnterior: "—",
+            estadoNuevo: "pendiente",
+            usuario,
+            fecha: nowIso(),
+          },
+        ],
+      };
+      store.orders.unshift(order);
+      return order;
+    },
+    800,
+    true,
+  );
+}
+
+function validateQuantity(p: Product, cantidad: number) {
+  const max = maxRequestable({ ...p, unidadesDisponibles: availableUnits(p) });
+  if (!Number.isSafeInteger(cantidad) || cantidad < 1 || cantidad > max)
+    throw new Error(
+      `Cantidad no disponible. Puedes solicitar hasta ${max} unidades; las reservas ya están descontadas.`,
+    );
 }
 
 function mutateOrder(id: number, usuario: string, fn: (o: Order) => void): Promise<Order> {
-  return api(() => {
-    const o = store.orders.find((x) => x.id === id);
-    if (!o) throw new Error("No encontramos este pedido.");
-    fn(o);
-    void usuario;
-    return o;
-  }, 600);
+  return api(
+    () => {
+      const o = store.orders.find((x) => x.id === id);
+      if (!o) throw new Error("No encontramos este pedido.");
+      fn(o);
+      void usuario;
+      return o;
+    },
+    600,
+    true,
+  );
 }
 
-function pushEvent(o: Order, tipo: "pedido" | "pago", anterior: string, nuevo: string, usuario: string) {
+function pushEvent(
+  o: Order,
+  tipo: Order["historial"][number]["tipo"],
+  anterior: string,
+  nuevo: string,
+  usuario: string,
+  detalle?: string,
+) {
   o.historial.push({
     id: nuevoEventoId(),
     tipo,
@@ -360,6 +532,7 @@ function pushEvent(o: Order, tipo: "pedido" | "pago", anterior: string, nuevo: s
     estadoNuevo: nuevo,
     usuario,
     fecha: nowIso(),
+    detalle,
   });
 }
 
@@ -370,8 +543,69 @@ export function changeOrderStatus(
   motivo?: string,
 ): Promise<Order> {
   return mutateOrder(id, usuario, (o) => {
-    if (!canTransition(o.estado, nuevo)) {
+    if (nuevo === "cancelado" && !canCancel(o.estado))
+      throw new Error(
+        "Solo puedes cancelar mientras el pedido esté Aceptado. Una vez iniciada la producción o marcado como listo, ya no puedes cancelarlo.",
+      );
+    if (!canTransition(o.estado, nuevo, o.opcion)) {
       throw new Error(`No se puede pasar de "${o.estado}" a "${nuevo}".`);
+    }
+    if (requiresConfirmedPayment(o.estado, nuevo) && o.estadoPago !== "confirmado") {
+      throw new Error("Confirma el pago antes de avanzar el pedido.");
+    }
+    const p = store.products.find((p) => p.id === o.productoId)!;
+    const antes = p.existenciasFisicas;
+    if (nuevo === "rechazado" && !motivo?.trim()) throw new Error("Indica el motivo del rechazo.");
+    if (nuevo === "aceptado") {
+      if (!o.entrega) throw new Error("Registra la cotización de entrega antes de aceptar.");
+      if (o.entrega.modalidad !== o.entregaPreferida.modalidad)
+        throw new Error(
+          "La cotización debe conservar la modalidad del comprador. Guarda nuevamente el costo y las notas antes de aceptar.",
+        );
+      validateQuantity(p, o.cantidad);
+      o.cotizacionCongelada = {
+        precioUnitario: o.precioUnitario,
+        cantidad: o.cantidad,
+        costosAdicionales: o.costosAdicionales,
+        costoEntrega: o.costoEntrega,
+        modalidad: o.entrega.modalidad,
+        total: orderTotal(o),
+        congeladaEn: nowIso(),
+      };
+      o.reserva = { cantidad: o.cantidad, estado: "activa" };
+      p.unidadesReservadas += o.cantidad;
+      movement(p, "reserva", o.cantidad, antes, usuario, "Aceptación del pedido", o.codigo);
+      pushEvent(
+        o,
+        "unidades",
+        "—",
+        "—",
+        usuario,
+        `Reserva de ${o.cantidad} unidades; total congelado C$ ${o.cotizacionCongelada.total}`,
+      );
+    }
+    if (nuevo === "entregado" || nuevo === "cancelado") {
+      if (o.reserva?.estado !== "activa") throw new Error("El pedido no tiene una reserva activa.");
+      p.unidadesReservadas -= o.cantidad;
+      if (nuevo === "entregado") {
+        p.existenciasFisicas -= o.cantidad;
+        o.reserva.estado = "consumida";
+        movement(p, "consumo", o.cantidad, antes, usuario, "Entrega del pedido", o.codigo);
+      } else {
+        p.unidadesPorClasificar += o.cantidad;
+        o.reserva.estado = "pendiente_clasificacion";
+        movement(p, "pendiente_clasificacion", o.cantidad, antes, usuario, motivo, o.codigo);
+      }
+      pushEvent(
+        o,
+        "unidades",
+        "—",
+        "—",
+        usuario,
+        nuevo === "entregado"
+          ? `Entrega de ${o.cantidad} unidades`
+          : `${o.cantidad} unidades pendientes de clasificación`,
+      );
     }
     const anterior = o.estado;
     o.estado = nuevo;
@@ -384,44 +618,279 @@ export function changeOrderStatus(
 export interface PaymentInput {
   metodo: PaymentMethod;
   referencia?: string | undefined;
-  comprobanteNombre?: string | undefined;
   nota?: string | undefined;
+  comprobante?: { nombreArchivo: string; tipo: string; tamano: number; src: string } | undefined;
 }
 
 export function registerPayment(id: number, input: PaymentInput, usuario: string): Promise<Order> {
   return mutateOrder(id, usuario, (o) => {
-    if (o.estadoPago !== "pendiente") {
-      throw new Error("Este pedido ya tiene un pago registrado.");
-    }
+    if (o.estado !== "aceptado" || !["pendiente", "no_recibido"].includes(o.estadoPago))
+      throw new Error(
+        "Solo puedes registrar un nuevo intento en Aceptado, sin pago vigente o tras Pago no recibido.",
+      );
+    if (!PAYMENT_METHODS.includes(input.metodo))
+      throw new Error("Selecciona un método de pago válido.");
+    validateReceipt(input.comprobante);
     const anterior = o.estadoPago;
+    const intento: Order["pagos"][number] = {
+      id: nextId(store.orders.flatMap((x) => x.pagos)),
+      numero: o.pagos.length + 1,
+      metodo: input.metodo,
+      referencia: input.referencia,
+      nota: input.nota,
+      estado: "registrado",
+      registradoEn: nowIso(),
+      comprobantes: [],
+      eventos: [],
+    };
+    o.pagos.push(intento);
+    const comprobanteId = attachReceipt(o, input.comprobante, usuario);
+    intento.eventos.push({
+      estadoAnterior: null,
+      estadoNuevo: "registrado",
+      usuario,
+      fecha: nowIso(),
+      comprobanteId,
+    });
     o.estadoPago = "registrado";
-    o.pago = { ...input, registradoEn: nowIso() };
     pushEvent(o, "pago", anterior, o.estadoPago, usuario);
   });
 }
 
-export function confirmPayment(id: number, usuario: string): Promise<Order> {
-  return mutateOrder(id, usuario, (o) => {
-    const siguiente = nextPaymentState(o.estadoPago);
-    if (o.estadoPago !== "registrado" || !siguiente) {
-      throw new Error("Solo se puede confirmar un pago que ya fue registrado.");
-    }
-    const anterior = o.estadoPago;
-    o.estadoPago = siguiente;
-    pushEvent(o, "pago", anterior, siguiente, usuario);
-  });
+function validateReceipt(file: PaymentInput["comprobante"]) {
+  if (!file) return;
+  const error = imageFileError({ type: file.tipo, size: file.tamano });
+  if (error) throw new Error(error);
+  if (!file.src.startsWith(`data:${file.tipo};base64,`) || !file.src.split(",")[1])
+    throw new Error("El comprobante debe contener una imagen válida.");
 }
 
-export function setDelivery(
+function attachReceipt(o: Order, file: PaymentInput["comprobante"], usuario: string) {
+  if (!file) return undefined;
+  const id = nextId(store.receiptFiles);
+  o.pagos.at(-1)!.comprobantes.push({
+    id,
+    nombreArchivo: file.nombreArchivo,
+    tipo: file.tipo,
+    tamano: file.tamano,
+    subidoEn: nowIso(),
+    subidoPor: usuario,
+  });
+  store.receiptFiles.push({ id, pedidoId: o.id, src: file.src });
+  return id;
+}
+
+export function correctPayment(
   id: number,
-  modalidad: DeliveryMode,
-  detalle: string | undefined,
-  costoEntrega: number,
+  comprobante: NonNullable<PaymentInput["comprobante"]>,
   usuario: string,
 ): Promise<Order> {
   return mutateOrder(id, usuario, (o) => {
-    o.entrega = { modalidad, detalle };
+    const intento = o.pagos.at(-1);
+    if (o.estado !== "aceptado" || intento?.estado !== "observado")
+      throw new Error("Solo se puede corregir un pago observado en un pedido Aceptado.");
+    const plazo = intento.eventos.at(-1)?.plazoHasta;
+    if (!plazo || Date.now() > Date.parse(plazo))
+      throw new Error(
+        "Venció el plazo de 48 horas. El taller debe revisar y resolver el intento; el vencimiento no cambia el estado automáticamente.",
+      );
+    validateReceipt(comprobante);
+    const comprobanteId = attachReceipt(o, comprobante, usuario);
+    intento.eventos.push({
+      estadoAnterior: "observado",
+      estadoNuevo: "registrado",
+      usuario,
+      fecha: nowIso(),
+      comprobanteId,
+      motivo: "Corrección del comprobante",
+    });
+    intento.estado = o.estadoPago = "registrado";
+    pushEvent(
+      o,
+      "pago",
+      "observado",
+      "registrado",
+      usuario,
+      "Comprobante corregido; se conserva el anterior",
+    );
+  });
+}
+
+export function reviewPayment(
+  id: number,
+  estado: Exclude<PaymentAttemptStatus, "registrado">,
+  usuario: string,
+  motivo?: string,
+): Promise<Order> {
+  return mutateOrder(id, usuario, (o) => {
+    const intento = o.pagos.at(-1);
+    if (
+      o.estado !== "aceptado" ||
+      !intento ||
+      !["registrado", "observado"].includes(intento.estado)
+    )
+      throw new Error("Solo puedes revisar un pago registrado u observado de un pedido Aceptado.");
+    if (!["confirmado", "observado", "no_recibido"].includes(estado))
+      throw new Error("Resolución de pago inválida.");
+    if (estado !== "confirmado" && !motivo?.trim())
+      throw new Error("Indica el motivo de la resolución.");
+    if (intento.estado === "observado" && estado === "observado")
+      throw new Error("Espera la corrección o resuelve el pago observado; no se renueva el plazo.");
+    const anterior = o.estadoPago;
+    intento.eventos.push({
+      estadoAnterior: intento.estado,
+      estadoNuevo: estado,
+      usuario,
+      fecha: nowIso(),
+      motivo,
+      plazoHasta:
+        estado === "observado" ? new Date(Date.now() + 48 * 3600000).toISOString() : undefined,
+    });
+    intento.estado = o.estadoPago = estado;
+    pushEvent(o, "pago", anterior, estado, usuario, motivo);
+  });
+}
+
+export function confirmPayment(id: number, usuario: string): Promise<Order> {
+  return reviewPayment(id, "confirmado", usuario);
+}
+
+/** Simulación de autorización: no reemplaza una sesión validada por el backend. */
+export function getPaymentReceipt(
+  pedidoId: number,
+  intentoId: number,
+  comprobanteId: number,
+  sesion: Pick<User, "id" | "rol" | "artesanoId"> | null,
+): Promise<string> {
+  return api(() => {
+    const o = store.orders.find((o) => o.id === pedidoId);
+    if (
+      !o ||
+      !sesion ||
+      !(
+        (sesion.rol === "comprador" && sesion.id === o.compradorId) ||
+        (sesion.rol === "artesano" && sesion.artesanoId === o.artesanoId)
+      )
+    )
+      throw new Error("Solo las partes del pedido pueden ver el comprobante.");
+    if (!o.pagos.find((p) => p.id === intentoId)?.comprobantes.some((c) => c.id === comprobanteId))
+      throw new Error("No encontramos este comprobante.");
+    const file = store.receiptFiles.find((f) => f.pedidoId === pedidoId && f.id === comprobanteId);
+    if (!file) throw new Error("No encontramos la imagen del comprobante.");
+    return file.src;
+  }, 100);
+}
+
+export function setDeliveryQuote(
+  id: number,
+  costoEntrega: number,
+  notasCotizacion: string | undefined,
+  usuario: string,
+): Promise<Order> {
+  return mutateOrder(id, usuario, (o) => {
+    if (o.estado !== "pendiente" || o.cotizacionCongelada)
+      throw new Error("Solo puedes guardar la cotización mientras el pedido está Pendiente.");
+    const modalidad = o.entregaPreferida.modalidad;
+    if (!DELIVERY_MODES.includes(modalidad) || !Number.isFinite(costoEntrega) || costoEntrega < 0)
+      throw new Error("Revisa la modalidad y el costo de entrega.");
+    if (modalidad === "retiro_en_taller" && costoEntrega !== 0)
+      throw new Error("Recoger en el taller cuesta C$ 0.");
+    if (notasCotizacion && notasCotizacion.trim().length > 200)
+      throw new Error("Las notas de cotización admiten hasta 200 caracteres.");
+    o.entrega = { modalidad, notasCotizacion: notasCotizacion?.trim() || undefined };
     o.costoEntrega = costoEntrega;
+    pushEvent(
+      o,
+      "entrega",
+      "—",
+      "—",
+      usuario,
+      `Cotización de entrega: ${DELIVERY_MODE_LABELS[modalidad]}; C$ ${costoEntrega}`,
+    );
+  });
+}
+
+export const setDelivery = setDeliveryQuote;
+
+export interface DeliveryCoordinationInput {
+  fechaRecogida?: string | undefined;
+  detalle?: string | undefined;
+}
+
+export function setDeliveryCoordination(
+  id: number,
+  input: DeliveryCoordinationInput,
+  usuario: string,
+): Promise<Order> {
+  return mutateOrder(id, usuario, (o) => {
+    if (
+      !["aceptado", "en_produccion", "listo_para_entrega"].includes(o.estado) ||
+      !o.entrega ||
+      !o.cotizacionCongelada
+    )
+      throw new Error("Solo se coordina la entrega de un pedido activo ya aceptado.");
+    if (o.entrega.modalidad === "retiro_en_taller") {
+      const fecha = input.fechaRecogida ?? "";
+      const parsed = new Date(`${fecha}T00:00:00Z`);
+      if (
+        !/^\d{4}-\d{2}-\d{2}$/.test(fecha) ||
+        Number.isNaN(parsed.getTime()) ||
+        parsed.toISOString().slice(0, 10) !== fecha
+      )
+        throw new Error("Selecciona una fecha válida para recoger el pedido en el taller.");
+      o.entrega.fechaRecogida = fecha;
+      pushEvent(o, "entrega", "—", "—", usuario, `Fecha de recogida en el taller: ${fecha}`);
+    } else {
+      const detalle = input.detalle?.trim();
+      if (!detalle || detalle.length > 200)
+        throw new Error(
+          "Indica la fecha y las indicaciones de coordinación (hasta 200 caracteres).",
+        );
+      o.entrega.detalle = detalle;
+      pushEvent(o, "entrega", "—", "—", usuario, detalle);
+    }
+  });
+}
+
+export function classifyCancelledUnits(
+  id: number,
+  disponibles: number,
+  bajas: number,
+  motivo: string,
+  usuario: string,
+): Promise<Order> {
+  return mutateOrder(id, usuario, (o) => {
+    if (o.estado !== "cancelado" || o.reserva?.estado !== "pendiente_clasificacion")
+      throw new Error("Este pedido no tiene unidades pendientes de clasificación.");
+    if (
+      ![disponibles, bajas].every((n) => Number.isSafeInteger(n) && n >= 0) ||
+      disponibles + bajas !== o.reserva.cantidad ||
+      !motivo.trim()
+    )
+      throw new Error(
+        "La suma debe coincidir con las unidades reservadas. Indica el motivo de clasificación.",
+      );
+    const p = store.products.find((p) => p.id === o.productoId)!;
+    const antes = p.existenciasFisicas;
+    p.unidadesPorClasificar -= o.reserva.cantidad;
+    p.existenciasFisicas -= bajas;
+    Object.assign(o.reserva, {
+      estado: "clasificada",
+      disponiblesDevueltas: disponibles,
+      bajas,
+      motivoClasificacion: motivo.trim(),
+    });
+    if (disponibles) movement(p, "liberacion", disponibles, antes, usuario, motivo, o.codigo);
+    if (bajas) movement(p, "baja", bajas, antes, usuario, motivo, o.codigo);
+    p.unidadesDisponibles = availableUnits(p);
+    pushEvent(
+      o,
+      "unidades",
+      "—",
+      "—",
+      usuario,
+      `Clasificadas: ${disponibles} disponibles y ${bajas} de baja. ${motivo.trim()}`,
+    );
   });
 }
 
@@ -443,41 +912,31 @@ export function sendMessage(
   autorNombre: string,
   texto: string,
 ): Promise<Message> {
-  return api(() => {
-    const msg: Message = {
-      id: nuevoMensajeId(),
-      pedidoId,
-      autor,
-      autorNombre,
-      texto,
-      fecha: nowIso(),
-    };
-    store.messages.push(msg);
-    return msg;
-  }, 400);
-}
-
-/** RNF-010: cada consulta del polling puede traer únicamente mensajes nuevos. */
-export function pollNewMessages(pedidoId: number, desde: string): Promise<Message[]> {
-  return api(() => {
-    const order = store.orders.find((o) => o.id === pedidoId);
-    const activo =
-      order && ["aceptado", "en_produccion", "listo_para_entrega"].includes(order.estado);
-    if (activo && Math.random() < 0.45) {
-      const texto = MENSAJES_ENTRANTES[
-        Math.floor(Math.random() * MENSAJES_ENTRANTES.length)
-      ] as string;
-      store.messages.push({
+  return api(
+    () => {
+      const msg: Message = {
         id: nuevoMensajeId(),
         pedidoId,
-        autor: "artesano",
-        autorNombre: "Taller artesanal",
+        autor,
+        autorNombre,
         texto,
         fecha: nowIso(),
-      });
-    }
-    return store.messages.filter((m) => m.pedidoId === pedidoId && m.fecha > desde);
-  }, 200);
+      };
+      store.messages.push(msg);
+      return msg;
+    },
+    400,
+    true,
+  );
+}
+
+/**
+ * RNF-010: cada consulta del polling trae únicamente los mensajes posteriores al
+ * último recibido. Solo devuelve mensajes reales de las partes: el mock no los
+ * inventa, para que la demostración sea reproducible.
+ */
+export function pollNewMessages(pedidoId: number, desde: string): Promise<Message[]> {
+  return api(() => store.messages.filter((m) => m.pedidoId === pedidoId && m.fecha > desde), 200);
 }
 
 // ---------- Panel del artesano ----------

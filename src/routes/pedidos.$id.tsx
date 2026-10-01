@@ -1,3 +1,5 @@
+import { PaymentPanel } from "@/components/pedidos/payment-receipt";
+import { DeliveryPanel, OrderAmounts, CancelledUnits } from "@/components/pedidos/delivery-panel";
 import { Link, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -9,10 +11,8 @@ import { StatusPair } from "@/components/pedidos/status-badges";
 import { AuditTimeline, OrderTimeline } from "@/components/pedidos/timelines";
 import { OrderChat } from "@/components/pedidos/order-chat";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -25,19 +25,17 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { changeOrderStatus, getOrder, getProduct, registerPayment } from "@/services/mock-api";
+import { changeOrderStatus, getOrder, getProduct } from "@/services/mock-api";
 import { canCancel } from "@/lib/order-state";
 import { formatDateTime } from "@/lib/format";
+import { orderTotal } from "@/lib/order-amounts";
 import { useCurrency } from "@/hooks/use-currency";
 import { useSession } from "@/hooks/use-session";
 import { useNotifications } from "@/hooks/use-notifications";
 import { useDocumentHead } from "@/hooks/use-document-head";
-import { DELIVERY_MODE_LABELS, PAYMENT_METHOD_LABELS } from "@/lib/labels";
-import { PAYMENT_METHODS, type PaymentMethod } from "@/types";
+import { DELIVERY_MODE_LABELS } from "@/lib/labels";
 import { parseRouteId } from "@/lib/route-id";
 import { NotFound } from "@/app/not-found";
-
-const METODOS: PaymentMethod[] = [...PAYMENT_METHODS];
 
 export default function DetallePedido() {
   const { id: idParam } = useParams<{ id: string }>();
@@ -62,9 +60,6 @@ export default function DetallePedido() {
     canonical: `/pedidos/${id}`,
   });
 
-  const [metodo, setMetodo] = useState<PaymentMethod>("transferencia");
-  const [referencia, setReferencia] = useState("");
-  const [nota, setNota] = useState("");
   const [motivo, setMotivo] = useState("");
 
   const pedido = useQuery({
@@ -83,31 +78,8 @@ export default function DetallePedido() {
   });
 
   const refrescar = () => {
-    void queryClient.invalidateQueries({ queryKey: ["pedido", id] });
-    void queryClient.invalidateQueries({ queryKey: ["pedidos"] });
+    void queryClient.invalidateQueries();
   };
-
-  const pagar = useMutation({
-    mutationFn: () =>
-      registerPayment(
-        id!,
-        {
-          metodo,
-          referencia: referencia.trim() || undefined,
-          nota: nota.trim() || undefined,
-        },
-        usuario?.nombre ?? "Comprador",
-      ),
-    onSuccess: () => {
-      refrescar();
-      toast.success("Pago registrado", {
-        description: "El artesano debe confirmarlo para continuar con la entrega.",
-      });
-      setReferencia("");
-      setNota("");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
 
   const cancelar = useMutation({
     mutationFn: () =>
@@ -125,7 +97,10 @@ export default function DetallePedido() {
     return (
       <SiteLayout>
         <div className="mx-auto max-w-3xl px-4 py-16">
-          <ErrorState mensaje="No pudimos cargar este pedido." onRetry={() => void pedido.refetch()} />
+          <ErrorState
+            mensaje="No pudimos cargar este pedido."
+            onRetry={() => void pedido.refetch()}
+          />
         </div>
       </SiteLayout>
     );
@@ -144,23 +119,22 @@ export default function DetallePedido() {
   }
 
   const o = pedido.data;
-  const total = o.precioUnitario * o.cantidad + o.costosAdicionales + o.costoEntrega;
+  const total = o.cotizacionCongelada?.total ?? orderTotal(o);
   // RF-011 v3.0: el pago se registra una vez que el artesano acepta la solicitud,
   // y debe confirmarse antes de que el pedido pueda entrar en producción.
-  const puedePagar = o.estado === "aceptado" && o.estadoPago === "pendiente";
 
   return (
     <SiteLayout>
       <div className="mx-auto max-w-5xl px-4 py-8">
         <Link
           to="/pedidos"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          className="inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
           Volver a mis pedidos
         </Link>
 
-        <header className="mt-4 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
+        <header className="mt-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0">
             <h1 className="font-display text-3xl font-bold">Pedido {o.codigo}</h1>
             <p className="text-sm text-muted-foreground">Creado el {formatDateTime(o.creadoEn)}</p>
@@ -175,7 +149,7 @@ export default function DetallePedido() {
                 Avance del pedido
               </h2>
               <div className="mt-4">
-                <OrderTimeline estado={o.estado} />
+                <OrderTimeline estado={o.estado} opcion={o.opcion} />
               </div>
               {o.motivoRechazo ? (
                 <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
@@ -209,7 +183,9 @@ export default function DetallePedido() {
               <dl className="mt-4 space-y-2 text-sm">
                 <div>
                   <dt className="font-medium">Personalización</dt>
-                  <dd className="text-muted-foreground">{o.personalizacion}</dd>
+                  <dd className="text-muted-foreground">
+                    {o.personalizacion || "Sin modificaciones"}
+                  </dd>
                 </div>
                 {o.observaciones ? (
                   <div>
@@ -246,99 +222,25 @@ export default function DetallePedido() {
             </section>
           </div>
 
-          <aside className="space-y-6">
+          {/* En móvil, montos, pago y cancelación van primero: son las acciones del comprador. */}
+          <aside className="order-first space-y-6 lg:order-none">
             <section className="rounded-xl border bg-card p-5" aria-labelledby="montos">
               <h2 id="montos" className="text-base font-semibold">
                 Montos
               </h2>
-              <dl className="mt-3 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">
-                    Producto x{o.cantidad}
-                  </dt>
-                  <dd>{format(o.precioUnitario * o.cantidad)}</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Costos adicionales</dt>
-                  <dd>{format(o.costosAdicionales)}</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Entrega</dt>
-                  <dd>{format(o.costoEntrega)}</dd>
-                </div>
-                <div className="flex justify-between border-t pt-2 text-base font-semibold">
-                  <dt>Total</dt>
-                  <dd className="text-primary">{format(total)}</dd>
-                </div>
-              </dl>
+              <OrderAmounts order={o} />
+              <DeliveryPanel
+                order={o}
+                autor={usuario?.nombre ?? "Comprador"}
+                onChanged={refrescar}
+              />
             </section>
 
             <section className="rounded-xl border bg-card p-5" aria-labelledby="pago">
               <h2 id="pago" className="text-base font-semibold">
                 Pago
               </h2>
-              {o.pago ? (
-                <dl className="mt-3 space-y-1 text-sm text-muted-foreground">
-                  <div>Método: {PAYMENT_METHOD_LABELS[o.pago.metodo]}</div>
-                  {o.pago.referencia ? <div>Referencia: {o.pago.referencia}</div> : null}
-                  {o.pago.nota ? <div>Nota: {o.pago.nota}</div> : null}
-                  <div>Registrado: {formatDateTime(o.pago.registradoEn)}</div>
-                </dl>
-              ) : puedePagar ? (
-                <form
-                  className="mt-3 space-y-4"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    pagar.mutate();
-                  }}
-                >
-                  <fieldset className="space-y-2">
-                    <legend className="text-sm font-medium">Método de pago</legend>
-                    <RadioGroup
-                      value={metodo}
-                      onValueChange={(v) => setMetodo(v as PaymentMethod)}
-                      className="gap-2"
-                    >
-                      {METODOS.map((m) => (
-                        <div key={m} className="flex items-center gap-2">
-                          <RadioGroupItem id={`metodo-${m}`} value={m} />
-                          <Label htmlFor={`metodo-${m}`} className="font-normal">
-                            {PAYMENT_METHOD_LABELS[m]}
-                          </Label>
-                        </div>
-                      ))}
-                    </RadioGroup>
-                  </fieldset>
-                  <div className="space-y-2">
-                    <Label htmlFor="referencia">Número de referencia</Label>
-                    <Input
-                      id="referencia"
-                      className="min-h-11"
-                      maxLength={40}
-                      placeholder="Ej. 0098231"
-                      value={referencia}
-                      onChange={(e) => setReferencia(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="nota-pago">Nota para el artesano</Label>
-                    <Textarea
-                      id="nota-pago"
-                      rows={3}
-                      maxLength={200}
-                      value={nota}
-                      onChange={(e) => setNota(e.target.value)}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full touch-target" disabled={pagar.isPending}>
-                    {pagar.isPending ? "Registrando…" : "Registrar pago"}
-                  </Button>
-                </form>
-              ) : (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Podrás registrar el pago cuando el taller acepte tu solicitud.
-                </p>
-              )}
+              <PaymentPanel order={o} onChanged={refrescar} />
             </section>
 
             {canCancel(o.estado) ? (
@@ -352,8 +254,9 @@ export default function DetallePedido() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>¿Cancelar este pedido?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Solo puedes cancelar antes de que el taller inicie la producción. Esta acción no
-                      se puede deshacer.
+                      Puedes cancelar mientras el pedido esté Aceptado. Cuando el taller inicie la
+                      producción o lo marque como listo para entrega, ya no podrás cancelarlo. El
+                      taller verá la cancelación y el motivo. Esta acción no se puede deshacer.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <div className="space-y-2">
@@ -369,11 +272,16 @@ export default function DetallePedido() {
                   <AlertDialogFooter>
                     <AlertDialogCancel>Volver</AlertDialogCancel>
                     <AlertDialogAction onClick={() => cancelar.mutate()}>
-                      Sí, cancelar
+                      Sí, cancelar pedido
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+            ) : o.estado === "en_produccion" ? (
+              <p className="rounded-lg border bg-muted p-3 text-sm text-muted-foreground">
+                El taller ya inició la producción. Este pedido ya no puede ser cancelado por el
+                comprador.
+              </p>
             ) : null}
           </aside>
         </div>

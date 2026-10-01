@@ -38,6 +38,14 @@ export interface Artisan {
   portadaUrl: string;
 }
 
+/**
+ * Clasificación de las unidades de una publicación (definición de Luis del
+ * 30-sep-2026, pendiente de homologación). Es independiente de la
+ * personalización: una pieza única no es un producto bajo demanda.
+ */
+export const UNIT_TYPES = ["pieza_unica", "existencias"] as const;
+export type UnitType = (typeof UNIT_TYPES)[number];
+
 export interface Product {
   id: number;
   nombre: string;
@@ -48,6 +56,42 @@ export interface Product {
   artesanoId: number;
   disponible: boolean;
   creadoEn: string;
+  tipoUnidades: UnitType;
+  /** RF-017: el comprador puede pedir que se personalice una unidad existente. */
+  admitePersonalizacion: boolean;
+  /** RF-022: unidades que existen en el taller. */
+  existenciasFisicas: number;
+  /** RF-022: comprometidas con pedidos aceptados que aún no se entregan. */
+  unidadesReservadas: number;
+  /** RF-022 (D22): reservas de pedidos cancelados por el comprador que el artesano aún no clasifica. */
+  unidadesPorClasificar: number;
+  /** Dato derivado que calcula el servicio: físicas − reservadas − por clasificar. */
+  unidadesDisponibles: number;
+}
+
+export const UNIT_MOVEMENT_TYPES = [
+  "alta",
+  "ajuste",
+  "reserva",
+  "consumo",
+  "pendiente_clasificacion",
+  "liberacion",
+  "baja",
+] as const;
+export type UnitMovementType = (typeof UNIT_MOVEMENT_TYPES)[number];
+
+/** RNF-008: cada movimiento de unidades estándar, con actor, fecha y motivo. */
+export interface UnitMovement {
+  id: number;
+  productoId: number;
+  tipo: UnitMovementType;
+  cantidad: number;
+  existenciasAntes: number;
+  existenciasDespues: number;
+  motivo?: string | undefined;
+  pedidoCodigo?: string | undefined;
+  usuario: string;
+  fecha: string;
 }
 
 /**
@@ -66,8 +110,27 @@ export const ORDER_STATES = [
 ] as const;
 export type OrderStatus = (typeof ORDER_STATES)[number];
 
-export const PAYMENT_STATES = ["pendiente", "registrado", "confirmado"] as const;
+/**
+ * RF-011 (especificación v2.1): `pendiente` significa que no hay intentos; los
+ * demás valores son el estado del último intento de pago.
+ */
+export const PAYMENT_STATES = [
+  "pendiente",
+  "registrado",
+  "observado",
+  "confirmado",
+  "no_recibido",
+] as const;
 export type PaymentStatus = (typeof PAYMENT_STATES)[number];
+export type PaymentAttemptStatus = Exclude<PaymentStatus, "pendiente">;
+
+/**
+ * Opción elegida en la solicitud. En esta fase las dos consumen unidades
+ * existentes: la personalización modifica una unidad disponible. La fabricación
+ * bajo demanda de RF-017 es una modalidad distinta, todavía no implementada.
+ */
+export const ORDER_OPTIONS = ["estandar", "personalizada"] as const;
+export type OrderOption = (typeof ORDER_OPTIONS)[number];
 
 export const DELIVERY_MODES = [
   "retiro_en_taller",
@@ -81,13 +144,73 @@ export type DeliveryMode = (typeof DELIVERY_MODES)[number];
 export const PAYMENT_METHODS = ["transferencia", "otro"] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
+/**
+ * RNF-008. Los eventos de `pedido` y `pago` registran un cambio de estado; los
+ * de `entrega` y `unidades` no cambian estado y se describen en `detalle`.
+ */
 export interface AuditEvent {
   id: number;
-  tipo: "pedido" | "pago";
+  tipo: "pedido" | "pago" | "entrega" | "unidades";
   estadoAnterior: string;
   estadoNuevo: string;
+  detalle?: string | undefined;
   usuario: string;
   fecha: string; // ISO
+}
+
+/** Metadatos del comprobante. La imagen se pide aparte y solo la reciben las partes (RNF-004). */
+export interface PaymentReceipt {
+  id: number;
+  nombreArchivo: string;
+  tipo: string;
+  tamano: number;
+  subidoEn: string;
+  subidoPor: string;
+}
+
+/** Historial de un intento: solo se añaden entradas, nunca se reescriben. */
+export interface PaymentAttemptEvent {
+  estadoAnterior: PaymentAttemptStatus | null;
+  estadoNuevo: PaymentAttemptStatus;
+  motivo?: string | undefined;
+  comprobanteId?: number | undefined;
+  /** Solo en una observación: vencimiento del plazo de 48 horas para corregir. */
+  plazoHasta?: string | undefined;
+  usuario: string;
+  fecha: string;
+}
+
+export interface PaymentAttempt {
+  id: number;
+  numero: number;
+  metodo: PaymentMethod;
+  referencia?: string | undefined;
+  nota?: string | undefined;
+  estado: PaymentAttemptStatus;
+  registradoEn: string;
+  /** El último es el vigente; los anteriores se conservan como historial. */
+  comprobantes: PaymentReceipt[];
+  eventos: PaymentAttemptEvent[];
+}
+
+/** RF-022: reserva de las unidades del pedido. */
+export interface UnitReservation {
+  cantidad: number;
+  estado: "activa" | "pendiente_clasificacion" | "consumida" | "clasificada";
+  disponiblesDevueltas?: number | undefined;
+  bajas?: number | undefined;
+  motivoClasificacion?: string | undefined;
+}
+
+/** RF-006: desglose y total congelados al aceptar. */
+export interface FrozenQuote {
+  precioUnitario: number;
+  cantidad: number;
+  costosAdicionales: number;
+  costoEntrega: number;
+  modalidad: DeliveryMode;
+  total: number;
+  congeladaEn: string;
 }
 
 export interface Message {
@@ -108,6 +231,8 @@ export interface Order {
   compradorId: number;
   compradorNombre: string;
   cantidad: number;
+  opcion: OrderOption;
+  /** Vacío cuando la opción es estándar. */
   personalizacion: string;
   observaciones: string;
   estado: OrderStatus;
@@ -115,14 +240,28 @@ export interface Order {
   precioUnitario: number;
   costosAdicionales: number;
   costoEntrega: number;
-  entrega?: { modalidad: DeliveryMode; detalle?: string | undefined };
-  pago?: {
-    metodo: PaymentMethod;
-    referencia?: string | undefined;
-    comprobanteNombre?: string | undefined;
-    nota?: string | undefined;
-    registradoEn: string;
+  /** RF-016: modalidad que propone el comprador al preparar la solicitud. */
+  entregaPreferida: {
+    modalidad: DeliveryMode;
+    /** Ubicación indicada por el comprador para encuentro o entrega directa. */
+    ubicacion?: string | undefined;
+    detalle?: string | undefined;
   };
+  /**
+   * Modalidad elegida por el comprador; el artesano solo cotiza costo y notas.
+   * Al aceptar se congela. La fecha de recogida se guarda como YYYY-MM-DD.
+   */
+  entrega?:
+    | {
+        modalidad: DeliveryMode;
+        notasCotizacion?: string | undefined;
+        fechaRecogida?: string | undefined;
+        detalle?: string | undefined;
+      }
+    | undefined;
+  cotizacionCongelada?: FrozenQuote | undefined;
+  reserva?: UnitReservation | undefined;
+  pagos: PaymentAttempt[];
   motivoCancelacion?: string | undefined;
   motivoRechazo?: string | undefined;
   creadoEn: string;

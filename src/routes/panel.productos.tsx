@@ -1,3 +1,5 @@
+import { UnitAvailability } from "@/components/catalogo/unit-availability";
+import { UNIT_TYPE_LABELS } from "@/lib/labels";
 import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -36,10 +38,14 @@ import {
 import { useCurrency } from "@/hooks/use-currency";
 import { useSession } from "@/hooks/use-session";
 import { useDocumentHead } from "@/hooks/use-document-head";
-import type { Product } from "@/types";
+import type { Product, UnitType } from "@/types";
 
 const esquema = z.object({
-  nombre: z.string().trim().min(3, "El nombre debe tener al menos 3 caracteres.").max(80, "Máximo 80 caracteres."),
+  nombre: z
+    .string()
+    .trim()
+    .min(3, "El nombre debe tener al menos 3 caracteres.")
+    .max(80, "Máximo 80 caracteres."),
   precio: z
     .number({ message: "Ingresa un precio válido." })
     .positive("El precio debe ser mayor que cero.")
@@ -52,7 +58,6 @@ const esquema = z.object({
     .min(20, "Describe el producto con al menos 20 caracteres.")
     .max(600, "Máximo 600 caracteres."),
 });
-
 
 export default function MisProductos() {
   useDocumentHead({
@@ -83,6 +88,11 @@ export default function MisProductos() {
   // Código de categoría; vacío significa "sin elegir", no un valor por defecto.
   const [categoria, setCategoria] = useState<string>("");
   const [descripcion, setDescripcion] = useState("");
+  const [tipoUnidades, setTipoUnidades] = useState<UnitType | "">("");
+  const [existencias, setExistencias] = useState("");
+  const [personalizable, setPersonalizable] = useState(false);
+  const [motivoAjuste, setMotivoAjuste] = useState("");
+  const [imageBusy, setImageBusy] = useState(false);
   const [imagen, setImagen] = useState<string | undefined>(undefined);
   const [errores, setErrores] = useState<Record<string, string>>({});
 
@@ -94,6 +104,10 @@ export default function MisProductos() {
 
   const abrir = (p?: Product) => {
     setEditando(p ?? null);
+    setTipoUnidades(p?.tipoUnidades ?? "");
+    setExistencias(p ? String(p.existenciasFisicas) : "");
+    setPersonalizable(p?.admitePersonalizacion ?? false);
+    setMotivoAjuste("");
     setNombre(p?.nombre ?? "");
     setPrecio(p ? String(p.precio) : "");
     setCategoria(p?.categoria.codigo ?? "");
@@ -110,12 +124,18 @@ export default function MisProductos() {
       categoria: string;
       descripcion: string;
     }) => {
-      const payload = { ...input, imagen };
+      const payload = {
+        ...input,
+        imagen,
+        tipoUnidades: tipoUnidades as UnitType,
+        existenciasFisicas: Number(existencias),
+        admitePersonalizacion: personalizable,
+        motivoAjuste,
+      };
       return editando ? updateProduct(editando.id, payload) : createProduct(artesanoId, payload);
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["mis-productos"] });
-      void queryClient.invalidateQueries({ queryKey: ["catalogo"] });
+      void queryClient.invalidateQueries();
       toast.success(editando ? "Producto actualizado" : "Producto publicado");
       setAbierto(false);
     },
@@ -131,6 +151,10 @@ export default function MisProductos() {
       setErrores(map);
       return;
     }
+    if (!tipoUnidades) {
+      setErrores({ tipoUnidades: "Selecciona el tipo de unidades." });
+      return;
+    }
     setErrores({});
     guardar.mutate(r.data);
   };
@@ -140,7 +164,7 @@ export default function MisProductos() {
       <div className="mx-auto max-w-6xl px-4 py-8">
         <Link
           to="/panel"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          className="inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
           Volver al panel
@@ -150,7 +174,7 @@ export default function MisProductos() {
           <div className="min-w-0">
             <h1 className="truncate font-display text-3xl font-bold">Mis productos</h1>
             <p className="text-sm text-muted-foreground">
-              Cada producto se elabora bajo pedido; publica precio base y descripción clara.
+              Publica cada pieza con fotografía, nombre, precio, rubro y una descripción clara.
             </p>
           </div>
           <Button className="touch-target shrink-0" onClick={() => abrir()}>
@@ -192,6 +216,11 @@ export default function MisProductos() {
                     <p className="text-xs text-muted-foreground">{p.categoria.nombre}</p>
                     <h2 className="mt-1 line-clamp-2 font-medium">{p.nombre}</h2>
                     <p className="mt-1 font-semibold text-primary">{format(p.precio)}</p>
+                    <UnitAvailability product={p} />
+                    <p className="text-xs text-muted-foreground">
+                      Físicas: {p.existenciasFisicas} · Reservadas: {p.unidadesReservadas} · Por
+                      clasificar: {p.unidadesPorClasificar}
+                    </p>
                     <Button
                       variant="outline"
                       className="mt-3 w-full touch-target"
@@ -213,7 +242,7 @@ export default function MisProductos() {
           <DialogHeader>
             <DialogTitle>{editando ? "Editar producto" : "Nuevo producto"}</DialogTitle>
             <DialogDescription>
-              Los datos son simulados: se guardan solo durante esta sesión de demostración.
+              Los datos son simulados y se conservan al recargar en este navegador.
             </DialogDescription>
           </DialogHeader>
 
@@ -256,11 +285,7 @@ export default function MisProductos() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="p-categoria">Rubro *</Label>
-                <Select
-                  value={categoria}
-                  onValueChange={setCategoria}
-                  disabled={!categorias.data}
-                >
+                <Select value={categoria} onValueChange={setCategoria} disabled={!categorias.data}>
                   <SelectTrigger
                     id="p-categoria"
                     className="min-h-11"
@@ -301,7 +326,77 @@ export default function MisProductos() {
               ) : null}
             </div>
 
-            <ImageUploader value={imagen} onChange={setImagen} />
+            <div className="space-y-3">
+              <Label htmlFor="p-units">Tipo de unidades *</Label>
+              <select
+                id="p-units"
+                value={tipoUnidades}
+                className="min-h-11 w-full rounded-md border bg-background px-3"
+                onChange={(e) => {
+                  const type = e.target.value as UnitType;
+                  setTipoUnidades(type);
+                  if (type === "pieza_unica")
+                    setExistencias(
+                      editando?.tipoUnidades === "pieza_unica"
+                        ? String(editando.existenciasFisicas)
+                        : "1",
+                    );
+                }}
+              >
+                <option value="">Selecciona el tipo</option>
+                {Object.entries(UNIT_TYPE_LABELS).map(([type, label]) => (
+                  <option key={type} value={type}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              {errores["tipoUnidades"] ? (
+                <p role="alert" className="text-sm text-destructive">
+                  {errores["tipoUnidades"]}
+                </p>
+              ) : null}
+              <Label htmlFor="p-stock">Existencias físicas *</Label>
+              <Input
+                id="p-stock"
+                type="number"
+                min={editando ? 0 : 1}
+                max={tipoUnidades === "pieza_unica" ? 1 : undefined}
+                step={1}
+                value={existencias}
+                disabled={tipoUnidades === "pieza_unica" && !editando}
+                onChange={(e) => setExistencias(e.target.value)}
+              />
+              {editando ? (
+                <>
+                  <p className="text-sm">
+                    Reservadas: {editando.unidadesReservadas} · Por clasificar:{" "}
+                    {editando.unidadesPorClasificar}. No pueden quedar menos unidades que las
+                    comprometidas.
+                  </p>
+                  <Label htmlFor="p-stock-reason">Motivo del ajuste de unidades</Label>
+                  <Textarea
+                    id="p-stock-reason"
+                    maxLength={300}
+                    value={motivoAjuste}
+                    onChange={(e) => setMotivoAjuste(e.target.value)}
+                  />
+                </>
+              ) : null}
+              <label className="flex min-h-11 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={personalizable}
+                  onChange={(e) => setPersonalizable(e.target.checked)}
+                />
+                Admite personalización de las unidades disponibles
+              </label>
+            </div>
+            <ImageUploader
+              key={editando?.id ?? "nuevo"}
+              value={imagen}
+              onChange={setImagen}
+              onBusyChange={setImageBusy}
+            />
 
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
               <Button
@@ -312,8 +407,16 @@ export default function MisProductos() {
               >
                 Cancelar
               </Button>
-              <Button type="submit" className="touch-target" disabled={guardar.isPending}>
-                {guardar.isPending ? "Guardando…" : editando ? "Guardar cambios" : "Publicar producto"}
+              <Button
+                type="submit"
+                className="touch-target"
+                disabled={guardar.isPending || imageBusy}
+              >
+                {guardar.isPending
+                  ? "Guardando…"
+                  : editando
+                    ? "Guardar cambios"
+                    : "Publicar producto"}
               </Button>
             </div>
           </form>

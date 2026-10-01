@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listOrders, listProducts } from "@/services/mock-api";
 import { formatDate } from "@/lib/format";
+import { orderTotal } from "@/lib/order-amounts";
 import { useCurrency } from "@/hooks/use-currency";
 import { useSession } from "@/hooks/use-session";
 import { useDocumentHead } from "@/hooks/use-document-head";
@@ -27,7 +28,7 @@ export default function MisPedidos() {
           "Consulta el estado de tus solicitudes de pedidos artesanales: evaluación, producción, pago y entrega.",
       },
       { property: "og:title", content: "Mis pedidos | Artesanías de Masaya" },
-      { property: "og:description", content: "Seguimiento de tus pedidos bajo demanda en Masaya." },
+      { property: "og:description", content: "Seguimiento de tus pedidos a talleres de Masaya." },
       { property: "og:url", content: "/pedidos" },
     ],
     canonical: "/pedidos",
@@ -64,7 +65,7 @@ export default function MisPedidos() {
         >
           <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
             {FILTROS.map((f) => (
-              <TabsTrigger key={f} value={f} className="min-h-9">
+              <TabsTrigger key={f} value={f} className="min-h-11">
                 {f === "todos" ? "Todos" : ORDER_STATUS_LABELS[f]}
               </TabsTrigger>
             ))}
@@ -89,22 +90,22 @@ export default function MisPedidos() {
           ) : (
             pedidos.data.map((o) => (
               <article key={o.id} className="rounded-xl border bg-card p-5">
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
+                <div className="flex flex-col gap-4 sm:grid sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
                   <div className="min-w-0">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                       {o.codigo} · {formatDate(o.creadoEn)}
                     </p>
-                    <h2 className="mt-1 truncate font-display text-lg font-semibold">
+                    <h2 className="mt-1 line-clamp-2 font-display text-lg font-semibold">
                       {nombreProducto(o.productoId)}
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                      Cantidad: {o.cantidad} · {format(o.precioUnitario * o.cantidad + o.costoEntrega)}
+                      Cantidad: {o.cantidad} · Total {format(orderTotal(o))}
                     </p>
                     <div className="mt-3">
                       <StatusPair estado={o.estado} estadoPago={o.estadoPago} />
                     </div>
                   </div>
-                  <Button asChild variant="outline" className="touch-target shrink-0">
+                  <Button asChild variant="outline" className="touch-target w-full sm:w-auto">
                     <Link to={`/pedidos/${o.id}`}>Ver detalle</Link>
                   </Button>
                 </div>

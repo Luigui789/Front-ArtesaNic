@@ -5,12 +5,13 @@ import { Badge } from "@/components/ui/badge";
 
 export function ArtisanCard({ artisan }: { artisan: Artisan }) {
   return (
-    <article className="h-full overflow-hidden rounded-xl border bg-card transition-shadow hover:shadow-md">
-      <Link to={`/artesano/${artisan.id}`} className="block h-full">
+    <article className="h-full overflow-hidden rounded-xl border bg-card transition-colors hover:border-primary/40 has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-ring has-[a:focus-visible]:ring-offset-2 has-[a:focus-visible]:ring-offset-background">
+      <Link to={`/artesano/${artisan.id}`} className="block h-full focus-visible:outline-none">
         <div className="aspect-[16/9] overflow-hidden bg-surface">
+          {/* La foto del taller muestra su oficio; la portada se reserva para el perfil. */}
           <img
-            src={artisan.portadaUrl}
-            alt={`Taller ${artisan.nombreTaller}`}
+            src={artisan.fotoUrl}
+            alt=""
             loading="lazy"
             width={1024}
             height={768}

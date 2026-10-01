@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Role } from "@/types";
-import { DEMO_ARTISAN_ID, DEMO_USER_ID } from "@/services/mock-api";
+import { DEMO_ARTISAN_ID, DEMO_ARTISAN_RESPONSABLE, DEMO_USER_ID } from "@/services/mock-api";
 
 export interface SesionUsuario {
   id: number;
@@ -28,7 +28,7 @@ const COMPRADOR: SesionUsuario = {
 
 const ARTESANO: SesionUsuario = {
   id: DEMO_USER_ID,
-  nombre: "Taller artesanal",
+  nombre: DEMO_ARTISAN_RESPONSABLE,
   telefono: "8777 9090",
   rol: "artesano",
   artesanoId: DEMO_ARTISAN_ID,

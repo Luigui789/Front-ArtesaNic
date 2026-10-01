@@ -1,3 +1,4 @@
+import { UnitAvailability } from "@/components/catalogo/unit-availability";
 import { Link, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -37,7 +38,7 @@ export default function DetalleProducto() {
           "Detalle del producto artesanal: precio, taller que lo elabora y solicitud de pedido personalizado.",
       },
       { property: "og:title", content: "Producto artesanal | Artesanías de Masaya" },
-      { property: "og:description", content: "Pieza artesanal de Masaya elaborada bajo pedido." },
+      { property: "og:description", content: "Pieza artesanal de un taller de Masaya." },
       { property: "og:url", content: `/producto/${id}` },
     ],
     canonical: `/producto/${id}`,
@@ -147,22 +148,13 @@ export default function DetalleProducto() {
             </Badge>
             <h1 className="mt-3 font-display text-3xl font-bold">{p.nombre}</h1>
 
+            <UnitAvailability product={p} />
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <p className="text-3xl font-bold text-primary">{format(p.precio)}</p>
               <CurrencySwitcher />
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
               Tasa simulada: 1 US$ = C$ {TASA_CAMBIO}
-            </p>
-
-            <p
-              className={`mt-4 inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm ${
-                p.disponible
-                  ? "border-success/30 bg-success/10 text-success"
-                  : "border-border bg-muted text-muted-foreground"
-              }`}
-            >
-              {p.disponible ? "✓ Disponible bajo pedido" : "✕ Temporalmente no disponible"}
             </p>
 
             <div className="mt-6">
@@ -173,14 +165,27 @@ export default function DetalleProducto() {
             </div>
 
             <div className="mt-8">
-              <Button asChild size="lg" className="w-full touch-target text-base sm:w-auto">
-                <Link to={`/solicitar/${p.id}`}>
-                  Solicitar pedido
-                  <ArrowRight className="size-5" aria-hidden="true" />
-                </Link>
-              </Button>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Enviarás una solicitud al taller. El artesano la acepta o la rechaza antes de producir.
+              {p.unidadesDisponibles > 0 ? (
+                <Button asChild size="lg" className="w-full touch-target text-base sm:w-auto">
+                  <Link to={`/solicitar/${p.id}`}>
+                    Solicitar pedido
+                    <ArrowRight className="size-5" aria-hidden="true" />
+                  </Link>
+                </Button>
+              ) : (
+                <>
+                  <Button size="lg" disabled aria-describedby="no-units">
+                    Solicitar pedido
+                  </Button>
+                  <p id="no-units" className="mt-2 text-sm">
+                    Sin unidades disponibles. Las reservas y las unidades por clasificar no pueden
+                    solicitarse.
+                  </p>
+                </>
+              )}
+              <p className="mt-2 max-w-md text-sm text-muted-foreground">
+                Enviarás una solicitud al taller. El artesano la revisa y, si la acepta, coordinan
+                el pago y la entrega.
               </p>
             </div>
 
@@ -212,7 +217,7 @@ export default function DetalleProducto() {
                     </p>
                     <Link
                       to={`/artesano/${artesano.data.id}`}
-                      className="mt-2 inline-flex text-sm font-medium text-primary hover:underline"
+                      className="mt-1 inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline"
                     >
                       Ver perfil del taller
                     </Link>
