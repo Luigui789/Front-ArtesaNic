@@ -281,7 +281,11 @@ export function PaymentPanel({ order: o, onChanged }: { order: Order; onChanged:
         </div>
       ) : null}
       {o.estado === "pendiente" ? (
-        <p className="text-sm">Podrás registrar el pago cuando el taller acepte la solicitud.</p>
+        <p className="text-sm">
+          {artisan
+            ? "El comprador podrá registrar el pago cuando aceptes la solicitud."
+            : "Podrás registrar el pago cuando el taller acepte la solicitud."}
+        </p>
       ) : null}
     </div>
   );

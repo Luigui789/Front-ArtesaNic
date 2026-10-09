@@ -99,11 +99,16 @@ export function AuditTimeline({ eventos }: { eventos: AuditEvent[] }) {
             <span className="rounded bg-surface px-2 py-0.5 text-xs font-medium uppercase tracking-wide">
               {AUDIT_TYPE_LABELS[e.tipo]}
             </span>
-            <span className="text-muted-foreground">
-              {auditStateLabel(e.tipo, e.estadoAnterior)}
-            </span>
-            <span aria-hidden="true">→</span>
-            <span className="font-medium">{auditStateLabel(e.tipo, e.estadoNuevo)}</span>
+            {/* Entrega y unidades no cambian estado: se describen solo en `detalle`. */}
+            {e.tipo === "pedido" || e.tipo === "pago" ? (
+              <>
+                <span className="text-muted-foreground">
+                  {auditStateLabel(e.tipo, e.estadoAnterior)}
+                </span>
+                <span aria-hidden="true">→</span>
+                <span className="font-medium">{auditStateLabel(e.tipo, e.estadoNuevo)}</span>
+              </>
+            ) : null}
           </div>
           {e.detalle ? <p className="mt-1 break-words text-sm">{e.detalle}</p> : null}
           <p className="mt-1 text-xs text-muted-foreground">

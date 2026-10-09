@@ -813,7 +813,7 @@ export function buildOrders(products: Product[]): DemoOrders {
         tipo: "unidades",
         estadoAnterior: "—",
         estadoNuevo: "—",
-        detalle: `${unidades} pendientes de clasificación por el taller`,
+        detalle: `${unidades} ${e.cantidad === 1 ? "pendiente" : "pendientes"} de clasificación por el taller`,
         usuario: C,
         fecha: canceladoEn,
       });
