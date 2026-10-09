@@ -1,0 +1,478 @@
+openapi: 3.0.3
+info:
+  title: API de ArtesaNic
+  version: 0.1.0
+  description: 'Contrato implementado por el backend. Requisitos y diseño de los demás
+    módulos: repositorio del frontend (docs/requisitos, docs/api).'
+paths:
+  /api/v1/auth/csrf/:
+    get:
+      operationId: obtener_token_csrf
+      description: Fija la cookie csrftoken y devuelve el valor que debe enviarse
+        en la cabecera X-CSRFToken de registro, login, refrescar y logout.
+      summary: Obtener el token CSRF
+      tags:
+      - Autenticación
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenCSRF'
+          description: ''
+  /api/v1/auth/login/:
+    post:
+      operationId: iniciar_sesion
+      description: 'El rol no se envía: lo determina la cuenta. Devuelve el token
+        de acceso y fija la cookie de renovación.'
+      summary: Iniciar sesión con teléfono y contraseña
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: 'Token de GET /api/v1/auth/csrf/. La petición debe llevar también
+          la cookie csrftoken (credentials: ''include'').'
+        required: true
+      tags:
+      - Autenticación
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              Login:
+                value:
+                  telefono: '85551234'
+                  password: …
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sesion'
+              examples:
+                SesiónIniciada:
+                  value:
+                    access: eyJhbGciOi…
+                    usuario:
+                      id: 4
+                      nombre: Ana Lucía Delgado
+                      telefono: '85551234'
+                      rol: comprador
+                  summary: Sesión iniciada
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
+              examples:
+                Validación:
+                  value:
+                    telefono:
+                    - Ya existe una cuenta con este teléfono.
+          description: 'Errores de validación: cada campo con su lista de mensajes.'
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Credenciales incorrectas o cuenta inactiva (mensaje único,
+            no revela si el teléfono existe).
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Token CSRF ausente o inválido, o cuenta de administración.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Demasiados intentos. La cabecera Retry-After indica la espera.
+  /api/v1/auth/logout/:
+    post:
+      operationId: cerrar_sesion
+      description: Revoca el token de renovación de la cookie y la borra. No exige
+        el token de acceso, para poder cerrar aunque haya caducado; es idempotente.
+      summary: Cerrar sesión
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: 'Token de GET /api/v1/auth/csrf/. La petición debe llevar también
+          la cookie csrftoken (credentials: ''include'').'
+        required: true
+      - in: cookie
+        name: refresh
+        schema:
+          type: string
+        description: Cookie HttpOnly emitida por el backend. El navegador la envía
+          sola.
+      tags:
+      - Autenticación
+      responses:
+        '204':
+          description: No response body
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Token CSRF ausente o inválido.
+  /api/v1/auth/perfil/:
+    get:
+      operationId: consultar_perfil
+      summary: Consultar la identidad autenticada
+      tags:
+      - Autenticación
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Sin token o token no válido.
+  /api/v1/auth/refrescar/:
+    post:
+      operationId: renovar_sesion
+      description: Usa la cookie de renovación, la rota (la anterior queda revocada)
+        y devuelve un token de acceso nuevo. Sin cuerpo.
+      summary: Renovar el token de acceso
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: 'Token de GET /api/v1/auth/csrf/. La petición debe llevar también
+          la cookie csrftoken (credentials: ''include'').'
+        required: true
+      - in: cookie
+        name: refresh
+        schema:
+          type: string
+        description: Cookie HttpOnly emitida por el backend. El navegador la envía
+          sola.
+      tags:
+      - Autenticación
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenAcceso'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Sin cookie, o caducada, revocada o de una cuenta sin acceso.
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Token CSRF ausente o inválido.
+  /api/v1/auth/registro/artesano/:
+    post:
+      operationId: registrar_artesano
+      description: 'Crea una cuenta de artesano. No crea ni aprueba el taller (fase
+        siguiente). El rol lo asigna el servidor; los campos no declarados se rechazan.
+        Inicia la sesión: devuelve el token de acceso y fija la cookie de renovación.'
+      summary: Registrar una cuenta de artesano
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: 'Token de GET /api/v1/auth/csrf/. La petición debe llevar también
+          la cookie csrftoken (credentials: ''include'').'
+        required: true
+      tags:
+      - Autenticación
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistroRequest'
+            examples:
+              Registro:
+                value:
+                  nombre: Ana Lucía Delgado
+                  telefono: 8555 1234
+                  password: …
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sesion'
+              examples:
+                SesiónIniciada:
+                  value:
+                    access: eyJhbGciOi…
+                    usuario:
+                      id: 4
+                      nombre: Ana Lucía Delgado
+                      telefono: '85551234'
+                      rol: artesano
+                  summary: Sesión iniciada
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
+              examples:
+                Validación:
+                  value:
+                    telefono:
+                    - Ya existe una cuenta con este teléfono.
+          description: 'Errores de validación: cada campo con su lista de mensajes.'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Token CSRF ausente o inválido.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Demasiados intentos. La cabecera Retry-After indica la espera.
+  /api/v1/auth/registro/comprador/:
+    post:
+      operationId: registrar_comprador
+      description: 'Crea una cuenta de comprador. El rol lo asigna el servidor; los
+        campos no declarados se rechazan. Inicia la sesión: devuelve el token de acceso
+        y fija la cookie de renovación.'
+      summary: Registrar una cuenta de comprador
+      parameters:
+      - in: header
+        name: X-CSRFToken
+        schema:
+          type: string
+        description: 'Token de GET /api/v1/auth/csrf/. La petición debe llevar también
+          la cookie csrftoken (credentials: ''include'').'
+        required: true
+      tags:
+      - Autenticación
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistroRequest'
+            examples:
+              Registro:
+                value:
+                  nombre: Ana Lucía Delgado
+                  telefono: 8555 1234
+                  password: …
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sesion'
+              examples:
+                SesiónIniciada:
+                  value:
+                    access: eyJhbGciOi…
+                    usuario:
+                      id: 4
+                      nombre: Ana Lucía Delgado
+                      telefono: '85551234'
+                      rol: comprador
+                  summary: Sesión iniciada
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
+              examples:
+                Validación:
+                  value:
+                    telefono:
+                    - Ya existe una cuenta con este teléfono.
+          description: 'Errores de validación: cada campo con su lista de mensajes.'
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Token CSRF ausente o inválido.
+        '429':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+          description: Demasiados intentos. La cabecera Retry-After indica la espera.
+  /api/v1/salud/:
+    get:
+      operationId: consultar_salud
+      summary: Comprobar que el servicio responde
+      tags:
+      - Salud
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Salud'
+          description: ''
+components:
+  schemas:
+    Error:
+      type: object
+      description: Forma de los errores que no son de validación de campos.
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    LoginRequest:
+      type: object
+      description: Credenciales de acceso. El rol no se envía; cualquier otro campo
+        se rechaza con 400.
+      properties:
+        telefono:
+          type: string
+          minLength: 1
+          description: 'Teléfono de Nicaragua: 8 dígitos, con o sin separadores y
+            con o sin prefijo +505.'
+          maxLength: 32
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - telefono
+    RegistroRequest:
+      type: object
+      description: Datos para crear una cuenta. Cualquier otro campo se rechaza con
+        400.
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+          description: Nombre completo.
+          maxLength: 150
+        telefono:
+          type: string
+          minLength: 1
+          description: 'Teléfono de Nicaragua: 8 dígitos, con o sin separadores y
+            con o sin prefijo +505.'
+          maxLength: 32
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+          description: Mínimo 8 caracteres; no puede ser común, solo numérica ni parecida
+            al nombre o al teléfono.
+      required:
+      - nombre
+      - password
+      - telefono
+    RolEnum:
+      enum:
+      - comprador
+      - artesano
+      type: string
+      description: |-
+        * `comprador` - Comprador
+        * `artesano` - Artesano
+    Salud:
+      type: object
+      properties:
+        estado:
+          type: string
+      required:
+      - estado
+    Sesion:
+      type: object
+      properties:
+        access:
+          type: string
+          description: Token de acceso. Guardarlo solo en memoria y enviarlo como
+            Bearer.
+        usuario:
+          $ref: '#/components/schemas/Usuario'
+      required:
+      - access
+      - usuario
+    TokenAcceso:
+      type: object
+      properties:
+        access:
+          type: string
+          description: Nuevo token de acceso.
+      required:
+      - access
+    TokenCSRF:
+      type: object
+      properties:
+        csrf_token:
+          type: string
+          description: Valor para la cabecera X-CSRFToken.
+      required:
+      - csrf_token
+    Usuario:
+      type: object
+      description: Identidad autenticada. Sin contraseña, hash ni privilegios internos.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nombre:
+          type: string
+          readOnly: true
+        telefono:
+          type: string
+          readOnly: true
+          title: Teléfono
+          description: 'Identificador de acceso: 8 dígitos, sin prefijo ni separadores.'
+        rol:
+          allOf:
+          - $ref: '#/components/schemas/RolEnum'
+          readOnly: true
+      required:
+      - id
+      - nombre
+      - rol
+      - telefono
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

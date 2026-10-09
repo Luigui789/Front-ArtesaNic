@@ -1,0 +1,13 @@
+# Configuración local con secretos: solo se versiona .env.example
+.env
+
+# Entorno virtual y cachés de herramientas
+.venv/
+__pycache__/
+*.py[cod]
+.ruff_cache/
+
+# Archivos generados o subidos en ejecución
+media/
+staticfiles/
+*.sqlite3
