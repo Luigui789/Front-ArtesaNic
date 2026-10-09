@@ -6,7 +6,7 @@
 
 **Ajuste de entrega — 1-oct-2026:** `setDeliveryQuote(id, costoEntrega, notasCotizacion, usuario)` deriva la modalidad de la solicitud del comprador, sin admitir que el artesano la cambie. `setDeliveryCoordination(id, input, usuario)` guarda `fechaRecogida` para recoger en taller o `detalle` para las otras modalidades. La dirección del taller se consulta con `getArtisan` desde su perfil; no se introduce en las notas ni se altera el total congelado. Simulación autorizada por Luis, pendiente de homologación y contrato real.
 
-**Extensión de demo — 30-sep-2026:** las tablas de agosto se conservan como línea base. El [plan funcional](../superpowers/plans/2026-09-30-correcciones-funcionales-demo.md) autoriza nuevas simulaciones **sin contrato homologado todavía**. Dependen de homologación y ADR-006; no deben traducirse automáticamente a endpoints ni considerarse implementación Django. Contrato y ADR no se modifican.
+**Extensión de demo — 30-sep-2026:** las tablas de agosto se conservan como línea base. El [plan funcional](../planes/2026-09-30-correcciones-funcionales-demo.md) autoriza nuevas simulaciones **sin contrato homologado todavía**. Dependen de homologación y ADR-006; no deben traducirse automáticamente a endpoints ni considerarse implementación Django. Contrato y ADR no se modifican.
 
 | Extensión del mock                                                                                                 | Responsabilidad real pendiente                                                          |
 | ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
@@ -22,7 +22,7 @@
 
 **Documento que lo gobierna:** [Contrato de API](contrato-api.md) — 34 endpoints.
 
-**Requisitos que lo respaldan:** [Requisitos funcionales y no funcionales](../requisitos/requisitos.md).
+**Requisitos que lo respaldan:** [Requisitos funcionales y no funcionales](../requisitos/historico/especificacion-v2.1.md).
 
 ---
 

@@ -6,7 +6,7 @@
 
 ## Contexto
 
-El prototipo `masaya-artisan-connect` fue generado en Lovable sobre la plantilla `tanstack_start_ts`, que incluye TanStack Start (routing + capa full-stack/SSR sobre Nitro). Una auditoría técnica del código real ([`auditoria/auditoria_tecnica_artesanica.md`](../../auditoria/auditoria_tecnica_artesanica.md)) y un análisis dedicado de la decisión arquitectónica #1 determinaron que:
+El prototipo `masaya-artisan-connect` fue generado en Lovable sobre la plantilla `tanstack_start_ts`, que incluye TanStack Start (routing + capa full-stack/SSR sobre Nitro). Una auditoría técnica del código real ([`auditoria/auditoria_tecnica_artesanica.md`](../arquitectura/auditoria-tecnica-historica.md)) y un análisis dedicado de la decisión arquitectónica #1 determinaron que:
 
 - El proyecto usa TanStack Start, no solo TanStack Router: `src/start.ts`, `src/server.ts` y las APIs de `__root.tsx` (`createRootRouteWithContext`, `shellComponent`, `<Scripts />`) solo tienen sentido con Start.
 - Ninguna de las capacidades full-stack de Start está en uso: no hay `createServerFn`, `loader`, `beforeLoad`, `dehydrate`/`hydrate` ni prefetch de datos en servidor. Todos los datos se piden desde el cliente con TanStack Query contra `mock-api.ts`.
@@ -81,4 +81,4 @@ Como paso previo e independiente a esta migración, el proyecto cambió de gesto
 
 ## Plan de migración
 
-[`docs/superpowers/plans/2026-08-15-migracion-react-router.md`](../superpowers/plans/2026-08-15-migracion-react-router.md)
+[`docs/superpowers/plans/2026-08-15-migracion-react-router.md`](../planes/2026-08-15-migracion-react-router.md)

@@ -1,0 +1,50 @@
+"""El esquema OpenAPI se genera desde el código y coincide con las rutas reales."""
+
+import yaml
+from django.conf import settings
+from django.test import SimpleTestCase
+from django.urls import URLResolver, get_resolver
+from drf_spectacular.generators import SchemaGenerator
+from drf_spectacular.renderers import OpenApiYamlRenderer
+from drf_spectacular.validation import validate_schema
+
+ARCHIVO = settings.DOCS_DIR / "api" / "openapi.yaml"
+METODOS_HTTP = ("get", "post", "put", "patch", "delete")
+COMANDO = (
+    "uv run python manage.py spectacular --validate --fail-on-warn "
+    "--file ../../docs/api/openapi.yaml"
+)
+
+
+def rutas_de_la_api(patrones=None, prefijo=""):
+    """Rutas /api/ del URLconf y los métodos HTTP que implementa cada vista."""
+    rutas = {}
+    for patron in get_resolver().url_patterns if patrones is None else patrones:
+        ruta = prefijo + str(patron.pattern)
+        if isinstance(patron, URLResolver):
+            rutas |= rutas_de_la_api(patron.url_patterns, ruta)
+        elif ruta.startswith("api/"):
+            vista = patron.callback.view_class
+            rutas["/" + ruta] = {metodo for metodo in METODOS_HTTP if hasattr(vista, metodo)}
+    return rutas
+
+
+class EsquemaOpenAPITests(SimpleTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.esquema = SchemaGenerator().get_schema(request=None, public=True)
+
+    def test_es_un_documento_openapi_valido(self):
+        validate_schema(self.esquema)
+
+    def test_documenta_exactamente_las_rutas_y_metodos_reales(self):
+        documentadas = {
+            ruta: set(operaciones) for ruta, operaciones in self.esquema["paths"].items()
+        }
+        self.assertEqual(documentadas, rutas_de_la_api())
+
+    def test_el_archivo_versionado_esta_al_dia(self):
+        generado = yaml.safe_load(OpenApiYamlRenderer().render(self.esquema, renderer_context={}))
+        versionado = yaml.safe_load(ARCHIVO.read_text(encoding="utf-8"))
+        self.assertEqual(versionado, generado, f"Regenerar con: {COMANDO}")

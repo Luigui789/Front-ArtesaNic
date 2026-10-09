@@ -1,5 +1,7 @@
 # Contrato de API — Artesanica
 
+> **Contrato propuesto anterior.** Para endpoints implementados, consultar [OpenAPI](openapi.yaml) y [autenticación](autenticacion.md). Las demás secciones son diseño pendiente y deben revisarse contra las 39 fichas actuales.
+
 **Estado:** Borrador para revisión. Define el contrato que expondrá el backend Django REST Framework y que consumirá el frontend React.
 
 **Fecha:** 2026-08-15
@@ -20,7 +22,7 @@ El contrato pasa de 29 a **34 endpoints**.
 
 **Decisiones que lo gobiernan:** [ADR-002 — Acceso a datos y contratos](../adr/0002-acceso-a-datos-y-contratos.md)
 
-**Requisitos que implementa:** [Requisitos funcionales y no funcionales](../requisitos/requisitos.md) — actualizado con RF-010 v2.0, RF-011 v3.0 y RF-015.
+**Requisitos que implementa:** [Requisitos funcionales y no funcionales](../requisitos/historico/especificacion-v2.1.md) — actualizado con RF-010 v2.0, RF-011 v3.0 y RF-015.
 
 Este documento es la **fuente de verdad compartida** entre el frontend (este repositorio) y el backend (repositorio separado). Ninguno de los dos debe asumir nada que no esté aquí.
 
@@ -219,7 +221,7 @@ Aplica únicamente cuando se cancela un pedido que ya tenía el pago confirmado 
 
 ### 2.3 Categorías (`categoria`)
 
-Las categorías son un **recurso propio** del backend, no una lista fija en el código del frontend, para que un administrador pueda añadir rubros sin desplegar el frontend (ver [sección 4](#4-categorías)).
+Las categorías son un **recurso propio** del backend, no una lista fija en el código del frontend, para que un administrador pueda añadir rubros sin desplegar el frontend (ver [sección 4](#4-categorías-y-configuración)).
 
 | Código | Etiqueta actual |
 |---|---|
@@ -619,7 +621,7 @@ Dos precisiones:
 
 ## 7. Pedidos
 
-La [máquina de estados del frontend](../../src/lib/order-state.ts) es la fuente de verdad para el diseño de esta sección, pero **quien la aplica es el backend**. El frontend la conserva únicamente para habilitar o deshabilitar controles; toda transición la valida y ejecuta el servidor.
+La [máquina de estados del frontend](../../apps/frontend/src/lib/order-state.ts) es la fuente de verdad para el diseño de esta sección, pero **quien la aplica es el backend**. El frontend la conserva únicamente para habilitar o deshabilitar controles; toda transición la valida y ejecuta el servidor.
 
 ```
 pendiente ──┬──> aceptado ──┬──> en_produccion ──┬──> listo_para_entrega ──> entregado
