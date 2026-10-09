@@ -119,11 +119,14 @@ for (const session of [
     /partes/,
   );
 await assert.rejects(api.reviewPayment(first.id, "observado", actor), /motivo/);
+// El mock toma la fecha del evento y el plazo en dos lecturas del reloj.
+// Verificar la ventana real evita fallos de 1 ms sin cambiar la lógica de pagos.
+const observationStarted = Date.now();
 o = await api.reviewPayment(first.id, "observado", actor, "No se aprecia el monto");
-assert.equal(
-  Date.parse(o.pagos[0].eventos.at(-1).plazoHasta) - Date.parse(o.pagos[0].eventos.at(-1).fecha),
-  48 * 3600000,
-);
+const observationFinished = Date.now();
+const correctionDeadline = Date.parse(o.pagos[0].eventos.at(-1).plazoHasta);
+assert.ok(correctionDeadline >= observationStarted + 48 * 3600000);
+assert.ok(correctionDeadline <= observationFinished + 48 * 3600000);
 const realNow = Date.now;
 try {
   Date.now = () => Date.parse(o.pagos[0].eventos.at(-1).plazoHasta) + 1;
