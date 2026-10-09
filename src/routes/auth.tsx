@@ -51,7 +51,8 @@ export default function Auth() {
 
   const entrar = (modo: "ingreso" | "registro") => (e: React.FormEvent) => {
     e.preventDefault();
-    const datos = modo === "ingreso" ? { telefono: tel, clave: pass } : { nombre, telefono: tel, clave: pass };
+    const datos =
+      modo === "ingreso" ? { telefono: tel, clave: pass } : { nombre, telefono: tel, clave: pass };
     const r = (modo === "ingreso" ? esquemaIngreso : esquemaRegistro).safeParse(datos);
     if (!r.success) {
       const map: Record<string, string> = {};
@@ -153,7 +154,11 @@ export default function Auth() {
           </TabsList>
 
           <TabsContent value="ingreso">
-            <form onSubmit={entrar("ingreso")} noValidate className="space-y-5 rounded-xl border bg-card p-5">
+            <form
+              onSubmit={entrar("ingreso")}
+              noValidate
+              className="space-y-5 rounded-xl border bg-card p-5"
+            >
               {campoRol}
               {campoTelefono("ingreso")}
               {campoClave("ingreso")}
@@ -164,7 +169,11 @@ export default function Auth() {
           </TabsContent>
 
           <TabsContent value="registro">
-            <form onSubmit={entrar("registro")} noValidate className="space-y-5 rounded-xl border bg-card p-5">
+            <form
+              onSubmit={entrar("registro")}
+              noValidate
+              className="space-y-5 rounded-xl border bg-card p-5"
+            >
               {campoRol}
               <div className="space-y-2">
                 <Label htmlFor="nombre">Nombre completo *</Label>

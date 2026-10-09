@@ -46,8 +46,7 @@ export default function MensajesPage() {
 
   const pedidos = useQuery({
     queryKey: ["mensajes-pedidos", rol],
-    queryFn: () =>
-      listOrders(rol === "artesano" ? { rol, artesanoId: DEMO_ARTISAN_ID } : { rol }),
+    queryFn: () => listOrders(rol === "artesano" ? { rol, artesanoId: DEMO_ARTISAN_ID } : { rol }),
   });
   const productos = useQuery({
     queryKey: ["catalogo-nombres"],

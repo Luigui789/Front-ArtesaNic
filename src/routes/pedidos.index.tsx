@@ -76,7 +76,9 @@ export default function MisPedidos() {
           {pedidos.isError ? (
             <ErrorState onRetry={() => void pedidos.refetch()} />
           ) : pedidos.isPending ? (
-            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-xl" />)
+            Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-32 w-full rounded-xl" />
+            ))
           ) : pedidos.data.length === 0 ? (
             <EmptyState
               titulo="Aún no tienes pedidos en este estado"

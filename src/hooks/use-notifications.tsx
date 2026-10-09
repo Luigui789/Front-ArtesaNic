@@ -134,9 +134,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     [noLeidos, recientes, marcarLeido, marcarTodoLeido],
   );
 
-  return (
-    <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>
-  );
+  return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>;
 }
 
 export function useNotifications() {

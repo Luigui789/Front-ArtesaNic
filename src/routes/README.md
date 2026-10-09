@@ -24,20 +24,20 @@ pero **no tienen ningún efecto sobre la URL** — solo importa lo que diga
    ```tsx
    import MiPagina from "@/routes/mi-pagina";
    // ...
-   <Route path="/mi-ruta" element={<MiPagina />} />
+   <Route path="/mi-ruta" element={<MiPagina />} />;
    ```
 
 ## Convenciones
 
-| Necesidad | Cómo se hace |
-| --- | --- |
-| Parámetro dinámico | `<Route path="/producto/:id" …>` + `useParams<{ id: string }>()` |
-| Parámetros de búsqueda (query) | `useSearchParams()` — ver `catalogo.tsx` y `mensajes.tsx` |
-| Navegación programática | `useNavigate()` de `react-router` |
-| Enlaces | `<Link to="/ruta">`; usar `<NavLink>` si se necesita estado activo |
-| Metadatos (`<title>`, `<meta>`) | hook `useDocumentHead` de `@/hooks/use-document-head` |
-| Página 404 | `src/app/not-found.tsx`, registrada como `<Route path="*">` |
-| Errores de render | `src/app/error-boundary.tsx` |
+| Necesidad                       | Cómo se hace                                                       |
+| ------------------------------- | ------------------------------------------------------------------ |
+| Parámetro dinámico              | `<Route path="/producto/:id" …>` + `useParams<{ id: string }>()`   |
+| Parámetros de búsqueda (query)  | `useSearchParams()` — ver `catalogo.tsx` y `mensajes.tsx`          |
+| Navegación programática         | `useNavigate()` de `react-router`                                  |
+| Enlaces                         | `<Link to="/ruta">`; usar `<NavLink>` si se necesita estado activo |
+| Metadatos (`<title>`, `<meta>`) | hook `useDocumentHead` de `@/hooks/use-document-head`              |
+| Página 404                      | `src/app/not-found.tsx`, registrada como `<Route path="*">`        |
+| Errores de render               | `src/app/error-boundary.tsx`                                       |
 
 ## Lo que ya no existe
 

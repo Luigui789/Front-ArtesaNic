@@ -153,7 +153,9 @@ export default function Catalogo() {
               min={0}
               className="min-h-11"
               defaultValue={search.precioMin ?? ""}
-              onBlur={(e) => set({ precioMin: e.target.value ? Number(e.target.value) : undefined })}
+              onBlur={(e) =>
+                set({ precioMin: e.target.value ? Number(e.target.value) : undefined })
+              }
             />
           </div>
           <div className="flex-1">
@@ -168,7 +170,9 @@ export default function Catalogo() {
               min={0}
               className="min-h-11"
               defaultValue={search.precioMax ?? ""}
-              onBlur={(e) => set({ precioMax: e.target.value ? Number(e.target.value) : undefined })}
+              onBlur={(e) =>
+                set({ precioMax: e.target.value ? Number(e.target.value) : undefined })
+              }
             />
           </div>
         </div>
@@ -310,7 +314,11 @@ export default function Catalogo() {
               <>
                 <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {productos.data.items.map((p) => (
-                    <ProductCard key={p.id} product={p} artisanName={nombreArtesano(p.artesanoId)} />
+                    <ProductCard
+                      key={p.id}
+                      product={p}
+                      artisanName={nombreArtesano(p.artesanoId)}
+                    />
                   ))}
                 </div>
 
@@ -323,7 +331,9 @@ export default function Catalogo() {
                     className="touch-target"
                     disabled={(search.page ?? 1) <= 1}
                     onClick={() =>
-                      setSearchParams(buildSearchParams({ ...search, page: (search.page ?? 1) - 1 }))
+                      setSearchParams(
+                        buildSearchParams({ ...search, page: (search.page ?? 1) - 1 }),
+                      )
                     }
                   >
                     Anterior
@@ -336,7 +346,9 @@ export default function Catalogo() {
                     className="touch-target"
                     disabled={(search.page ?? 1) >= productos.data.totalPages}
                     onClick={() =>
-                      setSearchParams(buildSearchParams({ ...search, page: (search.page ?? 1) + 1 }))
+                      setSearchParams(
+                        buildSearchParams({ ...search, page: (search.page ?? 1) + 1 }),
+                      )
                     }
                   >
                     Siguiente
