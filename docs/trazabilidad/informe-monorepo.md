@@ -15,6 +15,7 @@ Validación local completada el 9 de octubre de 2026, zona America/Managua. Rama
 | `8a6a3a6` | Snapshot backend | 60 archivos iniciales, con verificación SHA-256; excluye .env, entornos y cachés |
 | `7bcebd9` | Migración | Traslado, documentación central, ADR-010, variables, Docker, scripts y CI |
 | `4658c1e` | Verificación | Corrección aislada de una aserción de reloj en la prueba existente; no cambia el mock |
+| `6216ca8` | Entrega | Informe con pruebas locales, preservación, discrepancias y candidatos posteriores |
 
 Los 17 commits originales de la rama avanzada permanecen en el historial. El PR #1 fue fusionado en `main` mediante `203bb5b` y el commit exacto `3bbbb07` es ancestro de esta rama. No se reescribió historial publicado, no se hizo squash ni se eliminaron ramas.
 
@@ -62,7 +63,7 @@ Todo `src/**/*.ts`, `src/**/*.tsx` y `src/**/*.css` del frontend coincide con la
 | Compose | `docker compose up --build -d --wait --wait-timeout 180`: aprobado, los tres servicios saludables |
 | Salud desde frontend | `GET http://127.0.0.1:5173/api/v1/salud/` por proxy de Vite: HTTP 200 y `{"estado":"ok"}` |
 | Herramientas Windows | PowerShell parseado y tareas Docs y Health ejecutadas correctamente |
-| Enlaces internos | 216 enlaces (archivos y anclas) aprobados antes de añadir este informe; validación final ejecutada al registrar la entrega |
+| Enlaces internos | 218 enlaces (archivos y anclas) aprobados al registrar la entrega |
 | Revisión de secretos | Sin coincidencias en 226 archivos y 428 blobs de historial antes del commit de informe; validación final repetida al publicar |
 
 La primera pasada de lint encontró 13411 errores de formato heredado, corregidos sin desactivar reglas. Una prueba de plazo falló por 1 ms entre dos lecturas del reloj; su aserción ahora compara las 48 horas con el intervalo real de la operación. El código de pagos sigue intacto.
@@ -79,7 +80,7 @@ La revisión local recorre archivos versionables e historial alcanzable buscando
 
 ## PR, orden de integración y pendientes
 
-[PR #2 de consolidación](https://github.com/Luigui789/Front-ArtesaNic/pull/2) tiene base `main`. El PR de migración se publica con base `codex/frontend-consolidation`, para revisar el traslado separado de los avances funcionales existentes. Ambos quedan abiertos para revisión; no se fusionan automáticamente. Al aprobar la consolidación, se puede integrar esa rama y revisar/retargetear el PR de migración a `main` conservando sus commits.
+[PR #2 de consolidación](https://github.com/Luigui789/Front-ArtesaNic/pull/2) tiene base `main`. El [PR #3 de migración](https://github.com/Luigui789/Front-ArtesaNic/pull/3) tiene base `codex/frontend-consolidation`, para revisar el traslado separado de los avances funcionales existentes. Ambos quedan abiertos para revisión; no se fusionan automáticamente. Al aprobar la consolidación, se puede integrar esa rama y revisar/retargetear el PR de migración a `main` conservando sus commits.
 
 Los workflows frontend, backend e integración están preparados con filtros de rutas. La validación local descrita está completa; el resultado remoto de GitHub Actions se informa por separado. La identificación de Lovable y su historial se preservan, pero no se verificó su editor con `apps/frontend`; comprobarlo antes de usar esa herramienta para desarrollar de nuevo.
 
@@ -94,3 +95,7 @@ Los workflows frontend, backend e integración están preparados con filtros de 
 | `Back-Artesanic` remoto | Evaluar archivo histórico | No se archiva ahora; decisión separada del responsable |
 
 No se eliminaron ramas remotas, repositorios ni volúmenes. No se creó una función nueva de pedidos, inventario, pagos u otros RF.
+
+## Verificación remota de CI
+
+El primer job Backend falló antes del checkout por las comillas simples del argumento `--health-cmd` en la inicialización del servicio PostgreSQL del runner. Se corrigió únicamente ese argumento a comillas dobles y se vuelve a ejecutar CI. El job de integración remoto ya comprobó construcción, arranque completo y sonda desde Vite; las validaciones locales del backend permanecen aprobadas. Los enlaces de ejecuciones finales se registrarán tras finalizar la nueva pasada.
