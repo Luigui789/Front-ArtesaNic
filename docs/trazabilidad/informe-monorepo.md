@@ -16,6 +16,7 @@ Validación local completada el 9 de octubre de 2026, zona America/Managua. Rama
 | `7bcebd9` | Migración | Traslado, documentación central, ADR-010, variables, Docker, scripts y CI |
 | `4658c1e` | Verificación | Corrección aislada de una aserción de reloj en la prueba existente; no cambia el mock |
 | `6216ca8` | Entrega | Informe con pruebas locales, preservación, discrepancias y candidatos posteriores |
+| `bd5f0e3` | CI | Comillas del healthcheck PostgreSQL corregidas para el runner; sin cambio de aplicación |
 
 Los 17 commits originales de la rama avanzada permanecen en el historial. El PR #1 fue fusionado en `main` mediante `203bb5b` y el commit exacto `3bbbb07` es ancestro de esta rama. No se reescribió historial publicado, no se hizo squash ni se eliminaron ramas.
 
@@ -98,4 +99,10 @@ No se eliminaron ramas remotas, repositorios ni volúmenes. No se creó una func
 
 ## Verificación remota de CI
 
-El primer job Backend falló antes del checkout por las comillas simples del argumento `--health-cmd` en la inicialización del servicio PostgreSQL del runner. Se corrigió únicamente ese argumento a comillas dobles y se vuelve a ejecutar CI. El job de integración remoto ya comprobó construcción, arranque completo y sonda desde Vite; las validaciones locales del backend permanecen aprobadas. Los enlaces de ejecuciones finales se registrarán tras finalizar la nueva pasada.
+GitHub Actions aprobó los tres workflows en el commit `bd5f0e3`, con instalación limpia y PostgreSQL en un runner Linux:
+
+- [Frontend aprobado](https://github.com/Luigui789/Front-ArtesaNic/actions/runs/37891726925): instalación congelada, lint, typecheck, pruebas y build.
+- [Backend aprobado](https://github.com/Luigui789/Front-ArtesaNic/actions/runs/37891726936): instalación uv bloqueada, Ruff, checks, migraciones y tests PostgreSQL.
+- [Integración aprobada](https://github.com/Luigui789/Front-ArtesaNic/actions/runs/37891726944): enlaces, patrones de secretos, construcción y arranque de los tres servicios, y sonda real desde Vite.
+
+El primer job Backend falló antes del checkout por las comillas simples del argumento `--health-cmd` de PostgreSQL. Se corrigió únicamente ese argumento a comillas dobles en `bd5f0e3`; la nueva ejecución pasó. Esta actualización final solo registra la evidencia remota, sin cambiar aplicaciones o dependencias.
