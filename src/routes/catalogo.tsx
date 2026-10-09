@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { useSearchParams } from "react-router";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Filter, Search } from "lucide-react";
@@ -16,59 +16,76 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { listArtisans, listProducts } from "@/services/mock-api";
-import { CATEGORIES, type Category } from "@/types";
+import { listArtisans, listCategories, listProducts } from "@/services/mock-api";
+import { useDocumentHead } from "@/hooks/use-document-head";
+import { parseRouteId } from "@/lib/route-id";
+
+/** Valor técnico del `<Select>` de Radix, que exige texto. No es del dominio. */
+const SIN_CATEGORIA = "todas";
 
 interface CatalogSearch {
   q?: string | undefined;
-  categoria?: Category | "todas" | undefined;
+  /** Código de categoría. `undefined` significa "sin filtro". */
+  categoria?: string | undefined;
   precioMin?: number | undefined;
   precioMax?: number | undefined;
-  artesanoId?: string | undefined;
+  artesanoId?: number | undefined;
   orden?: "recientes" | "precio-asc" | "precio-desc" | "nombre" | undefined;
   page?: number | undefined;
 }
 
-export const Route = createFileRoute("/catalogo")({
-  validateSearch: (search: Record<string, unknown>): CatalogSearch => {
-    const cat = String(search["categoria"] ?? "todas");
-    const orden = String(search["orden"] ?? "recientes");
-    return {
-      q: search["q"] ? String(search["q"]) : undefined,
-      categoria: (CATEGORIES as readonly string[]).includes(cat) ? (cat as Category) : "todas",
-      precioMin: search["precioMin"] ? Number(search["precioMin"]) : undefined,
-      precioMax: search["precioMax"] ? Number(search["precioMax"]) : undefined,
-      artesanoId: search["artesanoId"] ? String(search["artesanoId"]) : undefined,
-      orden: ["recientes", "precio-asc", "precio-desc", "nombre"].includes(orden)
-        ? (orden as CatalogSearch["orden"])
-        : "recientes",
-      page: search["page"] ? Number(search["page"]) : 1,
-    };
-  },
+function parseCatalogSearch(params: URLSearchParams): CatalogSearch {
+  const orden = params.get("orden") ?? "recientes";
+  return {
+    q: params.get("q") ?? undefined,
+    // No se valida contra la lista: el servicio es la autoridad sobre qué
+    // categoría existe, y así el enlace profundo no depende de otra consulta.
+    categoria: params.get("categoria") ?? undefined,
+    precioMin: params.get("precioMin") ? Number(params.get("precioMin")) : undefined,
+    precioMax: params.get("precioMax") ? Number(params.get("precioMax")) : undefined,
+    // Un identificador de taller inválido no es un 404: equivale a "todos".
+    artesanoId: parseRouteId(params.get("artesanoId")),
+    orden: ["recientes", "precio-asc", "precio-desc", "nombre"].includes(orden)
+      ? (orden as CatalogSearch["orden"])
+      : "recientes",
+    page: params.get("page") ? Number(params.get("page")) : 1,
+  };
+}
 
-  head: () => ({
+function buildSearchParams(search: CatalogSearch): URLSearchParams {
+  const params = new URLSearchParams();
+  if (search.q) params.set("q", search.q);
+  if (search.categoria) params.set("categoria", search.categoria);
+  if (search.precioMin != null) params.set("precioMin", String(search.precioMin));
+  if (search.precioMax != null) params.set("precioMax", String(search.precioMax));
+  if (search.artesanoId != null) params.set("artesanoId", String(search.artesanoId));
+  if (search.orden && search.orden !== "recientes") params.set("orden", search.orden);
+  if (search.page && search.page !== 1) params.set("page", String(search.page));
+  return params;
+}
+
+export default function Catalogo() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const search = parseCatalogSearch(searchParams);
+  const [texto, setTexto] = useState(search.q ?? "");
+  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
+
+  useDocumentHead({
+    title: "Catálogo de productos artesanales | Masaya",
     meta: [
-      { title: "Catálogo de productos artesanales | Masaya" },
       {
         name: "description",
         content:
-          "Explora productos artesanales de Masaya por rubro, precio y taller. Cada pieza se elabora bajo pedido.",
+          "Explora productos artesanales de Masaya por rubro, precio y taller, y solicítalos directamente al taller.",
       },
       { property: "og:title", content: "Catálogo de productos artesanales | Masaya" },
       { property: "og:description", content: "Cuero, hamacas, madera, textiles, dulces y más." },
       { property: "og:url", content: "/catalogo" },
     ],
-    links: [{ rel: "canonical", href: "/catalogo" }],
-  }),
-  component: Catalogo,
-});
+    canonical: "/catalogo",
+  });
 
-function Catalogo() {
-  const search = Route.useSearch();
-  const navigate = Route.useNavigate();
-  const [texto, setTexto] = useState(search.q ?? "");
-  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
-
+  const categorias = useQuery({ queryKey: ["categorias"], queryFn: listCategories });
   const artesanos = useQuery({ queryKey: ["artesanos"], queryFn: listArtisans });
   const productos = useQuery({
     queryKey: ["catalogo", search],
@@ -87,9 +104,15 @@ function Catalogo() {
   });
 
   const set = (patch: Partial<CatalogSearch>) =>
-    void navigate({ to: "/catalogo", search: { ...search, page: 1, ...patch } });
+    setSearchParams(buildSearchParams({ ...search, page: 1, ...patch }));
 
-  const nombreArtesano = (id: string) =>
+  // Vacía también el texto de búsqueda; los campos de precio se reinician por su `key`.
+  const limpiar = () => {
+    setTexto("");
+    setSearchParams(buildSearchParams({}));
+  };
+
+  const nombreArtesano = (id: number) =>
     artesanos.data?.find((a) => a.id === id)?.nombreTaller ?? "";
 
   const Filtros = (
@@ -97,17 +120,18 @@ function Catalogo() {
       <div className="space-y-2">
         <Label htmlFor="filtro-categoria">Categoría</Label>
         <Select
-          value={search.categoria ?? "todas"}
-          onValueChange={(v) => set({ categoria: v as Category | "todas" })}
+          value={search.categoria ?? SIN_CATEGORIA}
+          onValueChange={(v) => set({ categoria: v === SIN_CATEGORIA ? undefined : v })}
+          disabled={!categorias.data}
         >
           <SelectTrigger id="filtro-categoria" className="min-h-11">
             <SelectValue placeholder="Todas las categorías" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="todas">Todas las categorías</SelectItem>
-            {CATEGORIES.map((c) => (
-              <SelectItem key={c} value={c}>
-                {c}
+            <SelectItem value={SIN_CATEGORIA}>Todas las categorías</SelectItem>
+            {categorias.data?.map((c) => (
+              <SelectItem key={c.id} value={c.codigo}>
+                {c.nombre}
               </SelectItem>
             ))}
           </SelectContent>
@@ -122,6 +146,7 @@ function Catalogo() {
               Desde
             </Label>
             <Input
+              key={`min-${search.precioMin ?? ""}`}
               id="precio-min"
               type="number"
               inputMode="numeric"
@@ -136,6 +161,7 @@ function Catalogo() {
               Hasta
             </Label>
             <Input
+              key={`max-${search.precioMax ?? ""}`}
               id="precio-max"
               type="number"
               inputMode="numeric"
@@ -150,9 +176,10 @@ function Catalogo() {
 
       <div className="space-y-2">
         <Label htmlFor="filtro-artesano">Taller artesanal</Label>
+        {/* El control solo admite valores de texto: se convierte en la frontera. */}
         <Select
-          value={search.artesanoId ?? "todos"}
-          onValueChange={(v) => set({ artesanoId: v === "todos" ? undefined : v })}
+          value={search.artesanoId != null ? String(search.artesanoId) : "todos"}
+          onValueChange={(v) => set({ artesanoId: v === "todos" ? undefined : parseRouteId(v) })}
         >
           <SelectTrigger id="filtro-artesano" className="min-h-11">
             <SelectValue placeholder="Todos los talleres" />
@@ -160,7 +187,7 @@ function Catalogo() {
           <SelectContent className="max-h-72">
             <SelectItem value="todos">Todos los talleres</SelectItem>
             {artesanos.data?.map((a) => (
-              <SelectItem key={a.id} value={a.id}>
+              <SelectItem key={a.id} value={String(a.id)}>
                 {a.nombreTaller}
               </SelectItem>
             ))}
@@ -168,13 +195,7 @@ function Catalogo() {
         </Select>
       </div>
 
-      <Button
-        variant="outline"
-        className="w-full touch-target"
-        onClick={() =>
-          void navigate({ to: "/catalogo", search: { categoria: "todas", orden: "recientes", page: 1 } })
-        }
-      >
+      <Button variant="outline" className="w-full touch-target" onClick={limpiar}>
         Limpiar filtros
       </Button>
     </div>
@@ -185,7 +206,7 @@ function Catalogo() {
       <div className="mx-auto max-w-7xl px-4 py-8">
         <h1 className="font-display text-3xl font-bold">Catálogo</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Todas las piezas se elaboran bajo pedido en talleres de Masaya.
+          Piezas de los talleres artesanales de Masaya. Filtra por rubro, precio o taller.
         </p>
 
         <form
@@ -279,16 +300,7 @@ function Catalogo() {
                   titulo="No encontramos productos"
                   descripcion="Prueba con otra palabra, cambia de categoría o limpia los filtros."
                   accion={
-                    <Button
-                      variant="outline"
-                      className="touch-target"
-                      onClick={() =>
-                        void navigate({
-                          to: "/catalogo",
-                          search: { categoria: "todas", orden: "recientes", page: 1 },
-                        })
-                      }
-                    >
+                    <Button variant="outline" className="touch-target" onClick={limpiar}>
                       Limpiar filtros
                     </Button>
                   }
@@ -311,10 +323,7 @@ function Catalogo() {
                     className="touch-target"
                     disabled={(search.page ?? 1) <= 1}
                     onClick={() =>
-                      void navigate({
-                        to: "/catalogo",
-                        search: { ...search, page: (search.page ?? 1) - 1 },
-                      })
+                      setSearchParams(buildSearchParams({ ...search, page: (search.page ?? 1) - 1 }))
                     }
                   >
                     Anterior
@@ -327,10 +336,7 @@ function Catalogo() {
                     className="touch-target"
                     disabled={(search.page ?? 1) >= productos.data.totalPages}
                     onClick={() =>
-                      void navigate({
-                        to: "/catalogo",
-                        search: { ...search, page: (search.page ?? 1) + 1 },
-                      })
+                      setSearchParams(buildSearchParams({ ...search, page: (search.page ?? 1) + 1 }))
                     }
                   >
                     Siguiente

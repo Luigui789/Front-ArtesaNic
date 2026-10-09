@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Link, useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { MessageSquare } from "lucide-react";
 import { SiteLayout } from "@/components/layout/site-layout";
@@ -7,29 +7,31 @@ import { OrderChat } from "@/components/pedidos/order-chat";
 import { OrderStatusBadge } from "@/components/pedidos/status-badges";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { listOrders, listProducts, DEMO_ARTISAN_ID } from "@/services/mock-api";
+import { getArtisan, listOrders, listProducts, DEMO_ARTISAN_ID } from "@/services/mock-api";
 import { chatMode } from "@/lib/order-state";
 import { formatDate } from "@/lib/format";
 import { useSession } from "@/hooks/use-session";
 import { useNotifications } from "@/hooks/use-notifications";
+import { useDocumentHead } from "@/hooks/use-document-head";
+import { parseRouteId } from "@/lib/route-id";
 import { cn } from "@/lib/utils";
 import { useEffect } from "react";
 
-interface MensajesSearch {
-  pedido?: string | undefined;
-}
+export default function MensajesPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  // Un identificador inválido no es un 404: se cae en la primera conversación.
+  const seleccionado = parseRouteId(searchParams.get("pedido"));
+  const { usuario } = useSession();
+  const rol = usuario?.rol ?? "comprador";
+  const { noLeidos, marcarLeido } = useNotifications();
 
-export const Route = createFileRoute("/mensajes")({
-  validateSearch: (search: Record<string, unknown>): MensajesSearch => ({
-    pedido: typeof search["pedido"] === "string" ? (search["pedido"] as string) : undefined,
-  }),
-  head: () => ({
+  useDocumentHead({
+    title: "Mensajes por pedido | Artesanías de Masaya",
     meta: [
-      { title: "Mensajes por pedido | Artesanías de Masaya" },
       {
         name: "description",
         content:
-          "Conversa con el taller artesanal sobre cada pedido bajo demanda: detalles, materiales y coordinación de entrega.",
+          "Conversa con el taller artesanal sobre cada pedido: detalles, materiales y coordinación de entrega.",
       },
       { property: "og:title", content: "Mensajes por pedido | Artesanías de Masaya" },
       {
@@ -39,17 +41,8 @@ export const Route = createFileRoute("/mensajes")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
-    links: [{ rel: "canonical", href: "/mensajes" }],
-  }),
-  component: MensajesPage,
-});
-
-function MensajesPage() {
-  const navigate = useNavigate();
-  const { pedido: seleccionado } = Route.useSearch();
-  const { usuario } = useSession();
-  const rol = usuario?.rol ?? "comprador";
-  const { noLeidos, marcarLeido } = useNotifications();
+    canonical: "/mensajes",
+  });
 
   const pedidos = useQuery({
     queryKey: ["mensajes-pedidos", rol],
@@ -61,16 +54,22 @@ function MensajesPage() {
     queryFn: () => listProducts({ pageSize: 1000 }),
   });
 
-  const nombreProducto = (id: string) =>
+  const nombreProducto = (id: number) =>
     productos.data?.items.find((p) => p.id === id)?.nombre ?? "Producto artesanal";
 
   const conversaciones = (pedidos.data ?? []).filter((o) => chatMode(o.estado) !== "none");
   const actual =
     conversaciones.find((o) => o.id === seleccionado) ?? conversaciones[0] ?? undefined;
 
-  const seleccionar = (id: string) => {
+  const taller = useQuery({
+    queryKey: ["artesano", actual?.artesanoId],
+    queryFn: () => getArtisan(actual!.artesanoId),
+    enabled: rol === "comprador" && !!actual,
+  });
+
+  const seleccionar = (id: number) => {
     marcarLeido(id);
-    void navigate({ to: "/mensajes", search: { pedido: id } });
+    setSearchParams({ pedido: String(id) });
   };
 
   // La conversación visible se marca como leída.
@@ -110,7 +109,7 @@ function MensajesPage() {
               descripcion="Cuando envíes una solicitud de pedido podrás conversar aquí con el taller artesanal."
               accion={
                 <Button asChild className="touch-target">
-                  <a href="/catalogo">Explorar el catálogo</a>
+                  <Link to="/catalogo">Explorar el catálogo</Link>
                 </Button>
               }
             />
@@ -164,7 +163,9 @@ function MensajesPage() {
                       {actual.codigo} · {nombreProducto(actual.productoId)}
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                      {rol === "artesano" ? actual.compradorNombre : "Taller artesanal"}
+                      {rol === "artesano"
+                        ? actual.compradorNombre
+                        : (taller.data?.nombreTaller ?? "Taller artesanal")}
                     </p>
                   </div>
                   <OrderChat pedidoId={actual.id} estado={actual.estado} />

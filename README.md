@@ -4,7 +4,7 @@ Prototipo para comercializar productos artesanales de las PYMEs de Masaya, Nicar
 
 **Documentación revisada el 8 de octubre de 2026.** El alcance objetivo comprende **24 requisitos funcionales y 15 no funcionales**, tomados de [RF/RNF.docx en Drive](https://docs.google.com/document/d/14I9njtLSWzJdw465-lOoiDgSJeIpJRnb/edit). La fuente conserva el estado **Propuesto para homologación**, salvo RF-012, postergado. El texto adjunto aportado para la revisión orienta la futura adaptación del frontend; sus modelos y nombres de servicios son propuestas técnicas.
 
-Esta actualización modifica documentación. El código de referencia es `main` en el commit [456f613](https://github.com/Luigui789/Front-ArtesaNic/commit/456f613b381d30136f1d9949eef57a5f54a1508b): todavía maneja pedidos de un producto, disponibilidad booleana y tres estados de pago. Publicar estas reglas no significa que el prototipo ya las implemente.
+Esta línea de integración conserva el commit documental `3bbbb07` y los 17 commits de `feat/presentation-polish`, más los cuatro commits que registran los cambios locales. El frontend utiliza React Router y pnpm. Los flujos siguen siendo simulados: registrar aquí los 24 RF y 15 RNF no acredita su implementación. La especificación v2.1, sus aprobaciones históricas y las definiciones posteriores se conservan en [su documento original](docs/requisitos/requisitos.md); las discrepancias requieren revisión del equipo.
 
 ## Documentación del proyecto
 
@@ -23,28 +23,25 @@ El trabajo de producto continúa siendo **frontend con mocks**: consultas, laten
 
 La arquitectura de negocio futura es React/TypeScript → servicios HTTP REST/JSON → Django/DRF → **PostgreSQL**, con archivos fuera de las filas de la base. La autorización, las transacciones, la persistencia y los importes tendrán al servidor como autoridad. El mapeo de snake_case a camelCase corresponde a la capa de servicios.
 
-Esta fase no desarrolla Django, DRF, base de datos, migraciones, API de negocio real, almacenamiento remoto, autenticación real, procesamiento de dinero ni infraestructura de negocio. La infraestructura técnica de TanStack Start que ya existe en la plantilla no equivale al backend Django de negocio.
+Esta fase no desarrolla Django, DRF, base de datos, migraciones, API de negocio real, almacenamiento remoto, autenticación real, procesamiento de dinero ni infraestructura de negocio. La aplicación es una SPA de Vite y no contiene un servidor de negocio propio.
 
 La administración corresponde a **Django Admin**, fuera de la interfaz React. No se crea dashboard administrativo React. El administrador podrá consultar pedidos e historial autorizado en solo lectura y no accederá al contenido de chats ni comprobantes.
 
-## Arquitectura verificada en este repositorio
+## Arquitectura verificada en esta línea de integración
 
 | Capa | Tecnología / evidencia |
 |---|---|
 | Interfaz | React 19, TypeScript estricto |
-| Construcción | Vite 8, configuración de Lovable |
-| Enrutamiento | TanStack Router, rutas por archivos |
-| Aplicación / servidor de plantilla | TanStack Start, Nitro y entrada SSR `src/server.ts` |
+| Construcción | Vite 8, SPA estática |
+| Enrutamiento | React Router 8, árbol explícito en `src/app/App.tsx` |
 | Datos y caché | TanStack Query |
 | Formularios | React Hook Form + Zod |
 | Estilos | Tailwind CSS 4, shadcn/ui, Radix UI |
-| Iconos | Lucide React |
-| Servicios de negocio actuales | `src/services/mock-api.ts`, store en memoria |
-| Dependencias reproducibles | `bun.lock` y `bunfig.toml` |
+| Servicios actuales | `src/services/mock-api.ts`, simulación local |
+| Persistencia de la demo | IndexedDB; sesión simulada en localStorage |
+| Dependencias reproducibles | pnpm 10.30.3 y `pnpm-lock.yaml` |
 
-Fuentes: [package.json](package.json), [vite.config.ts](vite.config.ts), [router.tsx](src/router.tsx), [start.ts](src/start.ts) y [tipos](src/types/index.ts). El repositorio **usa TanStack Router/Start**; no se atribuye aquí la migración a React Router de otro repositorio. Tampoco se describe la configuración actual como una SPA estática sin SSR. No se necesita cambiar el router para actualizar requisitos.
-
-La sesión de demostración se guarda en localStorage; productos, pedidos y mensajes usan el store en memoria. No existe persistencia de negocio entre recargas garantizada por este mock, sincronización entre dispositivos ni protección ACID real.
+La persistencia de la demo conserva los cambios de un navegador y protege instantáneas ilegibles. No acredita sincronización entre dispositivos, autorización real ni transacciones del backend. Fuentes: [package.json](package.json), [Vite](vite.config.ts), [rutas](src/routes/README.md) y [ADR-001](docs/adr/0001-sistema-de-routing.md).
 
 ## Modelo comercial objetivo
 

@@ -87,7 +87,8 @@
   --warning: oklch(0.72 0.13 70);
   --warning-foreground: oklch(0.24 0.03 70);
   --border: oklch(0.87 0.017 80);
-  --input: oklch(0.87 0.017 80);
+  /* Borde de campos de formulario: ≥ 3:1 sobre el fondo (WCAG 1.4.11). */
+  --input: oklch(0.64 0.02 75);
   --ring: oklch(0.53 0.135 38);
   --sidebar: oklch(0.955 0.013 82);
   --sidebar-foreground: oklch(0.24 0.014 60);

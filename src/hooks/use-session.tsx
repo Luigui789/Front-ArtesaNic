@@ -1,25 +1,34 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Role } from "@/types";
-import { DEMO_ARTISAN_ID } from "@/services/mock-api";
+import { DEMO_ARTISAN_ID, DEMO_ARTISAN_RESPONSABLE, DEMO_USER_ID } from "@/services/mock-api";
 
 export interface SesionUsuario {
-  id: string;
+  id: number;
   nombre: string;
   telefono: string;
   rol: Role;
-  artesanoId?: string;
+  artesanoId?: number;
 }
 
+/**
+ * Los dos perfiles siguientes son **estados de sesión alternativos** del
+ * prototipo, no dos personas usuarias simultáneas: comparten `DEMO_USER_ID`
+ * a propósito, para poder demostrar ambas navegaciones con un solo dataset.
+ * Esto no es el modelo de identidad del sistema real, donde cada cuenta tiene
+ * un identificador único y el rol lo determina el backend (D-6).
+ *
+ * `id` identifica a la persona; `artesanoId`, al taller. No son el mismo dato.
+ */
 const COMPRADOR: SesionUsuario = {
-  id: "user-comprador",
+  id: DEMO_USER_ID,
   nombre: "Ana Lucía Delgado",
   telefono: "8555 1234",
   rol: "comprador",
 };
 
 const ARTESANO: SesionUsuario = {
-  id: "user-artesano",
-  nombre: "Taller artesanal",
+  id: DEMO_USER_ID,
+  nombre: DEMO_ARTISAN_RESPONSABLE,
   telefono: "8777 9090",
   rol: "artesano",
   artesanoId: DEMO_ARTISAN_ID,
@@ -34,7 +43,13 @@ interface SessionContextValue {
 
 const SessionContext = createContext<SessionContextValue | null>(null);
 
-const KEY = "masaya.sesion";
+/**
+ * Clave versionada. La v1 guardaba identificadores de texto ("art-1") que hoy
+ * entrarían en un tipo `number` sin que nada lo detecte, porque la lectura usa
+ * una aserción y no valida. No se migra el objeto antiguo: convertirlo sería
+ * fabricar una sesión aparentemente válida a partir de otro modelo de datos.
+ */
+const KEY = "masaya-artisan-connect.session.v2";
 
 export function SessionProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<SesionUsuario | null>(null);

@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { PaymentPanel } from "@/components/pedidos/payment-receipt";
+import { DeliveryPanel, OrderAmounts, CancelledUnits } from "@/components/pedidos/delivery-panel";
+import { Link, useParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -9,17 +11,9 @@ import { StatusPair } from "@/components/pedidos/status-badges";
 import { AuditTimeline, OrderTimeline } from "@/components/pedidos/timelines";
 import { OrderChat } from "@/components/pedidos/order-chat";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -29,29 +23,46 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  changeOrderStatus,
-  confirmPayment,
-  getOrder,
-  getProduct,
-  setDelivery,
-} from "@/services/mock-api";
-import { nextOrderStates } from "@/lib/order-state";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { changeOrderStatus, getOrder, getProduct } from "@/services/mock-api";
+import { isTerminal, nextOrderStates, requiresConfirmedPayment } from "@/lib/order-state";
 import { formatDateTime } from "@/lib/format";
+import { orderTotal } from "@/lib/order-amounts";
 import { useCurrency } from "@/hooks/use-currency";
 import { useSession } from "@/hooks/use-session";
-import type { DeliveryMode, OrderStatus } from "@/types";
+import { useDocumentHead } from "@/hooks/use-document-head";
+import { ORDER_STATUS_LABELS } from "@/lib/labels";
+import type { OrderStatus } from "@/types";
+import { parseRouteId } from "@/lib/route-id";
+import { NotFound } from "@/app/not-found";
 
-const MODALIDADES: DeliveryMode[] = [
-  "Retiro en taller",
-  "Punto de encuentro",
-  "Entrega directa por el artesano",
-  "Otra",
-];
+/** Texto de cada acción del artesano, según el estado de destino (RF-005, RF-010). */
+const ACCION: Partial<Record<OrderStatus, string>> = {
+  aceptado: "Aceptar solicitud",
+  en_produccion: "Iniciar producción",
+  listo_para_entrega: "Marcar como listo para entrega",
+  entregado: "Marcar como entregado",
+};
 
-export const Route = createFileRoute("/panel/pedidos/$id")({
-  head: ({ params }) => ({
+export default function GestionPedido() {
+  const { id: idParam } = useParams<{ id: string }>();
+  const id = parseRouteId(idParam);
+  const queryClient = useQueryClient();
+  const { format } = useCurrency();
+  const { usuario } = useSession();
+  const autor = usuario?.nombre ?? "Artesano";
+
+  useDocumentHead({
+    title: "Gestión del pedido | Panel del artesano",
     meta: [
-      { title: "Gestión del pedido | Panel del artesano" },
       {
         name: "description",
         content:
@@ -59,28 +70,21 @@ export const Route = createFileRoute("/panel/pedidos/$id")({
       },
       { property: "og:title", content: "Gestión del pedido | Panel del artesano" },
       { property: "og:description", content: "Control del flujo del pedido bajo demanda." },
-      { property: "og:url", content: `/panel/pedidos/${params.id}` },
+      { property: "og:url", content: `/panel/pedidos/${id}` },
       { name: "robots", content: "noindex" },
     ],
-    links: [{ rel: "canonical", href: `/panel/pedidos/${params.id}` }],
-  }),
-  component: GestionPedido,
-});
-
-function GestionPedido() {
-  const { id } = Route.useParams();
-  const queryClient = useQueryClient();
-  const { format } = useCurrency();
-  const { usuario } = useSession();
-  const autor = usuario?.nombre ?? "Artesano";
+    canonical: `/panel/pedidos/${id}`,
+  });
 
   const [motivo, setMotivo] = useState("");
   const [rechazoAbierto, setRechazoAbierto] = useState(false);
-  const [modalidad, setModalidad] = useState<DeliveryMode>("Retiro en taller");
-  const [detalle, setDetalle] = useState("");
-  const [costo, setCosto] = useState("0");
+  const [aceptacionAbierta, setAceptacionAbierta] = useState(false);
 
-  const pedido = useQuery({ queryKey: ["pedido", id], queryFn: () => getOrder(id) });
+  const pedido = useQuery({
+    queryKey: ["pedido", id],
+    queryFn: () => getOrder(id!),
+    enabled: id !== undefined,
+  });
   const producto = useQuery({
     queryKey: ["producto", pedido.data?.productoId],
     queryFn: () => getProduct(pedido.data!.productoId),
@@ -88,45 +92,31 @@ function GestionPedido() {
   });
 
   const refrescar = () => {
-    void queryClient.invalidateQueries({ queryKey: ["pedido", id] });
-    void queryClient.invalidateQueries({ queryKey: ["pedidos"] });
-    void queryClient.invalidateQueries({ queryKey: ["resumen-artesano"] });
+    void queryClient.invalidateQueries();
   };
 
   const cambiar = useMutation({
     mutationFn: (v: { estado: OrderStatus; motivo?: string }) =>
-      changeOrderStatus(id, v.estado, autor, v.motivo),
+      changeOrderStatus(id!, v.estado, autor, v.motivo),
     onSuccess: (o) => {
       refrescar();
       setRechazoAbierto(false);
-      toast.success(`Pedido actualizado a "${o.estado}"`);
+      setAceptacionAbierta(false);
+      toast.success(`Pedido actualizado a "${ORDER_STATUS_LABELS[o.estado]}"`);
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const confirmar = useMutation({
-    mutationFn: () => confirmPayment(id, autor),
-    onSuccess: () => {
-      refrescar();
-      toast.success("Pago confirmado");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const entrega = useMutation({
-    mutationFn: () => setDelivery(id, modalidad, detalle.trim() || undefined, Number(costo) || 0, autor),
-    onSuccess: () => {
-      refrescar();
-      toast.success("Datos de entrega guardados");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
+  if (id === undefined) return <NotFound />;
 
   if (pedido.isError) {
     return (
       <SiteLayout>
         <div className="mx-auto max-w-3xl px-4 py-16">
-          <ErrorState mensaje="No pudimos cargar este pedido." onRetry={() => void pedido.refetch()} />
+          <ErrorState
+            mensaje="No pudimos cargar este pedido."
+            onRetry={() => void pedido.refetch()}
+          />
         </div>
       </SiteLayout>
     );
@@ -144,21 +134,25 @@ function GestionPedido() {
   }
 
   const o = pedido.data;
-  const siguientes = nextOrderStates(o.estado).filter((s) => s !== "Cancelado");
-  const total = o.precioUnitario * o.cantidad + o.costosAdicionales + o.costoEntrega;
+  const siguientes = nextOrderStates(o.estado, o.opcion).filter((s) => s !== "cancelado");
+  const total = o.cotizacionCongelada?.total ?? orderTotal(o);
+  const cerrado = isTerminal(o.estado);
+  // D-2: la interfaz refleja la precondición que el servicio impone.
+  const esperaPago = (s: OrderStatus) =>
+    requiresConfirmedPayment(o.estado, s) && o.estadoPago !== "confirmado";
 
   return (
     <SiteLayout>
       <div className="mx-auto max-w-5xl px-4 py-8">
         <Link
           to="/panel/pedidos"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          className="inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
           Volver a pedidos
         </Link>
 
-        <header className="mt-4 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
+        <header className="mt-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0">
             <h1 className="font-display text-3xl font-bold">Pedido {o.codigo}</h1>
             <p className="text-sm text-muted-foreground">
@@ -192,7 +186,9 @@ function GestionPedido() {
               <dl className="mt-4 space-y-2 text-sm">
                 <div>
                   <dt className="font-medium">Personalización</dt>
-                  <dd className="text-muted-foreground">{o.personalizacion}</dd>
+                  <dd className="text-muted-foreground">
+                    {o.personalizacion || "Sin modificaciones"}
+                  </dd>
                 </div>
                 {o.observaciones ? (
                   <div>
@@ -208,8 +204,18 @@ function GestionPedido() {
                 Avance del pedido
               </h2>
               <div className="mt-4">
-                <OrderTimeline estado={o.estado} />
+                <OrderTimeline estado={o.estado} opcion={o.opcion} />
               </div>
+              {o.motivoRechazo ? (
+                <p className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                  Motivo del rechazo: {o.motivoRechazo}
+                </p>
+              ) : null}
+              {o.motivoCancelacion ? (
+                <p className="mt-4 rounded-lg border bg-muted p-3 text-sm text-muted-foreground">
+                  Motivo de cancelación: {o.motivoCancelacion}
+                </p>
+              ) : null}
             </section>
 
             <section aria-labelledby="mensajes">
@@ -229,7 +235,8 @@ function GestionPedido() {
             </section>
           </div>
 
-          <aside className="space-y-6">
+          {/* En móvil, las acciones del artesano van primero. */}
+          <aside className="order-first space-y-6 lg:order-none">
             <section className="rounded-xl border bg-card p-5" aria-labelledby="acciones">
               <h2 id="acciones" className="text-base font-semibold">
                 Acciones
@@ -241,19 +248,47 @@ function GestionPedido() {
               ) : (
                 <div className="mt-3 space-y-2">
                   {siguientes
-                    .filter((s) => s !== "Rechazado")
+                    .filter((s) => s !== "rechazado")
                     .map((s) => (
-                      <Button
-                        key={s}
-                        className="w-full touch-target"
-                        disabled={cambiar.isPending}
-                        onClick={() => cambiar.mutate({ estado: s })}
-                      >
-                        {s === "Aceptado" ? "Aceptar solicitud" : `Marcar como "${s}"`}
-                      </Button>
+                      <div key={s} className="space-y-2">
+                        <Button
+                          className="w-full touch-target"
+                          disabled={
+                            cambiar.isPending ||
+                            esperaPago(s) ||
+                            (s === "aceptado" &&
+                              (!o.entrega ||
+                                !producto.data ||
+                                producto.data.unidadesDisponibles < o.cantidad))
+                          }
+                          aria-describedby={esperaPago(s) ? `espera-${s}` : undefined}
+                          onClick={() => {
+                            if (s === "aceptado") setAceptacionAbierta(true);
+                            else cambiar.mutate({ estado: s });
+                          }}
+                        >
+                          {ACCION[s] ?? ORDER_STATUS_LABELS[s]}
+                        </Button>
+                        {s === "aceptado" ? (
+                          <p className="text-sm text-muted-foreground">
+                            {!o.entrega
+                              ? "Guarda la cotización de entrega antes de aceptar."
+                              : producto.data && producto.data.unidadesDisponibles < o.cantidad
+                                ? "Ya no hay unidades suficientes para aceptar."
+                                : `Se reservarán ${o.cantidad} unidades y se congelará el total de ${format(total)}.`}
+                          </p>
+                        ) : null}
+                        {esperaPago(s) ? (
+                          <p id={`espera-${s}`} className="text-sm text-muted-foreground">
+                            {o.estadoPago === "registrado"
+                              ? "Confirma primero el pago del comprador; después podrás avanzar el pedido."
+                              : "El comprador todavía no registra el pago. El pedido avanza cuando el pago está confirmado."}
+                          </p>
+                        ) : null}
+                      </div>
                     ))}
 
-                  {siguientes.includes("Rechazado") ? (
+                  {siguientes.includes("rechazado") ? (
                     <Dialog open={rechazoAbierto} onOpenChange={setRechazoAbierto}>
                       <DialogTrigger asChild>
                         <Button variant="outline" className="w-full touch-target">
@@ -273,14 +308,20 @@ function GestionPedido() {
                             id="motivo-rechazo"
                             rows={4}
                             maxLength={200}
+                            aria-describedby="ayuda-rechazo"
                             value={motivo}
                             onChange={(e) => setMotivo(e.target.value)}
                           />
+                          <p id="ayuda-rechazo" className="text-xs text-muted-foreground">
+                            Escribe al menos 5 caracteres. El rechazo es definitivo.
+                          </p>
                         </div>
                         <Button
                           className="touch-target"
                           disabled={motivo.trim().length < 5 || cambiar.isPending}
-                          onClick={() => cambiar.mutate({ estado: "Rechazado", motivo: motivo.trim() })}
+                          onClick={() =>
+                            cambiar.mutate({ estado: "rechazado", motivo: motivo.trim() })
+                          }
                         >
                           Confirmar rechazo
                         </Button>
@@ -291,100 +332,51 @@ function GestionPedido() {
               )}
             </section>
 
-            <section className="rounded-xl border bg-card p-5" aria-labelledby="entrega">
-              <h2 id="entrega" className="text-base font-semibold">
-                Entrega
-              </h2>
-              <form
-                className="mt-3 space-y-4"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  entrega.mutate();
-                }}
-              >
-                <div className="space-y-2">
-                  <Label htmlFor="modalidad">Modalidad</Label>
-                  <Select value={modalidad} onValueChange={(v) => setModalidad(v as DeliveryMode)}>
-                    <SelectTrigger id="modalidad" className="min-h-11">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {MODALIDADES.map((m) => (
-                        <SelectItem key={m} value={m}>
-                          {m}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="detalle-entrega">Detalle acordado</Label>
-                  <Textarea
-                    id="detalle-entrega"
-                    rows={3}
-                    maxLength={200}
-                    placeholder="Ej. Parque central de Masaya, sábado 10:00 a. m."
-                    value={detalle}
-                    onChange={(e) => setDetalle(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="costo-entrega">Costo de entrega (C$)</Label>
-                  <Input
-                    id="costo-entrega"
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    className="min-h-11"
-                    value={costo}
-                    onChange={(e) => setCosto(e.target.value)}
-                  />
-                </div>
-                <Button type="submit" variant="outline" className="w-full touch-target" disabled={entrega.isPending}>
-                  Guardar entrega
-                </Button>
-              </form>
-              {o.entrega ? (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  Acordado: {o.entrega.modalidad}
-                  {o.entrega.detalle ? ` — ${o.entrega.detalle}` : ""}
-                </p>
-              ) : null}
-            </section>
-
+            {/* El pago va antes que la entrega: confirmarlo es la acción que desbloquea la producción. */}
             <section className="rounded-xl border bg-card p-5" aria-labelledby="pago">
               <h2 id="pago" className="text-base font-semibold">
                 Pago
               </h2>
-              <dl className="mt-3 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-muted-foreground">Total del pedido</dt>
-                  <dd className="font-semibold text-primary">{format(total)}</dd>
-                </div>
-              </dl>
-              {o.pago ? (
-                <div className="mt-3 space-y-1 text-sm text-muted-foreground">
-                  <p>Método: {o.pago.metodo}</p>
-                  {o.pago.referencia ? <p>Referencia: {o.pago.referencia}</p> : null}
-                  <p>Registrado: {formatDateTime(o.pago.registradoEn)}</p>
-                </div>
-              ) : (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  El comprador aún no ha registrado el pago.
-                </p>
-              )}
-              {o.estadoPago === "Pago registrado" ? (
-                <Button
-                  className="mt-4 w-full touch-target"
-                  disabled={confirmar.isPending}
-                  onClick={() => confirmar.mutate()}
-                >
-                  Confirmar pago recibido
-                </Button>
-              ) : null}
+              <OrderAmounts order={o} />
+              <PaymentPanel order={o} onChanged={refrescar} />
             </section>
+
+            <section className="rounded-xl border bg-card p-5" aria-labelledby="entrega">
+              <h2 id="entrega" className="text-base font-semibold">
+                Entrega
+              </h2>
+              <DeliveryPanel
+                key={`${o.id}-${o.entrega?.modalidad}-${o.entrega?.detalle}-${o.entrega?.notasCotizacion}-${o.entrega?.fechaRecogida}-${o.costoEntrega}-${o.estado}`}
+                order={o}
+                autor={autor}
+                onChanged={refrescar}
+                editable
+              />
+            </section>
+            <CancelledUnits order={o} autor={autor} onChanged={refrescar} />
           </aside>
         </div>
+        <AlertDialog open={aceptacionAbierta} onOpenChange={setAceptacionAbierta}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Aceptar la solicitud {o.codigo}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Se reservarán {o.cantidad} unidades. La disponibilidad se comprobará nuevamente y la
+                modalidad y los importes quedarán congelados.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <OrderAmounts order={o} />
+            <AlertDialogFooter>
+              <AlertDialogCancel>Volver</AlertDialogCancel>
+              <AlertDialogAction
+                disabled={cambiar.isPending}
+                onClick={() => cambiar.mutate({ estado: "aceptado" })}
+              >
+                Aceptar y reservar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </SiteLayout>
   );
