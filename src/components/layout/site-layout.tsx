@@ -1,4 +1,5 @@
-import { resetDemo } from "@/services/mock-api";
+import { getPersistenceStatus, resetDemo } from "@/services/mock-api";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Link, NavLink, useLocation, useNavigate } from "react-router";
 import { useEffect, useState, type ReactNode } from "react";
@@ -336,10 +337,36 @@ function Footer() {
   );
 }
 
+/**
+ * Avisa cuando la demo no puede guardar sin sobrescribir datos que no logró leer.
+ * Nada se borra hasta que la persona elige «Restablecer datos de demostración».
+ */
+function AvisoPersistencia() {
+  const { data } = useQuery({
+    queryKey: ["persistencia-demo"],
+    queryFn: getPersistenceStatus,
+    staleTime: Infinity,
+  });
+  if (!data || data.modo === "guardando") return null;
+  return (
+    <div role="alert" className="border-b border-destructive/30 bg-destructive/10">
+      <p className="mx-auto max-w-7xl px-4 py-3 text-sm text-destructive">
+        {data.motivo === "otra_version"
+          ? "Los datos guardados pertenecen a una versión anterior de la demostración y no se cargaron. "
+          : "No pudimos leer los datos guardados de la demostración. "}
+        Se muestra el escenario inicial y los cambios de esta sesión no se guardarán, para no
+        sobrescribir lo guardado. Usa «Restablecer datos de demostración», al pie de la página, para
+        descartarlos y volver a guardar.
+      </p>
+    </div>
+  );
+}
+
 export function SiteLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
+      <AvisoPersistencia />
       <main className="flex-1">{children}</main>
       <Footer />
     </div>

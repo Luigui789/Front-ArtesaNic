@@ -53,14 +53,29 @@ async function operar<R>(
   }
 }
 
-/** Devuelve el estado guardado, o `null` si no hay, si es de otra versión o si falla la lectura. */
-export async function leerInstantanea<T>(): Promise<T | null> {
+/**
+ * Resultado de leer la instantánea. Se distinguen los casos porque no son
+ * equivalentes: «vacía» permite empezar desde el seed y guardar, pero «otra
+ * versión» o «error» significan que hay datos que no se pudieron usar, y
+ * guardar encima los borraría sin avisar.
+ */
+export type LecturaInstantanea<T> =
+  | { estado: "vacia" }
+  | { estado: "cargada"; datos: T }
+  | { estado: "otra_version"; version: number }
+  | { estado: "error"; mensaje: string };
+
+export async function leerInstantanea<T>(): Promise<LecturaInstantanea<T>> {
   try {
-    if (typeof indexedDB === "undefined") return null;
+    if (typeof indexedDB === "undefined") return { estado: "vacia" };
     const guardada = await operar<Instantanea<T> | undefined>("readonly", (a) => a.get(CLAVE));
-    return guardada && guardada.version === VERSION_INSTANTANEA ? guardada.datos : null;
-  } catch {
-    return null;
+    if (!guardada) return { estado: "vacia" };
+    if (guardada.version !== VERSION_INSTANTANEA) {
+      return { estado: "otra_version", version: guardada.version };
+    }
+    return { estado: "cargada", datos: guardada.datos };
+  } catch (error) {
+    return { estado: "error", mensaje: error instanceof Error ? error.message : String(error) };
   }
 }
 

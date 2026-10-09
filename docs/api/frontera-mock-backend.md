@@ -16,7 +16,7 @@
 | `registerPayment`, `correctPayment`, `reviewPayment`, `confirmPayment`; intentos y eventos anexados                | Contrato de intentos y revisiones, plazos, permisos de cada acción y archivos validados |
 | `getPaymentReceipt(pedidoId, intentoId, comprobanteId, sesion)`                                                    | Sesión validada por servidor y archivos privados; el frontend solo simula el control    |
 | Foto y portada en `updateArtisan`                                                                                  | Multipart, procesamiento de imágenes y verificación de propiedad                        |
-| `mock-persistence.ts` y `resetDemo`                                                                                | No cruzan la frontera: herramientas locales del prototipo                               |
+| `mock-persistence.ts`, `resetDemo` y `getPersistenceStatus`                                                                                | No cruzan la frontera: herramientas locales del prototipo                               |
 
 `getOrder` y listados entregan metadatos, sin imágenes de comprobantes. IndexedDB es accesible al propietario del navegador; no equivale a almacenamiento privado del backend. La serialización protege una instancia y revierte ante error de guardado; no prueba concurrencia distribuida.
 

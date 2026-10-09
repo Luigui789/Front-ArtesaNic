@@ -47,10 +47,42 @@ const movements = applyScenarioUnits(products, orders);
 
 let store = { categories, artisans, products, orders, messages, receiptFiles, movements };
 const initial = structuredClone(store);
-const ready = leerInstantanea<typeof store>().then((saved) => {
-  if (saved) store = saved;
+/**
+ * Estado de la persistencia de la demo. Si había datos guardados que no se
+ * pudieron usar (error de lectura u otra versión), el mock trabaja solo en
+ * memoria y no guarda: hacerlo sobrescribiría esos datos sin avisar. La
+ * interfaz lo comunica y «Restablecer» es la única forma de reemplazarlos.
+ */
+export type PersistenceStatus =
+  { modo: "guardando" } | { modo: "solo_memoria"; motivo: "error_lectura" | "otra_version" };
+
+let persistencia: PersistenceStatus = { modo: "guardando" };
+
+const ready = leerInstantanea<typeof store>().then((lectura) => {
+  if (lectura.estado === "cargada") store = lectura.datos;
+  else if (lectura.estado === "error") {
+    persistencia = { modo: "solo_memoria", motivo: "error_lectura" };
+  } else if (lectura.estado === "otra_version") {
+    persistencia = { modo: "solo_memoria", motivo: "otra_version" };
+  }
 });
 let queue: Promise<unknown> = Promise.resolve();
+
+export async function getPersistenceStatus(): Promise<PersistenceStatus> {
+  await ready;
+  return persistencia;
+}
+
+async function guardar() {
+  if (persistencia.modo !== "guardando") return;
+  try {
+    await guardarInstantanea(store);
+  } catch {
+    throw new Error(
+      "No se pudo guardar en el almacenamiento del navegador; el cambio no se aplicó. Intenta de nuevo o libera espacio.",
+    );
+  }
+}
 
 /** Taller cuyo panel se demuestra en el prototipo. */
 export const DEMO_ARTISAN_ID = TALLER_DEMO_ID;
@@ -95,7 +127,7 @@ async function api<T>(fn: () => T, ms?: number, write = false): Promise<T> {
     const before = write ? structuredClone(store) : undefined;
     try {
       const result = structuredClone(fn());
-      if (write) await guardarInstantanea(store);
+      if (write) await guardar();
       return result;
     } catch (error) {
       if (before) store = before;
@@ -111,6 +143,8 @@ export async function resetDemo(): Promise<void> {
   const operation = queue.then(async () => {
     await borrarInstantanea();
     store = structuredClone(initial);
+    // Tras borrar lo ilegible u obsoleto, la demo vuelve a guardar normalmente.
+    persistencia = { modo: "guardando" };
   });
   queue = operation.catch(() => undefined);
   await operation;
