@@ -17,7 +17,7 @@ import { useSession } from "@/hooks/use-session";
 const POLL_MS = 20000;
 
 export interface NotificacionMensaje {
-  pedidoId: string;
+  pedidoId: number;
   codigo: string;
   autorNombre: string;
   texto: string;
@@ -25,13 +25,17 @@ export interface NotificacionMensaje {
 }
 
 interface NotificationsContextValue {
-  /** Mensajes no leídos por pedido. */
-  noLeidos: Record<string, number>;
+  /**
+   * Mensajes no leídos por pedido. La clave es el identificador del pedido:
+   * `Record<number, …>` no es exigido por el compilador (TypeScript admite
+   * índice numérico sobre firma de texto), pero el tipo debe decir la verdad.
+   */
+  noLeidos: Record<number, number>;
   /** Total de mensajes no leídos. */
   total: number;
   /** Últimas notificaciones recibidas (más recientes primero). */
   recientes: NotificacionMensaje[];
-  marcarLeido: (pedidoId: string) => void;
+  marcarLeido: (pedidoId: number) => void;
   marcarTodoLeido: () => void;
 }
 
@@ -40,9 +44,9 @@ const NotificationsContext = createContext<NotificationsContextValue | null>(nul
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const { usuario } = useSession();
   const rol = usuario?.rol ?? "comprador";
-  const [noLeidos, setNoLeidos] = useState<Record<string, number>>({});
+  const [noLeidos, setNoLeidos] = useState<Record<number, number>>({});
   const [recientes, setRecientes] = useState<NotificacionMensaje[]>([]);
-  const desde = useRef<Record<string, string>>({});
+  const desde = useRef<Record<number, string>>({});
   const inicio = useRef<string>(new Date().toISOString());
 
   // Al cambiar de rol se reinician los contadores de la sesión simulada.
@@ -104,7 +108,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     };
   }, [rol]);
 
-  const marcarLeido = useCallback((pedidoId: string) => {
+  const marcarLeido = useCallback((pedidoId: number) => {
     setNoLeidos((prev) => {
       if (!prev[pedidoId]) return prev;
       const next = { ...prev };
@@ -130,9 +134,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     [noLeidos, recientes, marcarLeido, marcarTodoLeido],
   );
 
-  return (
-    <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>
-  );
+  return <NotificationsContext.Provider value={value}>{children}</NotificationsContext.Provider>;
 }
 
 export function useNotifications() {

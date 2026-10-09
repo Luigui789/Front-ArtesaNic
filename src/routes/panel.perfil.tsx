@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { ImageUploader } from "@/components/productos/image-uploader";
+import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -13,34 +14,42 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DEMO_ARTISAN_ID, getArtisan, updateArtisan } from "@/services/mock-api";
 import { useSession } from "@/hooks/use-session";
+import { useDocumentHead } from "@/hooks/use-document-head";
 
 const esquema = z.object({
-  nombreTaller: z.string().trim().min(3, "Escribe el nombre del taller.").max(80, "Máximo 80 caracteres."),
-  responsable: z.string().trim().min(3, "Escribe el nombre del responsable.").max(80, "Máximo 80 caracteres."),
-  historia: z.string().trim().min(20, "Cuenta la historia del taller (mínimo 20 caracteres).").max(800, "Máximo 800 caracteres."),
-  ubicacion: z.string().trim().min(5, "Indica la ubicación del taller.").max(120, "Máximo 120 caracteres."),
-  horario: z.string().trim().min(5, "Indica el horario de atención.").max(120, "Máximo 120 caracteres."),
-  telefono: z.string().trim().regex(/^[0-9]{4}[ -]?[0-9]{4}$/, "Teléfono de 8 dígitos."),
-  whatsapp: z.string().trim().regex(/^[0-9]{4}[ -]?[0-9]{4}$/, "WhatsApp de 8 dígitos."),
-});
-
-export const Route = createFileRoute("/panel/perfil")({
-  head: () => ({
-    meta: [
-      { title: "Perfil del taller | Panel del artesano" },
-      {
-        name: "description",
-        content:
-          "Actualiza la información pública de tu taller: historia, ubicación, horario y datos de contacto.",
-      },
-      { property: "og:title", content: "Perfil del taller | Panel del artesano" },
-      { property: "og:description", content: "Perfilamiento del taller artesanal de Masaya." },
-      { property: "og:url", content: "/panel/perfil" },
-      { name: "robots", content: "noindex" },
-    ],
-    links: [{ rel: "canonical", href: "/panel/perfil" }],
-  }),
-  component: PerfilTaller,
+  nombreTaller: z
+    .string()
+    .trim()
+    .min(3, "Escribe el nombre del taller.")
+    .max(80, "Máximo 80 caracteres."),
+  responsable: z
+    .string()
+    .trim()
+    .min(3, "Escribe el nombre del responsable.")
+    .max(80, "Máximo 80 caracteres."),
+  historia: z
+    .string()
+    .trim()
+    .min(20, "Cuenta la historia del taller (mínimo 20 caracteres).")
+    .max(800, "Máximo 800 caracteres."),
+  ubicacion: z
+    .string()
+    .trim()
+    .min(5, "Indica la ubicación del taller.")
+    .max(120, "Máximo 120 caracteres."),
+  horario: z
+    .string()
+    .trim()
+    .min(5, "Indica el horario de atención.")
+    .max(120, "Máximo 120 caracteres."),
+  telefono: z
+    .string()
+    .trim()
+    .regex(/^[0-9]{4}[ -]?[0-9]{4}$/, "Teléfono de 8 dígitos."),
+  whatsapp: z
+    .string()
+    .trim()
+    .regex(/^[0-9]{4}[ -]?[0-9]{4}$/, "WhatsApp de 8 dígitos."),
 });
 
 type Campos = z.infer<typeof esquema>;
@@ -55,18 +64,43 @@ const VACIO: Campos = {
   whatsapp: "",
 };
 
-function PerfilTaller() {
+export default function PerfilTaller() {
+  useDocumentHead({
+    title: "Perfil del taller | Panel del artesano",
+    meta: [
+      {
+        name: "description",
+        content:
+          "Actualiza la información pública de tu taller: historia, ubicación, horario y datos de contacto.",
+      },
+      { property: "og:title", content: "Perfil del taller | Panel del artesano" },
+      { property: "og:description", content: "Perfilamiento del taller artesanal de Masaya." },
+      { property: "og:url", content: "/panel/perfil" },
+      { name: "robots", content: "noindex" },
+    ],
+    canonical: "/panel/perfil",
+  });
+
   const { usuario } = useSession();
   const queryClient = useQueryClient();
   const artesanoId = usuario?.artesanoId ?? DEMO_ARTISAN_ID;
 
-  const artesano = useQuery({ queryKey: ["artesano", artesanoId], queryFn: () => getArtisan(artesanoId) });
+  const artesano = useQuery({
+    queryKey: ["artesano", artesanoId],
+    queryFn: () => getArtisan(artesanoId),
+  });
+  const [foto, setFoto] = useState("");
+  const [portada, setPortada] = useState("");
+  const [fotoBusy, setFotoBusy] = useState(false);
+  const [portadaBusy, setPortadaBusy] = useState(false);
   const [campos, setCampos] = useState<Campos>(VACIO);
   const [errores, setErrores] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!artesano.data) return;
     const a = artesano.data;
+    setFoto(a.fotoUrl);
+    setPortada(a.portadaUrl);
     setCampos({
       nombreTaller: a.nombreTaller,
       responsable: a.responsable,
@@ -79,9 +113,10 @@ function PerfilTaller() {
   }, [artesano.data]);
 
   const guardar = useMutation({
-    mutationFn: (data: Campos) => updateArtisan(artesanoId, data),
+    mutationFn: (data: Campos) =>
+      updateArtisan(artesanoId, { ...data, fotoUrl: foto, portadaUrl: portada }),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["artesano"] });
+      void queryClient.invalidateQueries();
       toast.success("Perfil del taller actualizado");
     },
     onError: (e: Error) => toast.error(e.message),
@@ -102,11 +137,7 @@ function PerfilTaller() {
     guardar.mutate(r.data);
   };
 
-  const campo = (
-    id: keyof Campos,
-    label: string,
-    tipo: "input" | "textarea" = "input",
-  ) => (
+  const campo = (id: keyof Campos, label: string, tipo: "input" | "textarea" = "input") => (
     <div className="space-y-2">
       <Label htmlFor={id}>{label} *</Label>
       {tipo === "input" ? (
@@ -140,7 +171,7 @@ function PerfilTaller() {
       <div className="mx-auto max-w-3xl px-4 py-8">
         <Link
           to="/panel"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          className="inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
           Volver al panel
@@ -162,7 +193,25 @@ function PerfilTaller() {
             ))}
           </div>
         ) : (
-          <form onSubmit={enviar} noValidate className="mt-8 space-y-6 rounded-xl border bg-card p-5">
+          <form
+            onSubmit={enviar}
+            noValidate
+            className="mt-8 space-y-6 rounded-xl border bg-card p-5"
+          >
+            <ImageUploader
+              label="Foto del taller"
+              aspectRatio="1 / 1"
+              value={foto}
+              onChange={setFoto}
+              onBusyChange={setFotoBusy}
+            />
+            <ImageUploader
+              label="Imagen de portada"
+              aspectRatio="4 / 1"
+              value={portada}
+              onChange={setPortada}
+              onBusyChange={setPortadaBusy}
+            />
             {campo("nombreTaller", "Nombre del taller")}
             {campo("responsable", "Persona responsable")}
             {campo("historia", "Historia del taller", "textarea")}
@@ -174,13 +223,15 @@ function PerfilTaller() {
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row">
-              <Button type="submit" className="touch-target" disabled={guardar.isPending}>
+              <Button
+                type="submit"
+                className="touch-target"
+                disabled={guardar.isPending || fotoBusy || portadaBusy}
+              >
                 {guardar.isPending ? "Guardando…" : "Guardar cambios"}
               </Button>
               <Button asChild type="button" variant="outline" className="touch-target">
-                <Link to="/artesano/$id" params={{ id: artesanoId }}>
-                  Ver perfil público
-                </Link>
+                <Link to={`/artesano/${artesanoId}`}>Ver perfil público</Link>
               </Button>
             </div>
           </form>

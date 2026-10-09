@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800" role="img" aria-label="Comprobante de transferencia simulado">
+  <rect width="600" height="800" fill="#fbf8f3"/>
+  <rect x="30" y="30" width="540" height="740" rx="16" fill="#ffffff" stroke="#d8cfc2" stroke-width="2"/>
+  <rect x="30" y="30" width="540" height="110" rx="16" fill="#8a4b2d"/>
+  <rect x="30" y="110" width="540" height="30" fill="#8a4b2d"/>
+  <text x="300" y="80" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#ffffff" text-anchor="middle">Comprobante de transferencia</text>
+  <text x="300" y="118" font-family="Arial, sans-serif" font-size="18" fill="#f3e3d6" text-anchor="middle">DOCUMENTO SIMULADO · SIN VALOR</text>
+  <g font-family="Arial, sans-serif" font-size="20" fill="#3b2a20">
+    <text x="70" y="210">Banco</text><text x="530" y="210" text-anchor="end">Banco de demostración</text>
+    <text x="70" y="270">Cuenta destino</text><text x="530" y="270" text-anchor="end">Taller de Cuero Mendoza</text>
+    <text x="70" y="330">Referencia</text><text x="530" y="330" text-anchor="end">TRF-0000</text>
+    <text x="70" y="390">Fecha</text><text x="530" y="390" text-anchor="end">dd/mm/aaaa</text>
+  </g>
+  <line x1="70" y1="440" x2="530" y2="440" stroke="#d8cfc2" stroke-width="2" stroke-dasharray="8 6"/>
+  <text x="70" y="510" font-family="Arial, sans-serif" font-size="22" fill="#3b2a20">Monto transferido</text>
+  <text x="530" y="510" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#8a4b2d" text-anchor="end">C$ ———</text>
+  <rect x="70" y="580" width="460" height="120" rx="12" fill="#f4ede4"/>
+  <text x="300" y="630" font-family="Arial, sans-serif" font-size="18" fill="#5c4a3d" text-anchor="middle">Imagen de muestra del prototipo ArtesaNic.</text>
+  <text x="300" y="662" font-family="Arial, sans-serif" font-size="18" fill="#5c4a3d" text-anchor="middle">Un comprobante no confirma el pago.</text>
+</svg>

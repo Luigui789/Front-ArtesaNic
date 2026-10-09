@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Clock, Facebook, Instagram, MapPin, Phone, MessageCircle } from "lucide-react";
 import { SiteLayout } from "@/components/layout/site-layout";
@@ -6,11 +6,17 @@ import { ProductCard, ProductCardSkeleton } from "@/components/catalogo/product-
 import { EmptyState, ErrorState } from "@/components/common/states";
 import { Badge } from "@/components/ui/badge";
 import { getArtisan, listMyProducts } from "@/services/mock-api";
+import { useDocumentHead } from "@/hooks/use-document-head";
+import { parseRouteId } from "@/lib/route-id";
+import { NotFound } from "@/app/not-found";
 
-export const Route = createFileRoute("/artesano/$id")({
-  head: ({ params }) => ({
+export default function PerfilArtesano() {
+  const { id: idParam } = useParams<{ id: string }>();
+  const id = parseRouteId(idParam);
+
+  useDocumentHead({
+    title: "Artesano | Artesanías de Masaya",
     meta: [
-      { title: "Artesano | Artesanías de Masaya" },
       {
         name: "description",
         content:
@@ -18,26 +24,32 @@ export const Route = createFileRoute("/artesano/$id")({
       },
       { property: "og:title", content: "Artesano | Artesanías de Masaya" },
       { property: "og:description", content: "Conoce el taller que elabora cada pieza en Masaya." },
-      { property: "og:url", content: `/artesano/${params.id}` },
+      { property: "og:url", content: `/artesano/${id}` },
     ],
-    links: [{ rel: "canonical", href: `/artesano/${params.id}` }],
-  }),
-  component: PerfilArtesano,
-});
+    canonical: `/artesano/${id}`,
+  });
 
-function PerfilArtesano() {
-  const { id } = Route.useParams();
-  const artesano = useQuery({ queryKey: ["artesano", id], queryFn: () => getArtisan(id) });
+  const artesano = useQuery({
+    queryKey: ["artesano", id],
+    queryFn: () => getArtisan(id!),
+    enabled: id !== undefined,
+  });
   const productos = useQuery({
     queryKey: ["productos-artesano", id],
-    queryFn: () => listMyProducts(id),
+    queryFn: () => listMyProducts(id!),
+    enabled: id !== undefined,
   });
+
+  if (id === undefined) return <NotFound />;
 
   if (artesano.isError) {
     return (
       <SiteLayout>
         <div className="mx-auto max-w-3xl px-4 py-16">
-          <ErrorState mensaje="No pudimos cargar este taller." onRetry={() => void artesano.refetch()} />
+          <ErrorState
+            mensaje="No pudimos cargar este taller."
+            onRetry={() => void artesano.refetch()}
+          />
         </div>
       </SiteLayout>
     );
@@ -59,7 +71,7 @@ function PerfilArtesano() {
 
   return (
     <SiteLayout>
-      <div className="relative h-48 overflow-hidden bg-surface sm:h-64">
+      <div className="relative aspect-[2/1] overflow-hidden bg-surface sm:aspect-[4/1]">
         <img
           src={a.portadaUrl}
           alt={`Portada del taller ${a.nombreTaller}`}
@@ -70,17 +82,19 @@ function PerfilArtesano() {
       </div>
 
       <div className="mx-auto max-w-7xl px-4">
-        <header className="-mt-12 grid grid-cols-[auto_minmax(0,1fr)] items-end gap-4 rounded-xl border bg-card p-5 sm:flex sm:items-center">
+        <header className="relative z-10 -mt-8 grid grid-cols-[auto_minmax(0,1fr)] items-end gap-4 rounded-xl border bg-card p-5 sm:flex sm:items-center">
           <img
             src={a.fotoUrl}
             alt=""
             className="size-20 shrink-0 rounded-xl border-4 border-card object-cover"
           />
           <div className="min-w-0">
-            <h1 className="truncate font-display text-2xl font-bold sm:text-3xl">{a.nombreTaller}</h1>
+            <h1 className="break-words font-display text-2xl font-bold sm:text-3xl">
+              {a.nombreTaller}
+            </h1>
             <p className="text-sm text-muted-foreground">A cargo de {a.responsable}</p>
             <Badge variant="outline" className="mt-2 border-secondary/40 text-secondary">
-              {a.rubro}
+              {a.rubro.nombre}
             </Badge>
           </div>
         </header>
@@ -100,15 +114,24 @@ function PerfilArtesano() {
             </h2>
             <ul className="mt-3 space-y-2 text-sm">
               <li className="flex items-start gap-2">
-                <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <MapPin
+                  className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                  aria-hidden="true"
+                />
                 <span>{a.ubicacion}</span>
               </li>
               <li className="flex items-start gap-2">
-                <Clock className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <Clock
+                  className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                  aria-hidden="true"
+                />
                 <span>{a.horario}</span>
               </li>
               <li className="flex items-start gap-2">
-                <Phone className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <Phone
+                  className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                  aria-hidden="true"
+                />
                 <span>Teléfono: {a.telefono}</span>
               </li>
               <li className="flex items-start gap-2">
@@ -120,7 +143,10 @@ function PerfilArtesano() {
               </li>
               {a.redes.facebook ? (
                 <li className="flex items-start gap-2">
-                  <Facebook className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  <Facebook
+                    className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                    aria-hidden="true"
+                  />
                   <span className="break-all">{a.redes.facebook}</span>
                 </li>
               ) : null}

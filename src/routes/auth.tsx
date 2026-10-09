@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "react-router";
 import { useState } from "react";
 import { z } from "zod";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSession } from "@/hooks/use-session";
+import { useDocumentHead } from "@/hooks/use-document-head";
 import type { Role } from "@/types";
 
 const telefono = z
@@ -24,10 +25,10 @@ const esquemaRegistro = z.object({
   clave,
 });
 
-export const Route = createFileRoute("/auth")({
-  head: () => ({
+export default function Auth() {
+  useDocumentHead({
+    title: "Ingresar o crear cuenta | Artesanías de Masaya",
     meta: [
-      { title: "Ingresar o crear cuenta | Artesanías de Masaya" },
       {
         name: "description",
         content:
@@ -37,12 +38,9 @@ export const Route = createFileRoute("/auth")({
       { property: "og:description", content: "Acceso simulado para comprador y artesano." },
       { property: "og:url", content: "/auth" },
     ],
-    links: [{ rel: "canonical", href: "/auth" }],
-  }),
-  component: Auth,
-});
+    canonical: "/auth",
+  });
 
-function Auth() {
   const { ingresar } = useSession();
   const navigate = useNavigate();
   const [rol, setRol] = useState<Role>("comprador");
@@ -53,7 +51,8 @@ function Auth() {
 
   const entrar = (modo: "ingreso" | "registro") => (e: React.FormEvent) => {
     e.preventDefault();
-    const datos = modo === "ingreso" ? { telefono: tel, clave: pass } : { nombre, telefono: tel, clave: pass };
+    const datos =
+      modo === "ingreso" ? { telefono: tel, clave: pass } : { nombre, telefono: tel, clave: pass };
     const r = (modo === "ingreso" ? esquemaIngreso : esquemaRegistro).safeParse(datos);
     if (!r.success) {
       const map: Record<string, string> = {};
@@ -64,7 +63,7 @@ function Auth() {
     setErrores({});
     ingresar(rol, modo === "registro" ? nombre : undefined);
     toast.success(modo === "ingreso" ? "Sesión iniciada" : "Cuenta creada");
-    void navigate({ to: rol === "artesano" ? "/panel" : "/catalogo" });
+    void navigate(rol === "artesano" ? "/panel" : "/catalogo");
   };
 
   const campoRol = (
@@ -138,19 +137,28 @@ function Auth() {
         <p className="mt-1 text-sm text-muted-foreground">
           Prototipo de demostración: los datos son simulados y no se envían a ningún servidor.
         </p>
+        <p className="mt-3 rounded-lg border bg-surface p-3 text-sm text-muted-foreground">
+          El selector «Vista de demostración» de la cabecera es una herramienta del prototipo para
+          alternar entre las vistas de comprador y artesano. No inicia sesión ni verifica identidad:
+          en el sistema real, el acceso se hace en esta pantalla y el rol lo asigna el servidor.
+        </p>
 
         <Tabs defaultValue="ingreso" className="mt-8">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="ingreso" className="min-h-10">
+            <TabsTrigger value="ingreso" className="min-h-11">
               Ingresar
             </TabsTrigger>
-            <TabsTrigger value="registro" className="min-h-10">
+            <TabsTrigger value="registro" className="min-h-11">
               Crear cuenta
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="ingreso">
-            <form onSubmit={entrar("ingreso")} noValidate className="space-y-5 rounded-xl border bg-card p-5">
+            <form
+              onSubmit={entrar("ingreso")}
+              noValidate
+              className="space-y-5 rounded-xl border bg-card p-5"
+            >
               {campoRol}
               {campoTelefono("ingreso")}
               {campoClave("ingreso")}
@@ -161,7 +169,11 @@ function Auth() {
           </TabsContent>
 
           <TabsContent value="registro">
-            <form onSubmit={entrar("registro")} noValidate className="space-y-5 rounded-xl border bg-card p-5">
+            <form
+              onSubmit={entrar("registro")}
+              noValidate
+              className="space-y-5 rounded-xl border bg-card p-5"
+            >
               {campoRol}
               <div className="space-y-2">
                 <Label htmlFor="nombre">Nombre completo *</Label>

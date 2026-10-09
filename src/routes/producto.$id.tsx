@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { UnitAvailability } from "@/components/catalogo/unit-availability";
+import { Link, useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { ArrowRight, Clock, MapPin, Phone } from "lucide-react";
@@ -18,36 +19,43 @@ import {
 import { getArtisan, getProduct } from "@/services/mock-api";
 import { useCurrency } from "@/hooks/use-currency";
 import { TASA_CAMBIO } from "@/lib/format";
+import { useDocumentHead } from "@/hooks/use-document-head";
+import { parseRouteId } from "@/lib/route-id";
+import { NotFound } from "@/app/not-found";
 
-export const Route = createFileRoute("/producto/$id")({
-  head: ({ params }) => ({
+export default function DetalleProducto() {
+  const { id: idParam } = useParams<{ id: string }>();
+  const id = parseRouteId(idParam);
+  const { format } = useCurrency();
+  const [imagen, setImagen] = useState(0);
+
+  useDocumentHead({
+    title: "Producto artesanal | Artesanías de Masaya",
     meta: [
-      { title: "Producto artesanal | Artesanías de Masaya" },
       {
         name: "description",
         content:
           "Detalle del producto artesanal: precio, taller que lo elabora y solicitud de pedido personalizado.",
       },
       { property: "og:title", content: "Producto artesanal | Artesanías de Masaya" },
-      { property: "og:description", content: "Pieza artesanal de Masaya elaborada bajo pedido." },
-      { property: "og:url", content: `/producto/${params.id}` },
+      { property: "og:description", content: "Pieza artesanal de un taller de Masaya." },
+      { property: "og:url", content: `/producto/${id}` },
     ],
-    links: [{ rel: "canonical", href: `/producto/${params.id}` }],
-  }),
-  component: DetalleProducto,
-});
+    canonical: `/producto/${id}`,
+  });
 
-function DetalleProducto() {
-  const { id } = Route.useParams();
-  const { format } = useCurrency();
-  const [imagen, setImagen] = useState(0);
-
-  const producto = useQuery({ queryKey: ["producto", id], queryFn: () => getProduct(id) });
+  const producto = useQuery({
+    queryKey: ["producto", id],
+    queryFn: () => getProduct(id!),
+    enabled: id !== undefined,
+  });
   const artesano = useQuery({
     queryKey: ["artesano", producto.data?.artesanoId],
     queryFn: () => getArtisan(producto.data!.artesanoId),
     enabled: !!producto.data,
   });
+
+  if (id === undefined) return <NotFound />;
 
   if (producto.isError) {
     return (
@@ -136,26 +144,17 @@ function DetalleProducto() {
 
           <div>
             <Badge variant="outline" className="border-secondary/40 text-secondary">
-              {p.categoria}
+              {p.categoria.nombre}
             </Badge>
             <h1 className="mt-3 font-display text-3xl font-bold">{p.nombre}</h1>
 
+            <UnitAvailability product={p} />
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <p className="text-3xl font-bold text-primary">{format(p.precio)}</p>
               <CurrencySwitcher />
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
               Tasa simulada: 1 US$ = C$ {TASA_CAMBIO}
-            </p>
-
-            <p
-              className={`mt-4 inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm ${
-                p.disponible
-                  ? "border-success/30 bg-success/10 text-success"
-                  : "border-border bg-muted text-muted-foreground"
-              }`}
-            >
-              {p.disponible ? "✓ Disponible bajo pedido" : "✕ Temporalmente no disponible"}
             </p>
 
             <div className="mt-6">
@@ -166,14 +165,27 @@ function DetalleProducto() {
             </div>
 
             <div className="mt-8">
-              <Button asChild size="lg" className="w-full touch-target text-base sm:w-auto">
-                <Link to="/solicitar/$productId" params={{ productId: p.id }}>
-                  Solicitar pedido
-                  <ArrowRight className="size-5" aria-hidden="true" />
-                </Link>
-              </Button>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Enviarás una solicitud al taller. El artesano la acepta o la rechaza antes de producir.
+              {p.unidadesDisponibles > 0 ? (
+                <Button asChild size="lg" className="w-full touch-target text-base sm:w-auto">
+                  <Link to={`/solicitar/${p.id}`}>
+                    Solicitar pedido
+                    <ArrowRight className="size-5" aria-hidden="true" />
+                  </Link>
+                </Button>
+              ) : (
+                <>
+                  <Button size="lg" disabled aria-describedby="no-units">
+                    Solicitar pedido
+                  </Button>
+                  <p id="no-units" className="mt-2 text-sm">
+                    Sin unidades disponibles. Las reservas y las unidades por clasificar no pueden
+                    solicitarse.
+                  </p>
+                </>
+              )}
+              <p className="mt-2 max-w-md text-sm text-muted-foreground">
+                Enviarás una solicitud al taller. El artesano la revisa y, si la acepta, coordinan
+                el pago y la entrega.
               </p>
             </div>
 
@@ -204,9 +216,8 @@ function DetalleProducto() {
                       {artesano.data.telefono}
                     </p>
                     <Link
-                      to="/artesano/$id"
-                      params={{ id: artesano.data.id }}
-                      className="mt-2 inline-flex text-sm font-medium text-primary hover:underline"
+                      to={`/artesano/${artesano.data.id}`}
+                      className="mt-1 inline-flex min-h-11 items-center text-sm font-medium text-primary hover:underline"
                     >
                       Ver perfil del taller
                     </Link>

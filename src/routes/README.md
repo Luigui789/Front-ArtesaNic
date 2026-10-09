@@ -1,41 +1,47 @@
-# Rutas del frontend
+# Routes
 
-El repositorio usa **TanStack Router y TanStack Start con rutas por archivos**. Ver [router.tsx](../router.tsx), [vite.config.ts](../../vite.config.ts) y [package.json](../../package.json). Esta documentación no migra el router.
+Cada archivo `.tsx` de este directorio es un **componente de página**. El
+enrutamiento **no** es por convención de nombre de archivo: el árbol de rutas se
+declara explícitamente en [`src/app/App.tsx`](../app/App.tsx) con `<Routes>` y
+`<Route>` de React Router.
 
-`__root.tsx` contiene el layout raíz y debe conservar `<Outlet />`. `src/routeTree.gen.ts` se genera automáticamente; no se edita a mano. No introducir convenciones de Next.js/Remix como `src/pages/` o `app/layout.tsx`.
+Los nombres de archivo con puntos (`panel.pedidos.$id.tsx`) son un vestigio de
+la plantilla original basada en TanStack Start. Se conservaron para minimizar el
+diff de la migración (ver [ADR-001](../../docs/adr/0001-sistema-de-routing.md)),
+pero **no tienen ningún efecto sobre la URL** — solo importa lo que diga
+`App.tsx`.
 
-## Rutas existentes en el código de referencia
+## Cómo agregar una ruta
 
-Referencia: main en commit 456f613b381d30136f1d9949eef57a5f54a1508b. Las rutas de índice pueden normalizar la barra final; se muestran aquí como URLs de navegación.
+1. Crear el componente de página en este directorio y exportarlo por defecto:
 
-| Archivo | URL | Función |
-|---|---|---|
-| index.tsx | / | Inicio |
-| catalogo.tsx | /catalogo | Catálogo |
-| producto.$id.tsx | /producto/:id | Producto |
-| artesano.$id.tsx | /artesano/:id | Perfil público del taller |
-| solicitar.$productId.tsx | /solicitar/:productId | Solicitud actual de un producto |
-| pedidos.index.tsx | /pedidos | Pedidos del comprador |
-| pedidos.$id.tsx | /pedidos/:id | Detalle, pago y entrega del comprador |
-| mensajes.tsx | /mensajes | Conversaciones por pedido |
-| auth.tsx | /auth | Acceso simulado |
-| panel.index.tsx | /panel | Panel del artesano |
-| panel.pedidos.index.tsx | /panel/pedidos | Solicitudes/pedidos del artesano |
-| panel.pedidos.$id.tsx | /panel/pedidos/:id | Gestión del pedido |
-| panel.productos.tsx | /panel/productos | Productos |
-| panel.perfil.tsx | /panel/perfil | Perfil del taller |
+   ```tsx
+   export default function MiPagina() { ... }
+   ```
 
-Pago y chat se integran en las vistas actuales; no hay archivos de ruta independientes para `/pedidos/:id/pago`, `/pedidos/:id/mensajes` ni `/panel/solicitudes`. No presentarlos como implementados.
+2. Registrarlo en `src/app/App.tsx`:
 
-## Rutas propuestas para Inventario y Costos
+   ```tsx
+   import MiPagina from "@/routes/mi-pagina";
+   // ...
+   <Route path="/mi-ruta" element={<MiPagina />} />;
+   ```
 
-Estas rutas **todavía no existen**; pertenecen a la adaptación futura de RF-022 a RF-024.
+## Convenciones
 
-| Archivo propuesto | URL objetivo | Función |
-|---|---|---|
-| panel.inventario.index.tsx | /panel/inventario | Listado de cantidades y valorización |
-| panel.inventario.$productId.tsx | /panel/inventario/:productId | Movimientos, reservas, costos y clasificación |
+| Necesidad                       | Cómo se hace                                                       |
+| ------------------------------- | ------------------------------------------------------------------ |
+| Parámetro dinámico              | `<Route path="/producto/:id" …>` + `useParams<{ id: string }>()`   |
+| Parámetros de búsqueda (query)  | `useSearchParams()` — ver `catalogo.tsx` y `mensajes.tsx`          |
+| Navegación programática         | `useNavigate()` de `react-router`                                  |
+| Enlaces                         | `<Link to="/ruta">`; usar `<NavLink>` si se necesita estado activo |
+| Metadatos (`<title>`, `<meta>`) | hook `useDocumentHead` de `@/hooks/use-document-head`              |
+| Página 404                      | `src/app/not-found.tsx`, registrada como `<Route path="*">`        |
+| Errores de render               | `src/app/error-boundary.tsx`                                       |
 
-Agregar acceso «Inventario» en la navegación del artesano y «Ver inventario» desde Mis productos cuando se implemente. Las rutas reflejan pertenencia al taller; la autorización definitiva corresponde al servidor.
+## Lo que ya no existe
 
-Mantener el modelo de pedido por taller en la solicitud actual al adaptar RF-009/RF-018. No crear carrito universal ni rutas administrativas React. Consultar [módulos y reglas](../../docs/modulos-y-reglas.md) y [matriz de alineación](../../docs/alineacion.md) antes de ampliar navegación.
+`__root.tsx`, `routeTree.gen.ts`, `createFileRoute`, los loaders y las server
+functions se eliminaron al migrar a React Router. El shell HTML vive ahora en
+[`index.html`](../../index.html) y los proveedores globales (`QueryClient`,
+sesión, moneda, notificaciones) en `src/app/App.tsx`.

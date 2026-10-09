@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { UnitAvailability } from "@/components/catalogo/unit-availability";
+import { UNIT_TYPE_LABELS } from "@/lib/labels";
+import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -29,19 +31,27 @@ import {
 import {
   createProduct,
   DEMO_ARTISAN_ID,
+  listCategories,
   listMyProducts,
   updateProduct,
 } from "@/services/mock-api";
 import { useCurrency } from "@/hooks/use-currency";
 import { useSession } from "@/hooks/use-session";
-import { CATEGORIES, type Category, type Product } from "@/types";
+import { useDocumentHead } from "@/hooks/use-document-head";
+import type { Product, UnitType } from "@/types";
 
 const esquema = z.object({
-  nombre: z.string().trim().min(3, "El nombre debe tener al menos 3 caracteres.").max(80, "Máximo 80 caracteres."),
+  nombre: z
+    .string()
+    .trim()
+    .min(3, "El nombre debe tener al menos 3 caracteres.")
+    .max(80, "Máximo 80 caracteres."),
   precio: z
     .number({ message: "Ingresa un precio válido." })
     .positive("El precio debe ser mayor que cero.")
     .max(500000, "Precio demasiado alto."),
+  // El rubro deja de tener valor por defecto, así que pasa a validarse.
+  categoria: z.string().min(1, "Selecciona un rubro."),
   descripcion: z
     .string()
     .trim()
@@ -49,10 +59,10 @@ const esquema = z.object({
     .max(600, "Máximo 600 caracteres."),
 });
 
-export const Route = createFileRoute("/panel/productos")({
-  head: () => ({
+export default function MisProductos() {
+  useDocumentHead({
+    title: "Mis productos | Panel del artesano",
     meta: [
-      { title: "Mis productos | Panel del artesano" },
       {
         name: "description",
         content:
@@ -63,12 +73,9 @@ export const Route = createFileRoute("/panel/productos")({
       { property: "og:url", content: "/panel/productos" },
       { name: "robots", content: "noindex" },
     ],
-    links: [{ rel: "canonical", href: "/panel/productos" }],
-  }),
-  component: MisProductos,
-});
+    canonical: "/panel/productos",
+  });
 
-function MisProductos() {
   const { usuario } = useSession();
   const { format } = useCurrency();
   const queryClient = useQueryClient();
@@ -78,11 +85,18 @@ function MisProductos() {
   const [editando, setEditando] = useState<Product | null>(null);
   const [nombre, setNombre] = useState("");
   const [precio, setPrecio] = useState("");
-  const [categoria, setCategoria] = useState<Category>("Cuero y calzado");
+  // Código de categoría; vacío significa "sin elegir", no un valor por defecto.
+  const [categoria, setCategoria] = useState<string>("");
   const [descripcion, setDescripcion] = useState("");
+  const [tipoUnidades, setTipoUnidades] = useState<UnitType | "">("");
+  const [existencias, setExistencias] = useState("");
+  const [personalizable, setPersonalizable] = useState(false);
+  const [motivoAjuste, setMotivoAjuste] = useState("");
+  const [imageBusy, setImageBusy] = useState(false);
   const [imagen, setImagen] = useState<string | undefined>(undefined);
   const [errores, setErrores] = useState<Record<string, string>>({});
 
+  const categorias = useQuery({ queryKey: ["categorias"], queryFn: listCategories });
   const productos = useQuery({
     queryKey: ["mis-productos", artesanoId],
     queryFn: () => listMyProducts(artesanoId),
@@ -90,9 +104,13 @@ function MisProductos() {
 
   const abrir = (p?: Product) => {
     setEditando(p ?? null);
+    setTipoUnidades(p?.tipoUnidades ?? "");
+    setExistencias(p ? String(p.existenciasFisicas) : "");
+    setPersonalizable(p?.admitePersonalizacion ?? false);
+    setMotivoAjuste("");
     setNombre(p?.nombre ?? "");
     setPrecio(p ? String(p.precio) : "");
-    setCategoria(p?.categoria ?? "Cuero y calzado");
+    setCategoria(p?.categoria.codigo ?? "");
     setDescripcion(p?.descripcion ?? "");
     setImagen(p?.imagenes[0]);
     setErrores({});
@@ -100,13 +118,24 @@ function MisProductos() {
   };
 
   const guardar = useMutation({
-    mutationFn: (input: { nombre: string; precio: number; descripcion: string }) => {
-      const payload = { ...input, categoria, imagen };
+    mutationFn: (input: {
+      nombre: string;
+      precio: number;
+      categoria: string;
+      descripcion: string;
+    }) => {
+      const payload = {
+        ...input,
+        imagen,
+        tipoUnidades: tipoUnidades as UnitType,
+        existenciasFisicas: Number(existencias),
+        admitePersonalizacion: personalizable,
+        motivoAjuste,
+      };
       return editando ? updateProduct(editando.id, payload) : createProduct(artesanoId, payload);
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["mis-productos"] });
-      void queryClient.invalidateQueries({ queryKey: ["catalogo"] });
+      void queryClient.invalidateQueries();
       toast.success(editando ? "Producto actualizado" : "Producto publicado");
       setAbierto(false);
     },
@@ -115,11 +144,15 @@ function MisProductos() {
 
   const enviar = (e: React.FormEvent) => {
     e.preventDefault();
-    const r = esquema.safeParse({ nombre, precio: Number(precio), descripcion });
+    const r = esquema.safeParse({ nombre, precio: Number(precio), categoria, descripcion });
     if (!r.success) {
       const map: Record<string, string> = {};
       for (const issue of r.error.issues) map[String(issue.path[0])] = issue.message;
       setErrores(map);
+      return;
+    }
+    if (!tipoUnidades) {
+      setErrores({ tipoUnidades: "Selecciona el tipo de unidades." });
       return;
     }
     setErrores({});
@@ -131,7 +164,7 @@ function MisProductos() {
       <div className="mx-auto max-w-6xl px-4 py-8">
         <Link
           to="/panel"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          className="inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
           Volver al panel
@@ -141,7 +174,7 @@ function MisProductos() {
           <div className="min-w-0">
             <h1 className="truncate font-display text-3xl font-bold">Mis productos</h1>
             <p className="text-sm text-muted-foreground">
-              Cada producto se elabora bajo pedido; publica precio base y descripción clara.
+              Publica cada pieza con fotografía, nombre, precio, rubro y una descripción clara.
             </p>
           </div>
           <Button className="touch-target shrink-0" onClick={() => abrir()}>
@@ -180,9 +213,14 @@ function MisProductos() {
                     className="aspect-[4/3] w-full object-cover"
                   />
                   <div className="p-4">
-                    <p className="text-xs text-muted-foreground">{p.categoria}</p>
+                    <p className="text-xs text-muted-foreground">{p.categoria.nombre}</p>
                     <h2 className="mt-1 line-clamp-2 font-medium">{p.nombre}</h2>
                     <p className="mt-1 font-semibold text-primary">{format(p.precio)}</p>
+                    <UnitAvailability product={p} />
+                    <p className="text-xs text-muted-foreground">
+                      Físicas: {p.existenciasFisicas} · Reservadas: {p.unidadesReservadas} · Por
+                      clasificar: {p.unidadesPorClasificar}
+                    </p>
                     <Button
                       variant="outline"
                       className="mt-3 w-full touch-target"
@@ -204,7 +242,7 @@ function MisProductos() {
           <DialogHeader>
             <DialogTitle>{editando ? "Editar producto" : "Nuevo producto"}</DialogTitle>
             <DialogDescription>
-              Los datos son simulados: se guardan solo durante esta sesión de demostración.
+              Los datos son simulados y se conservan al recargar en este navegador.
             </DialogDescription>
           </DialogHeader>
 
@@ -247,18 +285,27 @@ function MisProductos() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="p-categoria">Rubro *</Label>
-                <Select value={categoria} onValueChange={(v) => setCategoria(v as Category)}>
-                  <SelectTrigger id="p-categoria" className="min-h-11">
-                    <SelectValue />
+                <Select value={categoria} onValueChange={setCategoria} disabled={!categorias.data}>
+                  <SelectTrigger
+                    id="p-categoria"
+                    className="min-h-11"
+                    aria-invalid={!!errores["categoria"]}
+                  >
+                    <SelectValue placeholder="Seleccione una categoría" />
                   </SelectTrigger>
                   <SelectContent>
-                    {CATEGORIES.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
+                    {categorias.data?.map((c) => (
+                      <SelectItem key={c.id} value={c.codigo}>
+                        {c.nombre}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {errores["categoria"] ? (
+                  <p role="alert" className="text-sm text-destructive">
+                    {errores["categoria"]}
+                  </p>
+                ) : null}
               </div>
             </div>
 
@@ -279,7 +326,77 @@ function MisProductos() {
               ) : null}
             </div>
 
-            <ImageUploader value={imagen} onChange={setImagen} />
+            <div className="space-y-3">
+              <Label htmlFor="p-units">Tipo de unidades *</Label>
+              <select
+                id="p-units"
+                value={tipoUnidades}
+                className="min-h-11 w-full rounded-md border bg-background px-3"
+                onChange={(e) => {
+                  const type = e.target.value as UnitType;
+                  setTipoUnidades(type);
+                  if (type === "pieza_unica")
+                    setExistencias(
+                      editando?.tipoUnidades === "pieza_unica"
+                        ? String(editando.existenciasFisicas)
+                        : "1",
+                    );
+                }}
+              >
+                <option value="">Selecciona el tipo</option>
+                {Object.entries(UNIT_TYPE_LABELS).map(([type, label]) => (
+                  <option key={type} value={type}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              {errores["tipoUnidades"] ? (
+                <p role="alert" className="text-sm text-destructive">
+                  {errores["tipoUnidades"]}
+                </p>
+              ) : null}
+              <Label htmlFor="p-stock">Existencias físicas *</Label>
+              <Input
+                id="p-stock"
+                type="number"
+                min={editando ? 0 : 1}
+                max={tipoUnidades === "pieza_unica" ? 1 : undefined}
+                step={1}
+                value={existencias}
+                disabled={tipoUnidades === "pieza_unica" && !editando}
+                onChange={(e) => setExistencias(e.target.value)}
+              />
+              {editando ? (
+                <>
+                  <p className="text-sm">
+                    Reservadas: {editando.unidadesReservadas} · Por clasificar:{" "}
+                    {editando.unidadesPorClasificar}. No pueden quedar menos unidades que las
+                    comprometidas.
+                  </p>
+                  <Label htmlFor="p-stock-reason">Motivo del ajuste de unidades</Label>
+                  <Textarea
+                    id="p-stock-reason"
+                    maxLength={300}
+                    value={motivoAjuste}
+                    onChange={(e) => setMotivoAjuste(e.target.value)}
+                  />
+                </>
+              ) : null}
+              <label className="flex min-h-11 items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={personalizable}
+                  onChange={(e) => setPersonalizable(e.target.checked)}
+                />
+                Admite personalización de las unidades disponibles
+              </label>
+            </div>
+            <ImageUploader
+              key={editando?.id ?? "nuevo"}
+              value={imagen}
+              onChange={setImagen}
+              onBusyChange={setImageBusy}
+            />
 
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
               <Button
@@ -290,8 +407,16 @@ function MisProductos() {
               >
                 Cancelar
               </Button>
-              <Button type="submit" className="touch-target" disabled={guardar.isPending}>
-                {guardar.isPending ? "Guardando…" : editando ? "Guardar cambios" : "Publicar producto"}
+              <Button
+                type="submit"
+                className="touch-target"
+                disabled={guardar.isPending || imageBusy}
+              >
+                {guardar.isPending
+                  ? "Guardando…"
+                  : editando
+                    ? "Guardar cambios"
+                    : "Publicar producto"}
               </Button>
             </div>
           </form>

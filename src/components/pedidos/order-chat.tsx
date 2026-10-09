@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Lock, MessageSquareOff, RefreshCw, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,7 +14,7 @@ import { cn } from "@/lib/utils";
 const POLL_MS = 15000; // RNF-010
 
 /** RF-014: mensajería asociada exclusivamente a un pedido. */
-export function OrderChat({ pedidoId, estado }: { pedidoId: string; estado: OrderStatus }) {
+export function OrderChat({ pedidoId, estado }: { pedidoId: number; estado: OrderStatus }) {
   const modo = chatMode(estado);
   const queryClient = useQueryClient();
   const { usuario } = useSession();
@@ -21,7 +22,7 @@ export function OrderChat({ pedidoId, estado }: { pedidoId: string; estado: Orde
   const [ultimaActualizacion, setUltimaActualizacion] = useState(() => Date.now());
   const [, forceTick] = useState(0);
   const lastFecha = useRef<string>(new Date(0).toISOString());
-  const finRef = useRef<HTMLDivElement>(null);
+  const listaRef = useRef<HTMLDivElement>(null);
 
   const mensajes = useQuery({
     queryKey: ["mensajes", pedidoId],
@@ -32,7 +33,9 @@ export function OrderChat({ pedidoId, estado }: { pedidoId: string; estado: Orde
   useEffect(() => {
     const last = mensajes.data?.at(-1);
     if (last) lastFecha.current = last.fecha;
-    finRef.current?.scrollIntoView({ block: "nearest" });
+    // Solo se desplaza la lista de mensajes: mover la página haría saltar la vista al chat.
+    const lista = listaRef.current;
+    if (lista) lista.scrollTop = lista.scrollHeight;
   }, [mensajes.data]);
 
   // Polling simulado: solo trae mensajes nuevos.
@@ -62,6 +65,7 @@ export function OrderChat({ pedidoId, estado }: { pedidoId: string; estado: Orde
       setTexto("");
       void queryClient.invalidateQueries({ queryKey: ["mensajes", pedidoId] });
     },
+    onError: () => toast.error("No pudimos enviar el mensaje. Intenta nuevamente."),
   });
 
   if (modo === "none") {
@@ -86,13 +90,14 @@ export function OrderChat({ pedidoId, estado }: { pedidoId: string; estado: Orde
     <div className="rounded-xl border bg-card">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
         <h3 className="text-sm font-semibold">Mensajes del pedido</h3>
-        <p className="flex items-center gap-1.5 text-xs text-muted-foreground" role="status">
+        {/* Sin región viva: el texto cambia cada segundo y saturaría el lector de pantalla. */}
+        <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <RefreshCw className="size-3.5" aria-hidden="true" />
           Actualizado {relativeSeconds(ultimaActualizacion)}
         </p>
       </div>
 
-      <div className="max-h-96 space-y-3 overflow-y-auto p-4">
+      <div ref={listaRef} className="max-h-96 space-y-3 overflow-y-auto p-4">
         {mensajes.isPending ? (
           <div className="space-y-3">
             <div className="h-14 animate-pulse rounded-lg bg-surface" />
@@ -130,7 +135,6 @@ export function OrderChat({ pedidoId, estado }: { pedidoId: string; estado: Orde
             Todavía no hay mensajes en este pedido. Escribe el primero para coordinar los detalles.
           </p>
         )}
-        <div ref={finRef} />
       </div>
 
       {modo === "readonly" ? (
