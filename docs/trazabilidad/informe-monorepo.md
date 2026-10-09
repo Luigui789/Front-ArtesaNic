@@ -17,6 +17,9 @@ Validación local completada el 9 de octubre de 2026, zona America/Managua. Rama
 | `4658c1e` | Verificación | Corrección aislada de una aserción de reloj en la prueba existente; no cambia el mock |
 | `6216ca8` | Entrega | Informe con pruebas locales, preservación, discrepancias y candidatos posteriores |
 | `bd5f0e3` | CI | Comillas del healthcheck PostgreSQL corregidas para el runner; sin cambio de aplicación |
+| `13eaecc` | Evidencia | Resultado aprobado de los tres workflows remotos |
+| `5bdaa83` | Cierre | Integra en una rama basada en main el merge del PR #3 que quedó en la rama de consolidación |
+| `cef2c25` | Cierre | Conserva la actualización documental posterior al merge del PR #3 |
 
 Los 17 commits originales de la rama avanzada permanecen en el historial. El PR #1 fue fusionado en `main` mediante `203bb5b` y el commit exacto `3bbbb07` es ancestro de esta rama. No se reescribió historial publicado, no se hizo squash ni se eliminaron ramas.
 
@@ -81,7 +84,9 @@ La revisión local recorre archivos versionables e historial alcanzable buscando
 
 ## PR, orden de integración y pendientes
 
-[PR #2 de consolidación](https://github.com/Luigui789/Front-ArtesaNic/pull/2) tiene base `main`. El [PR #3 de migración](https://github.com/Luigui789/Front-ArtesaNic/pull/3) tiene base `codex/frontend-consolidation`, para revisar el traslado separado de los avances funcionales existentes. Ambos quedan abiertos para revisión; no se fusionan automáticamente. Al aprobar la consolidación, se puede integrar esa rama y revisar/retargetear el PR de migración a `main` conservando sus commits.
+[PR #2 de consolidación](https://github.com/Luigui789/Front-ArtesaNic/pull/2) se fusionó en `main` mediante `246549e`. El [PR #3 de migración](https://github.com/Luigui789/Front-ArtesaNic/pull/3) se fusionó después mediante `3bea835`, pero su base seguía siendo `codex/frontend-consolidation`. Por ello ese segundo merge no actualizó main: el árbol de main todavía mostraba el frontend en raíz. No faltaban archivos en la migración; faltaba integrar su historial en la rama principal.
+
+La rama `codex/monorepo-closure`, creada desde main, incorpora ambos merges y la evidencia `13eaecc` sin reescribir historia. Su PR de cierre tiene base explícita `main`. El cierre requiere CI verde y una nueva validación desde una clonación limpia del commit finalmente publicado en main; el resultado se registra con su SHA para distinguirlo de la validación previa de la rama de migración. Esta etapa no cambia la estructura aprobada ni implementa nuevos RF.
 
 Los workflows frontend, backend e integración están preparados con filtros de rutas. La validación local descrita está completa; el resultado remoto de GitHub Actions se informa por separado. La identificación de Lovable y su historial se preservan, pero no se verificó su editor con `apps/frontend`; comprobarlo antes de usar esa herramienta para desarrollar de nuevo.
 
@@ -93,9 +98,12 @@ Los workflows frontend, backend e integración están preparados con filtros de 
 | `codex/frontend-local-consolidation` local | Limpiar copia/ramas de respaldo | Verificar los cuatro commits en main y confirmar explícitamente |
 | `codex/frontend-consolidation` | Eliminar después de sus PR | Solo cuando ambos PR estén integrados y haya aprobación |
 | `chore/monorepo-migration` | Eliminar después de su PR | Solo tras integración y aprobación |
+| `codex/monorepo-closure` | Eliminar después del cierre | Solo tras integración en main, verificación limpia y aprobación final |
 | `Back-Artesanic` remoto | Evaluar archivo histórico | No se archiva ahora; decisión separada del responsable |
 
 No se eliminaron ramas remotas, repositorios ni volúmenes. No se creó una función nueva de pedidos, inventario, pagos u otros RF.
+
+Permanecen pendientes la ratificación de la base del costo promedio y la decisión sobre el repositorio remoto `Back-Artesanic`. Como deuda técnica quedan los 9 avisos de react-refresh y el bundle principal de 676.12 kB: evaluar división de código en una fase posterior. La única comunicación real frontend/backend comprobada es `/api/v1/salud/`; los flujos funcionales del frontend continúan usando mocks. Ninguna de estas decisiones se resuelve alterando el alcance de este cierre.
 
 ## Verificación remota de CI
 
