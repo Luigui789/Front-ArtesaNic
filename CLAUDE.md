@@ -1,3 +1,17 @@
+## Project identity
+- project-id: `masaya-artisan-connect`   (identificador canónico, estable; independiente del nombre físico de la carpeta)
+- Repository: `masaya-artisan-connect` (frontend) — GitHub: https://github.com/Luigui789/masaya-artisan-connect
+- Repositorio hermano (backend): `Back-Artesanic` — GitHub: https://github.com/Luigui789/Back-Artesanic
+  (sin CLAUDE.md propio todavía; se onboardea cuando tenga código real)
+
+## Obsidian para este proyecto
+- Índice: `note_read 10-Projects/masaya-artisan-connect/masaya-artisan-connect.md`; contexto: `frontmatter_query field=project value=masaya-artisan-connect`.
+- Consultar **cuando aporte** (investigación, decisión arquitectónica, tema transversal, ambigüedad resoluble con conocimiento previo). No es obligatorio en tareas mecánicas ni cuando `docs/`/ADRs ya alcanzan.
+- **No crear ni modificar notas de Obsidian automáticamente**: requiere pedido o aprobación explícita para *esa* escritura.
+- El MCP `obsidian-vault` es solo de lectura; toda escritura en Obsidian se hace por filesystem, no por MCP.
+- La aprobación es **por operación lógica**, no por cada escritura interna: mostrar la nota destino y el cambio concreto y recibir un "sí" habilita ese cambio completo, pero no habilita tocar notas no mencionadas.
+- Obsidian aporta contexto; la verdad del proyecto está en `docs/`/ADRs de este repo (y de `Back-Artesanic` para el backend, cuando exista código).
+
 # 1. Entorno de desarrollo
 
 ## Stack real del frontend
