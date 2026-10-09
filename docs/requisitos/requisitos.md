@@ -1,53 +1,67 @@
 # Requisitos funcionales y no funcionales
 
-**Proyecto:** Sistema e-commerce para la comercialización de productos artesanales de las PYMEs del municipio de Masaya
-**Asignatura:** Diseño de sistemas en internet — UNI, Recinto Universitario Simón Bolívar
-**Grupo:** 5T1-SIS-S
-**Autores:** Br. Luis Fernando José Gutiérrez Dávila · Br. Heidi Leana Piña Martínez · Br. Keyling de los Ángeles Rocha Pérez
+**Proyecto:** ArtesaNic — comercialización de productos artesanales de las PYMEs de Masaya.
 
-**Redacción vigente:** especificación consolidada **v2.1** (revisión local del 30 de septiembre de 2026), incorporada al repositorio el 4 de octubre de 2026.
-**Módulos y funcionalidades (sección 4.4 de la v2.1):** [modulos-funcionalidades.md](modulos-funcionalidades.md).
+**Fuente:** [RF/RNF.docx en Google Drive](https://docs.google.com/document/d/14I9njtLSWzJdw465-lOoiDgSJeIpJRnb/edit), leído el **8 de octubre de 2026** (America/Managua). La última modificación informada por Drive fue el 8 de octubre de 2026 a las 22:40:48 en esa zona (9 de octubre a las 04:40:48 UTC).
 
-> **Este documento gobierna al prototipo.** Cuando el código contradiga un requisito, se corrige el código o se registra la diferencia como desviación; no se reescribe el requisito para acomodar la implementación. Las diferencias vigentes están en la sección [5. Estado del prototipo frente a la v2.1](#5-estado-del-prototipo-frente-a-la-v21).
+Este documento reproduce las **24 fichas RF y 15 fichas RNF** del archivo consultado, con versiones, autores, dependencias, responsables y estados. Las fichas son propuestas para homologación; RF-012 está postergado. La incorporación al repositorio no acredita aprobación del equipo ni implementación del prototipo. No se asigna una nueva versión global a la fuente.
 
-> **Estado de homologación.** «Propuesto para homologación» identifica la redacción consolidada v2.1 y **no acredita implementación ni aprobación formal del equipo**. Las versiones aprobadas anteriormente no se revocan: se conservan en el [Anexo A](#anexo-a-línea-base-del-15-de-agosto-de-2026-histórica).
+Las reglas gobiernan la implementación objetivo. Las diferencias del código de referencia se registran en la [matriz de alineación](../trazabilidad/alineacion-main-456f613.md); no se reduce un requisito para acomodarlo al mock existente. El alcance de esta actualización es documental.
 
----
+**Nota editorial:** en las dependencias de RF-010, la fuente escribe `RF--023` y `RF024`; aquí se normalizan a **RF-023** y **RF-024**, sin cambiar su sentido ni la versión de la ficha. El resto de los campos conserva el contenido de la fuente, adaptando saltos de línea a Markdown.
 
-## Registro de revisiones
+## Índice
 
-| Fecha | Versión | Fuente | Qué cambia | Estado |
-|---|---|---|---|---|
-| 15-ago-2026 | Línea base del repositorio | Documento de requisitos del equipo | RF-001 a RF-016 y RNF-001 a RNF-010 | Aprobados: RF-001 v1.0, RF-002 v1.0, RF-003 v1.0, RF-005 v2.0, RNF-001 v1.0, RNF-002 v1.0, RNF-003 v1.1 y RNF-005 v1.0 (Mantenibilidad). Los demás, Propuesto. Texto íntegro en el [Anexo A](#anexo-a-línea-base-del-15-de-agosto-de-2026-histórica) |
-| 29/30-sep-2026 | Especificación v2.0 | Especificación consolidada (fuera del repositorio) | RF-017 a RF-022, RNF-011 a RNF-015 y módulos 4.4 | Propuesto para homologación. Sustituida por la v2.1 |
-| 30-sep-2026 | Especificación **v2.1** | Texto «Especificación consolidada de RF y RNF — ArtesaNic», encabezado verificado: «Versión de trabajo: 2.1 consolidada · Fecha de revisión local: 30 de septiembre de 2026». Entregado por Luis el 4-oct-2026; el archivo `Especificacion_RF_RNF_y_Modulos_ArtesaNic_2026-09-29.md` no estaba en la carpeta de descargas, donde solo existían el PDF y una copia v2.0 | Fichas de esta versión (secciones 1 y 2) y módulos 4.4 | Propuesto para homologación |
-| 30-sep y 1-oct-2026 | Definiciones de Luis posteriores a la v2.1 | Instrucciones de Luis registradas en el [plan funcional](../superpowers/plans/2026-09-30-correcciones-funcionales-demo.md) | Sección 3 | Definidas por Luis, **pendientes de homologación del equipo** |
+| Identificador | Requisito | Versión | Estado |
+|---|---|---|---|
+| [RF-001](#rf-001) | CARGA SIMPLIFICADA DE PRODUCTOS | 2.0 | Propuesto para homologación |
+| [RF-002](#rf-002) | OPTIMIZACIÓN Y ALMACENAMIENTO EFICIENTE DE IMÁGENES | 2.0 | Propuesto para homologación |
+| [RF-003](#rf-003) | CATEGORIZACIÓN POR RUBRO LOCAL | 2.0 | Propuesto para homologación |
+| [RF-004](#rf-004) | AUTENTICACIÓN SIMPLIFICADA (ASISTIDA) | 2.0 | Propuesto para homologación |
+| [RF-005](#rf-005) | EVALUACIÓN DE SOLICITUD (ACEPTAR/RECHAZAR) | 3.1 | Propuesto para homologación |
+| [RF-006](#rf-006) | RESUMEN ECONÓMICO DEL PEDIDO | 2.1 | Propuesto para homologación |
+| [RF-007](#rf-007) | CONVERSIÓN DE DIVISAS | 2.0 | Propuesto para homologación |
+| [RF-008](#rf-008) | PERFIL DE ARTESANO/TALLER | 2.0 | Propuesto para homologación |
+| [RF-009](#rf-009) | SOLICITUD DE PEDIDO | 2.0 | Propuesto para homologación |
+| [RF-010](#rf-010) | GESTIONAR EL CICLO DE VIDA DEL PEDIDO | 3.1 | Propuesto para homologación |
+| [RF-011](#rf-011) | REGISTRO Y CONFIRMACIÓN DE PAGO | 4.1 | Propuesto para homologación |
+| [RF-012](#rf-012) | PASARELA DE PAGO (EVOLUCIÓN FUTURA) | 1.0 | Postergado (fuera del alcance actual) |
+| [RF-013](#rf-013) | PANEL DE ADMINISTRACIÓN (DJANGO ADMIN) | 3.0 | Propuesto para homologación |
+| [RF-014](#rf-014) | MENSAJERÍA ASOCIADA AL PEDIDO | 2.0 | Propuesto para homologación |
+| [RF-015](#rf-015) | CANCELACIÓN Y CIERRE PARCIAL DE PEDIDOS | 2.1 | Propuesto para homologación |
+| [RF-016](#rf-016) | REGISTRO DE MODALIDAD DE ENTREGA | 2.1 | Propuesto para homologación |
+| [RF-017](#rf-017) | OFERTA ESTÁNDAR Y PERSONALIZACIÓN BAJO DEMANDA | 1.0 | Propuesto para homologación |
+| [RF-018](#rf-018) | PEDIDO DE VARIOS PRODUCTOS DE UN MISMO TALLER | 1.1 | Propuesto para homologación |
+| [RF-019](#rf-019) | DESPUBLICACIÓN Y MODERACIÓN DE PRODUCTOS | 1.1 | Propuesto para homologación |
+| [RF-020](#rf-020) | NOTIFICACIONES DE EVENTOS DEL PEDIDO | 1.1 | Propuesto para homologación |
+| [RF-021](#rf-021) | REGISTRO Y SEGUIMIENTO DE REEMBOLSO EXTERNO | 1.1 | Propuesto para homologación |
+| [RF-022](#rf-022) | CONTROL DE EXISTENCIAS, DISPONIBILIDAD Y RESERVAS DE PRODUCTOS ESTÁNDAR | 2.0 | Propuesto para homologación |
+| [RF-023](#rf-023) | HISTORIAL DE MOVIMIENTOS DE INVENTARIO | 1.0 | Propuesto para homologación |
+| [RF-024](#rf-024) | COSTOS Y VALORIZACIÓN BÁSICA DEL INVENTARIO | 1.0 | Propuesto para homologación |
+| [RNF-001](#rnf-001) | USABILIDAD | 2.0 | Propuesto para homologación |
+| [RNF-002](#rnf-002) | RESPONSIVIDAD Y COMPATIBILIDAD MÓVIL | 2.1 | Propuesto para homologación |
+| [RNF-003](#rnf-003) | DESEMPEÑO Y CARGA PROGRESIVA | 2.0 | Propuesto para homologación |
+| [RNF-004](#rnf-004) | SEGURIDAD DE PAGOS Y DATOS SENSIBLES | 4.1 | Propuesto para homologación |
+| [RNF-005](#rnf-005) | ARQUITECTURA E INTEROPERABILIDAD | 2.1 | Propuesto para homologación |
+| [RNF-006](#rnf-006) | DISPONIBILIDAD | 2.0 | Propuesto para homologación |
+| [RNF-007](#rnf-007) | ESCALABILIDAD | 2.0 | Propuesto para homologación |
+| [RNF-008](#rnf-008) | TRAZABILIDAD DE PEDIDOS, PAGOS, REEMBOLSOS Y UNIDADES | 4.0 | Propuesto para homologación |
+| [RNF-009](#rnf-009) | COMPATIBILIDAD DE NAVEGADORES DE ESCRITORIO | 2.0 | Propuesto para homologación |
+| [RNF-010](#rnf-010) | EFICIENCIA EN CONSUMO DE DATOS MÓVILES (POLLING) | 2.1 | Propuesto para homologación |
+| [RNF-011](#rnf-011) | INTEGRIDAD TRANSACCIONAL Y CONCURRENCIA | 1.1 | Propuesto para homologación |
+| [RNF-012](#rnf-012) | RESPALDO Y RECUPERACIÓN | 1.0 | Propuesto para homologación |
+| [RNF-013](#rnf-013) | MINIMIZACIÓN Y ACCESO A DATOS PERSONALES | 1.1 | Propuesto para homologación |
+| [RNF-014](#rnf-014) | RESILIENCIA ANTE CONECTIVIDAD INESTABLE | 1.1 | Propuesto para homologación |
+| [RNF-015](#rnf-015) | MANTENIBILIDAD Y PRUEBAS DE REGLAS DE NEGOCIO | 1.1 | Propuesto para homologación |
 
-**Cambios de tema con el mismo identificador.** RNF-005 era «Mantenibilidad» (aprobado en la línea base) y en la v2.1 pasa a «Arquitectura e interoperabilidad»; la mantenibilidad queda en RNF-015. RF-009 deja de titularse «Solicitud de pedido personalizado». RF-015 pasa de «Cancelación de pedido tras aceptación» a «Cancelación y cierre parcial de pedidos». La aprobación de las versiones históricas sigue registrada en el Anexo A y no se traslada a las fichas nuevas.
+## Requisitos funcionales
 
-**Correspondencia de identificadores con el DSI** (la cita «DSI RF-017» en RF-012 no significa que RF-017 conserve ese tema):
+<a id="rf-001"></a>
 
-| DSI | Esta especificación | Tema |
-|---|---|---|
-| RF-012 | RF-013 | Administración |
-| RF-013 | RF-014 | Mensajería |
-| RF-014 | RF-015 | Cancelación |
-| RF-015 | RF-016 | Entrega |
-| RF-016 | RF-017 | Oferta estándar y bajo demanda |
-| RF-017 | RF-012 | Pasarela postergada |
+### RF-001 — CARGA SIMPLIFICADA DE PRODUCTOS
 
-**Alcance confirmado por el equipo:** una ficha puede ofrecer unidades estándar, personalización bajo demanda o ambas; cada pedido puede agrupar varios renglones de un único taller. RF-012 conserva el identificador de la pasarela futura, postergada y fuera de los criterios de aceptación de la primera versión.
-
-**Definiciones de Luis incorporadas en la v2.1, pendientes de homologación del equipo:** aceptación integral; cotización visible en Pendiente; un pago externo del 100 % con historial de intentos; pago confirmado antes de producción o Listo; reserva al aceptar sin vencimiento automático; cancelación manual por falta de pago tras 48 horas, respetando la revisión del comprobante; 48 horas para corregir desde la notificación de la observación; cancelación por imposibilidad del artesano; entregas registradas por el artesano y evidencia separada del comprador; cierre parcial por imposibilidad o solicitud aceptada; devolución de lo no entregado y los servicios no prestados; clasificación de unidades reutilizables o de baja; avisos de cierre parcial y discrepancias. Una cancelación del comprador no libera al catálogo cantidades todavía pendientes de clasificación.
-
-**Terminología:** despublicar producto; cancelar solicitud Pendiente; recoger el pedido en el taller. La recogida atrasada después de siete días desde Listo no cancela, no libera reservas ni permite revender lo pagado. La política ante recepción fallida en otras modalidades sigue pendiente. La generación de avisos por plazo se definirá en el ADR-006; la referencia a la Ley N°. 787 y cualquier cargo por tardanza requieren la validación indicada en sus fichas.
-
----
-
-## 1. Requisitos funcionales
-
-| RF-001 | CARGA SIMPLIFICADA DE PRODUCTOS |
-| ----- | ----- |
+| Campo | Contenido |
+|---|---|
 | Versión | 2.0 |
 | Autores | Luis Gutiérrez, Keyling Rocha |
 | Fuentes | Encuestas a artesanos (problemas de adopción tecnológica) |
@@ -57,10 +71,18 @@
 | Urgencia | Alta |
 | Estado | Propuesto para homologación |
 | Estabilidad | Alta |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Analista de Sistemas (flujo de publicación en cinco pasos); Especialista de Base de Datos (modelo de datos del producto) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Responsable de Soporte y Atención a Artesanos y Especialista en Capacitación de Usuarios |
 | Comentarios | Mantiene cuatro grupos obligatorios; la cantidad estándar es un dato condicional. La redacción revisada debe aprobarse como nueva versión. |
 
-| RF-002 | OPTIMIZACIÓN Y ALMACENAMIENTO EFICIENTE DE IMÁGENES |
-| ----- | ----- |
+<a id="rf-002"></a>
+
+### RF-002 — OPTIMIZACIÓN Y ALMACENAMIENTO EFICIENTE DE IMÁGENES
+
+| Campo | Contenido |
+|---|---|
 | Versión | 2.0 |
 | Autores | Luis Gutiérrez, Heidi Piña |
 | Fuentes | Buenas prácticas de arquitectura de software |
@@ -70,10 +92,18 @@
 | Urgencia | Alta |
 | Estado | Propuesto para homologación |
 | Estabilidad | Alta |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Administrador de Infraestructura Tecnológica (almacenamiento de imágenes en Amazon S3); Especialista de Base de Datos (rutas y metadatos) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Administrador de Infraestructura Tecnológica |
 | Comentarios | Sustituye la mención desactualizada a SQL Server por PostgreSQL para referencias y archivos fuera de la base. |
 
-| RF-003 | CATEGORIZACIÓN POR RUBRO LOCAL |
-| ----- | ----- |
+<a id="rf-003"></a>
+
+### RF-003 — CATEGORIZACIÓN POR RUBRO LOCAL
+
+| Campo | Contenido |
+|---|---|
 | Versión | 2.0 |
 | Autores | Luis Gutiérrez, Heidi Piña |
 | Fuentes | Marco Teórico 6.1.1 |
@@ -83,10 +113,18 @@
 | Urgencia | Media |
 | Estado | Propuesto para homologación |
 | Estabilidad | Alta |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Especialista de Base de Datos (consultas paginadas e índices); Analista de Sistemas (criterios de búsqueda y filtros) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Responsable de Soporte y Atención a Artesanos |
 | Comentarios | Integra categorías, búsqueda y visibilidad de productos de talleres aprobados. |
 
-| RF-004 | AUTENTICACIÓN SIMPLIFICADA (ASISTIDA) |
-| ----- | ----- |
+<a id="rf-004"></a>
+
+### RF-004 — AUTENTICACIÓN SIMPLIFICADA (ASISTIDA)
+
+| Campo | Contenido |
+|---|---|
 | Versión | 2.0 |
 | Autores | Heidi Piña, Keyling Rocha |
 | Fuentes | Encuestas a artesanos |
@@ -96,23 +134,39 @@
 | Urgencia | Media |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Coordinador de Seguridad y Gestión de Riesgos (criterios de acceso); Especialista de Base de Datos (permisos técnicos); Administrador de Infraestructura Tecnológica (certificado TLS) |
+| Responsable de validación | Coordinador de Desarrollo de Software y Coordinador de Seguridad y Gestión de Riesgos |
+| Operación y soporte | Responsable de Soporte y Atención a Artesanos |
 | Comentarios | El servidor asigna roles y verifica pertenencia. Un selector de actor en una demostración con datos simulados no sustituye autenticación ni autorización. La recuperación de contraseña asistida requiere definición específica. |
 
-| RF-005 | EVALUACIÓN DE SOLICITUD (ACEPTAR/RECHAZAR) |
-| ----- | ----- |
+<a id="rf-005"></a>
+
+### RF-005 — EVALUACIÓN DE SOLICITUD (ACEPTAR/RECHAZAR)
+
+| Campo | Contenido |
+|---|---|
 | Versión | 3.1 |
 | Autores | Luis Gutiérrez |
 | Fuentes | DSI RF-005 y decisión del equipo sobre oferta estándar y personalización; definiciones de funcionamiento de Luis Gutiérrez y revisión de alineación del 30-sep-2026 |
-| Dependencias | RF-004, RF-009, RF-017, RF-018, RF-022 |
-| Descripción | El artesano recibirá la solicitud y aceptará o rechazará **todos los renglones del mismo pedido**. Al aceptar verificará y reservará atómicamente las unidades estándar y congelará el total cotizado, ya visible para el comprador durante Pendiente. El rechazo será terminal y registrará motivo. |
+| Dependencias | RF-004, RF-009, RF-017, RF-018, RF-022, RF-023 |
+| Descripción | El artesano recibirá la solicitud y aceptará o rechazará todos los renglones del mismo pedido. Al aceptar, el sistema verificará y reservará atómicamente las unidades estándar disponibles y registrará el movimiento correspondiente conforme a RF-023; asimismo, congelará el total cotizado, ya visible para el comprador durante Pendiente. El rechazo será terminal y registrará motivo. |
 | Importancia | Crítica |
 | Urgencia | Alta |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Analista de Sistemas (reglas de aceptación y rechazo); Especialista de Base de Datos (reserva atómica de unidades) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Responsable de Soporte y Atención a Artesanos |
 | Comentarios | Aceptación integral definida por Luis, pendiente de homologación del equipo. El comprador decide pagar el total congelado o cancelar. Las reservas no vencen automáticamente; las unidades no entregadas se resuelven según RF-022. |
 
-| RF-006 | RESUMEN ECONÓMICO DEL PEDIDO |
-| ----- | ----- |
+<a id="rf-006"></a>
+
+### RF-006 — RESUMEN ECONÓMICO DEL PEDIDO
+
+| Campo | Contenido |
+|---|---|
 | Versión | 2.1 |
 | Autores | Luis Gutiérrez |
 | Fuentes | Modelo de pedido bajo demanda: necesidad de informar el costo total antes de la aceptación; definiciones de funcionamiento de Luis Gutiérrez y revisión de alineación del 30-sep-2026 |
@@ -122,10 +176,18 @@
 | Urgencia | Media |
 | Estado | Propuesto para homologación |
 | Estabilidad | Alta |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Analista de Sistemas (reglas de cálculo y distribución de cargos) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Responsable de Soporte y Atención a Artesanos |
 | Comentarios | Un total y un pago externo del 100 % por pedido. Registrar un pago expresa conformidad del comprador con el total informado; el valor en dólares es informativo. La suma de renglones y servicios debe coincidir con el total. Las devoluciones conservan este desglose y no reescriben la cotización original. |
 
-| RF-007 | CONVERSIÓN DE DIVISAS |
-| ----- | ----- |
+<a id="rf-007"></a>
+
+### RF-007 — CONVERSIÓN DE DIVISAS
+
+| Campo | Contenido |
+|---|---|
 | Versión | 2.0 |
 | Autores | Keyling Rocha |
 | Fuentes | Dinámica económica bimonetaria de Nicaragua |
@@ -135,10 +197,18 @@
 | Urgencia | Baja |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Analista de Sistemas (reglas de conversión) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Gerente General |
 | Comentarios | Tasa manual administrada; no exige consulta en tiempo real a un servicio externo. |
 
-| RF-008 | PERFIL DE ARTESANO/TALLER |
-| ----- | ----- |
+<a id="rf-008"></a>
+
+### RF-008 — PERFIL DE ARTESANO/TALLER
+
+| Campo | Contenido |
+|---|---|
 | Versión | 2.0 |
 | Autores | Keyling Rocha, Heidi Piña |
 | Fuentes | Marco teórico 6.1.6, 6.2.4 |
@@ -148,10 +218,18 @@
 | Urgencia | Media |
 | Estado | Propuesto para homologación |
 | Estabilidad | Alta |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Analista de Sistemas (contenido del perfil); Coordinador de Seguridad y Gestión de Riesgos (publicación mínima de datos) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Responsable de Soporte y Atención a Artesanos y Especialista en Capacitación de Usuarios |
 | Comentarios | Datos de contacto del taller y credenciales de cuenta tienen distinta visibilidad. |
 
-| RF-009 | SOLICITUD DE PEDIDO |
-| ----- | ----- |
+<a id="rf-009"></a>
+
+### RF-009 — SOLICITUD DE PEDIDO
+
+| Campo | Contenido |
+|---|---|
 | Versión | 2.0 |
 | Autores | Luis Gutiérrez, Heidi Piña |
 | Fuentes | DSI RF-009 y decisión del equipo de varios productos de un taller |
@@ -161,23 +239,39 @@
 | Urgencia | Alta |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Analista de Sistemas (reglas de la solicitud) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Responsable de Soporte y Atención a Artesanos |
 | Comentarios | La composición anterior al envío se guarda en el dispositivo y no es todavía un pedido Pendiente del servidor. No se sincroniza entre dispositivos. |
 
-| RF-010 | GESTIONAR EL CICLO DE VIDA DEL PEDIDO |
-| ----- | ----- |
+<a id="rf-010"></a>
+
+### RF-010 — GESTIONAR EL CICLO DE VIDA DEL PEDIDO
+
+| Campo | Contenido |
+|---|---|
 | Versión | 3.1 |
 | Autores | Luis Gutiérrez, Heidi Piña |
 | Fuentes | DSI RF-010 y esquema de pedido mixto; definiciones de funcionamiento de Luis Gutiérrez y revisión de alineación del 30-sep-2026 |
-| Dependencias | RF-005, RF-011, RF-018 |
-| Descripción | El servidor controlará los estados y transiciones definidos en 4.4.3. Un pedido con al menos un renglón personalizado requiere Pago confirmado para pasar de Aceptado a En producción; uno completamente estándar requiere Pago confirmado para pasar directamente de Aceptado a Listo para entrega. Todos los productos deberán estar listos antes de la primera entrega. El artesano registrará cada entrega indicando fecha y cantidades por renglón; el registro descontará existencias y reservas estándar de lo entregado. El comprador podrá confirmar recepción o registrar una discrepancia para cada entrega, incluso después del cierre operativo, como evidencia separada. El pedido pasará a Entregado al completar todas las cantidades o a Cerrado parcialmente cuando proceda según RF-015. |
+| Dependencias | RF-005, RF-011, RF-018, RF-022, RF-023, RF-024 |
+| Descripción | El servidor controlará los estados y transiciones definidos en el módulo de Solicitudes y Pedidos. Un pedido con al menos un renglón personalizado requiere Pago confirmado para pasar de Aceptado a En producción; uno completamente estándar requiere Pago confirmado para pasar directamente de Aceptado a Listo para entrega. Todos los productos deberán estar listos antes de la primera entrega.<br>El artesano registrará cada entrega indicando fecha y cantidades por renglón. Para las unidades estándar, el registro descontará simultáneamente las existencias físicas y las reservas correspondientes y generará el movimiento de consumo de inventario según RF-022 y RF-023, conservando además el costo asociado a las unidades entregadas conforme a RF-024.<br>El comprador podrá confirmar recepción o registrar una discrepancia para cada entrega, incluso después del cierre operativo, como evidencia separada. El pedido pasará a Entregado al completar todas las cantidades o a Cerrado parcialmente cuando corresponda según RF-015. |
 | Importancia | Crítica |
 | Urgencia | Alta |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Analista de Sistemas (estados y transiciones); Especialista de Base de Datos (integridad de los estados) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Responsable de Soporte y Atención a Artesanos |
 | Comentarios | La confirmación del comprador no condiciona el descuento de unidades ni el cierre operativo. Un registro del artesano no equivale a recepción confirmada por el comprador: ambos hechos se muestran por separado. Una discrepancia no revierte automáticamente entrega, unidades o estado y no implica arbitraje de la plataforma. Listo para entrega admite varias entregas registradas sin cambiar a Entregado hasta completarlas. |
 
-| RF-011 | REGISTRO Y CONFIRMACIÓN DE PAGO |
-| ----- | ----- |
+<a id="rf-011"></a>
+
+### RF-011 — REGISTRO Y CONFIRMACIÓN DE PAGO
+
+| Campo | Contenido |
+|---|---|
 | Versión | 4.1 |
 | Autores | Luis Gutiérrez, Keyling Rocha |
 | Fuentes | Viabilidad de pasarelas de pago en Nicaragua; definiciones de funcionamiento de Luis Gutiérrez y revisión de alineación del 30-sep-2026 |
@@ -187,10 +281,18 @@
 | Urgencia | Alta |
 | Estado | Propuesto para homologación |
 | Estabilidad | Alta |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Analista de Sistemas (reglas de pago); Especialista de Base de Datos (historial de intentos); Coordinador de Seguridad y Gestión de Riesgos (acceso a comprobantes) |
+| Responsable de validación | Coordinador de Desarrollo de Software y Jefe del Departamento de Informática |
+| Operación y soporte | Responsable de Soporte y Atención a Artesanos |
 | Comentarios | Un pago económico del total puede tener varios intentos de registro o corrección; no son cuotas ni autorización para cobrar varias veces. Corregir un comprobante no exige repetir una transferencia. La confirmación de fondos no se revierte por una corrección posterior. Producción y Listo requieren Pago confirmado y pedido vivo. La plataforma no arbitra disputas de pago; las partes conservan su evidencia y deben acudir al canal externo correspondiente. |
 
-| RF-012 | PASARELA DE PAGO (EVOLUCIÓN FUTURA) |
-| ----- | ----- |
+<a id="rf-012"></a>
+
+### RF-012 — PASARELA DE PAGO (EVOLUCIÓN FUTURA)
+
+| Campo | Contenido |
+|---|---|
 | Versión | 1.0 |
 | Autores | Keyling Rocha, Luis Gutiérrez |
 | Fuentes | DSI RF-017; análisis de viabilidad de pagos electrónicos |
@@ -200,10 +302,18 @@
 | Urgencia | Media |
 | Estado | Postergado (fuera del alcance actual) |
 | Estabilidad | Media |
+| Responsable de desarrollo | Jefe del Departamento de Informática |
+| Cargos de apoyo | Coordinador de Seguridad y Gestión de Riesgos (evaluación de riesgos de pagos en línea); Desarrollador Full Stack (integración técnica); Administrador de Infraestructura Tecnológica (requisitos de infraestructura) |
+| Responsable de validación | Gerente General |
+| Operación y soporte | No aplica en la primera versión |
 | Comentarios | Identificador histórico reservado. La primera versión registra pagos externos sin procesar tarjetas; el DSI usa para este tema RF-017. |
 
-| RF-013 | PANEL DE ADMINISTRACIÓN (DJANGO ADMIN) |
-| ----- | ----- |
+<a id="rf-013"></a>
+
+### RF-013 — PANEL DE ADMINISTRACIÓN (DJANGO ADMIN)
+
+| Campo | Contenido |
+|---|---|
 | Versión | 3.0 |
 | Autores | Heidi Piña, Keyling Rocha |
 | Fuentes | DSI RF-012; política de administración y acceso |
@@ -213,10 +323,18 @@
 | Urgencia | Media |
 | Estado | Propuesto para homologación |
 | Estabilidad | Alta |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Administrador de Infraestructura Tecnológica (acceso al panel); Coordinador de Seguridad y Gestión de Riesgos (roles y permisos) |
+| Responsable de validación | Jefe del Departamento de Informática |
+| Operación y soporte | Gerente General y Responsable de Soporte y Atención a Artesanos |
 | Comentarios | Django Admin con autorización por rol y objeto. El rol administrativo no accede al contenido de chats ni comprobantes, sin excepciones en esta especificación. La supervisión no permite modificar pedidos o acuerdos comerciales. |
 
-| RF-014 | MENSAJERÍA ASOCIADA AL PEDIDO |
-| ----- | ----- |
+<a id="rf-014"></a>
+
+### RF-014 — MENSAJERÍA ASOCIADA AL PEDIDO
+
+| Campo | Contenido |
+|---|---|
 | Versión | 2.0 |
 | Autores | Heidi Piña, Keyling Rocha |
 | Fuentes | DSI RF-013; análisis de completitud del ciclo de vida del pedido |
@@ -226,23 +344,39 @@
 | Urgencia | Media |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Coordinador de Seguridad y Gestión de Riesgos (acceso exclusivo de las partes del pedido); Administrador de Infraestructura Tecnológica (consumo del servidor) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Responsable de Soporte y Atención a Artesanos |
 | Comentarios | Conservar chat por pedido y polling incremental, restringido a las partes. |
 
-| RF-015 | CANCELACIÓN Y CIERRE PARCIAL DE PEDIDOS |
-| ----- | ----- |
+<a id="rf-015"></a>
+
+### RF-015 — CANCELACIÓN Y CIERRE PARCIAL DE PEDIDOS
+
+| Campo | Contenido |
+|---|---|
 | Versión | 2.1 |
 | Autores | Luis Gutiérrez, Heidi Piña |
 | Fuentes | DSI RF-014; política de cancelación y reembolso; definiciones de funcionamiento de Luis Gutiérrez y revisión de alineación del 30-sep-2026 |
 | Dependencias | RF-010, RF-011, RF-022 |
-| Descripción | El comprador podrá cancelar una solicitud Pendiente, con motivo y aviso al artesano, sin chat, reserva ni reembolso. Desde Aceptado podrá cancelar antes de pasar a En producción o a Listo para entrega. El artesano podrá cancelar por imposibilidad de cumplir desde Aceptado, En producción o Listo para entrega antes de cualquier entrega, con motivo y reembolso total de los fondos recibidos. Para cancelar por falta de pago deberá esperar al menos 48 horas desde la aceptación, respetar cualquier plazo vigente de 48 horas para corregir un comprobante y resolver las revisiones de fondos pendientes; esta acción será manual desde el detalle del pedido. El comprador no podrá cancelar unilateralmente desde En producción ni desde Listo para entrega. Después de una entrega parcial, si el artesano no puede cumplir lo restante, cerrará parcialmente con motivo; el comprador también podrá solicitar el cierre de las cantidades pendientes y el artesano aceptará o rechazará con motivo. La solicitud por sí sola no cambia el estado ni genera reembolso. Si se acepta o existe imposibilidad de cumplir, el pedido pasará a Cerrado parcialmente, conservando lo entregado y creando la obligación de devolver lo no entregado y los servicios no prestados según RF-021. Las unidades estándar pendientes se resolverán según RF-022. |
+| Descripción | El comprador podrá cancelar una solicitud Pendiente, con motivo y aviso al artesano, sin chat, reserva ni reembolso. Desde Aceptado podrá cancelar antes de pasar a En producción o a Listo para entrega. El artesano podrá cancelar por imposibilidad de cumplir desde Aceptado, En producción o Listo para entrega antes de cualquier entrega, con motivo y reembolso total de los fondos recibidos. Para cancelar por falta de pago deberá esperar al menos 48 horas desde la aceptación, respetar cualquier plazo vigente de 48 horas para corregir un comprobante y resolver las revisiones de fondos pendientes; esta acción será manual desde el detalle del pedido.<br><br>El comprador no podrá cancelar unilateralmente desde En producción ni desde Listo para entrega. Después de una entrega parcial, si el artesano no puede cumplir lo restante, cerrará parcialmente con motivo; el comprador también podrá solicitar el cierre de las cantidades pendientes y el artesano aceptará o rechazará con motivo.<br><br>La solicitud por sí sola no cambia el estado ni genera reembolso. Si se acepta o existe imposibilidad de cumplir, el pedido pasará a Cerrado parcialmente, conservando lo entregado y creando la obligación de devolver lo no entregado y los servicios no prestados según RF-021.<br>Las unidades estándar pendientes derivadas de una cancelación o cierre parcial se resolverán conforme a RF-022. Cuando deban permanecer fuera de la disponibilidad hasta conocer su destino, pasarán a condición pendiente de clasificación. La reincorporación, liberación o baja que corresponda generará los movimientos respectivos según RF-023. |
 | Importancia | Alta |
 | Urgencia | Alta |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Analista de Sistemas (políticas de cancelación y cierre parcial); Especialista de Base de Datos (liberación de reservas) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Responsable de Soporte y Atención a Artesanos |
 | Comentarios | La cancelación y el cierre parcial se auditan y no requieren avanzar falsamente de estado. Cancelado y Cerrado parcialmente son estados operativos terminales; una revisión de pago, clasificación de unidades, confirmación de recepción o devolución puede seguir pendiente por separado. Tras siete días desde Listo sin recoger en taller los productos pendientes, el pedido sigue pagado y Listo, con marca de recogida atrasada y aviso; las cantidades permanecen reservadas, sin liberación, reventa ni reembolso automático, y puede acordarse nueva fecha. Esta regla no se extiende a otras modalidades de entrega por analogía. El cargo por tardanza queda fuera del alcance hasta definirlo y validarlo. |
 
-| RF-016 | REGISTRO DE MODALIDAD DE ENTREGA |
-| ----- | ----- |
+<a id="rf-016"></a>
+
+### RF-016 — REGISTRO DE MODALIDAD DE ENTREGA
+
+| Campo | Contenido |
+|---|---|
 | Versión | 2.1 |
 | Autores | Luis Gutiérrez, Keyling Rocha |
 | Fuentes | DSI RF-015; delimitación de la coordinación de entrega; definiciones de funcionamiento de Luis Gutiérrez y revisión de alineación del 30-sep-2026 |
@@ -252,23 +386,39 @@
 | Urgencia | Media |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Analista de Sistemas (modalidades y costos de entrega) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Responsable de Soporte y Atención a Artesanos |
 | Comentarios | El plan, la modalidad y los costos propuestos son visibles en Pendiente y el comprador puede cancelar la solicitud. Las fechas acordadas no equivalen a entrega efectuada. No se implementan GPS, logística propia ni seguimiento de transportistas; falta definir la política ante recepción fallida en modalidades distintas de recogida en taller. |
 
-| RF-017 | OFERTA ESTÁNDAR Y PERSONALIZACIÓN BAJO DEMANDA |
-| ----- | ----- |
+<a id="rf-017"></a>
+
+### RF-017 — OFERTA ESTÁNDAR Y PERSONALIZACIÓN BAJO DEMANDA
+
+| Campo | Contenido |
+|---|---|
 | Versión | 1.0 |
 | Autores | Luis Gutiérrez, Heidi Piña |
 | Fuentes | DSI RF-016; decisión del equipo sobre ambas modalidades |
 | Dependencias | RF-001, RF-003 |
-| Descripción | Una ficha podrá ofrecer unidades estándar, personalización bajo demanda o ambas. El comprador elegirá la opción de cada renglón; si la opción estándar no tiene unidades disponibles no podrá solicitar esa opción, pero sí la personalizada si está habilitada. |
+| Descripción | Una misma ficha puede ofrecer modalidad estándar, personalizada o ambas. La disponibilidad de la opción estándar dependerá de las unidades calculadas como disponibles según RF-022. El control de existencias, reservas, movimientos, costos y valorización aplica directamente a unidades estándar. Los productos personalizados bajo demanda no requieren existencia estándar previa y no se incorporarán automáticamente al inventario salvo que el artesano registre posteriormente una entrada de unidades estándar. |
 | Importancia | Crítica |
 | Urgencia | Alta |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
-| Comentarios | Una misma ficha puede ofrecer ambas opciones. Cambia el selector exclusivo de modalidad del DSI; la decisión de alcance está confirmada, la ficha requiere homologación. La disponibilidad visible al solicitar puede variar: la verificación definitiva y la reserva ocurren al aceptar. |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Analista de Sistemas (reglas de cada modalidad) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Responsable de Soporte y Atención a Artesanos y Especialista en Capacitación de Usuarios |
+| Comentarios | Una misma ficha puede ofrecer ambas opciones. Cambia el selector exclusivo de modalidad del DSI; la decisión de alcance está confirmada, la ficha requiere homologación. La disponibilidad visible al solicitar puede variar: la verificación definitiva y la reserva ocurren al aceptar. El control de inventario, costos y valorización aplica a las unidades estándar. Los productos personalizados bajo demanda no requieren existencia estándar previa, salvo que posteriormente el artesano los incorpore expresamente al inventario mediante una entrada. |
 
-| RF-018 | PEDIDO DE VARIOS PRODUCTOS DE UN MISMO TALLER |
-| ----- | ----- |
+<a id="rf-018"></a>
+
+### RF-018 — PEDIDO DE VARIOS PRODUCTOS DE UN MISMO TALLER
+
+| Campo | Contenido |
+|---|---|
 | Versión | 1.1 |
 | Autores | Equipo del proyecto (atribución formal por ratificar) |
 | Fuentes | DSI RF-009; decisión del equipo sobre pedidos por taller; definiciones de funcionamiento de Luis Gutiérrez y revisión de alineación del 30-sep-2026 |
@@ -278,10 +428,18 @@
 | Urgencia | Alta |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Analista de Sistemas (reglas del pedido por taller); Especialista de Base de Datos (estructura de renglones) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Responsable de Soporte y Atención a Artesanos |
 | Comentarios | La composición por taller está confirmada por el equipo. Aceptación integral, pago del 100 % y varias entregas son criterios de Luis pendientes de homologación. La composición local de la solicitud no introduce un checkout tradicional. Aceptación integral no obliga a entregar todo el mismo día. |
 
-| RF-019 | DESPUBLICACIÓN Y MODERACIÓN DE PRODUCTOS |
-| ----- | ----- |
+<a id="rf-019"></a>
+
+### RF-019 — DESPUBLICACIÓN Y MODERACIÓN DE PRODUCTOS
+
+| Campo | Contenido |
+|---|---|
 | Versión | 1.1 |
 | Autores | Equipo del proyecto (atribución formal por ratificar) |
 | Fuentes | Propuesta §4.4.2 y §7.1; definiciones de funcionamiento de Luis Gutiérrez y revisión de alineación del 30-sep-2026 |
@@ -291,10 +449,18 @@
 | Urgencia | Media |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Analista de Sistemas (reglas de despublicación y moderación) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Gerente General y Responsable de Soporte y Atención a Artesanos |
 | Comentarios | Despublicar conserva las referencias y precios históricos. La distinción de causas y el mecanismo autorizado de restitución deben concretarse en el contrato; no se presume aprobación de la elección técnica D14. |
 
-| RF-020 | NOTIFICACIONES DE EVENTOS DEL PEDIDO |
-| ----- | ----- |
+<a id="rf-020"></a>
+
+### RF-020 — NOTIFICACIONES DE EVENTOS DEL PEDIDO
+
+| Campo | Contenido |
+|---|---|
 | Versión | 1.1 |
 | Autores | Equipo del proyecto (atribución formal por ratificar) |
 | Fuentes | Propuesta §4.4.6 y diagrama de aceptación/rechazo; definiciones de funcionamiento de Luis Gutiérrez y revisión de alineación del 30-sep-2026 |
@@ -304,10 +470,18 @@
 | Urgencia | Media |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Administrador de Infraestructura Tecnológica (servicio de envío) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Responsable de Soporte y Atención a Artesanos |
 | Comentarios | Los avisos no cancelan pedidos ni liberan reservas por sí mismos. La generación de avisos por plazo —al consultar o mediante ejecución programada— se decidirá en el ADR-006 y el contrato; no exige aquí Celery o Redis. La emisión debe evitar duplicados del mismo evento. Los avisos por cada mensaje de chat quedan fuera del mínimo. |
 
-| RF-021 | REGISTRO Y SEGUIMIENTO DE REEMBOLSO EXTERNO |
-| ----- | ----- |
+<a id="rf-021"></a>
+
+### RF-021 — REGISTRO Y SEGUIMIENTO DE REEMBOLSO EXTERNO
+
+| Campo | Contenido |
+|---|---|
 | Versión | 1.1 |
 | Autores | Equipo del proyecto (atribución formal por ratificar) |
 | Fuentes | Propuesta §4.4.4; RF-015 histórico; definiciones de funcionamiento de Luis Gutiérrez y revisión de alineación del 30-sep-2026 |
@@ -317,27 +491,83 @@
 | Urgencia | Alta |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Analista de Sistemas (reglas de reembolso); Especialista de Base de Datos (registro de obligaciones) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Responsable de Soporte y Atención a Artesanos |
 | Comentarios | No se genera una obligación por fondos no recibidos ni se presume ausencia de fondos porque falte confirmación. El cierre operativo puede completarse mientras el reembolso siga Pendiente. El total de devoluciones no debe superar los fondos confirmados y la repetición de una acción no debe crear un segundo reembolso por la misma obligación. La cotización original permanece como evidencia. |
 
-| RF-022 | CONTROL MÍNIMO DE UNIDADES ESTÁNDAR Y RESERVAS |
-| ----- | ----- |
-| Versión | 1.1 |
-| Autores | Equipo del proyecto (atribución formal por ratificar) |
-| Fuentes | DSI RF-016; decisión del equipo sobre unidades estándar; definiciones de funcionamiento de Luis Gutiérrez y revisión de alineación del 30-sep-2026 |
-| Dependencias | RF-017, RF-018 |
-| Descripción | El artesano podrá registrar y ajustar con motivo las existencias físicas estándar. El sistema calculará disponibles = físicas − reservadas; al aceptar reservará atómicamente las cantidades estándar y, al registrar una entrega, descontará simultáneamente existencias y reservas de lo entregado. Al cancelar o cerrar parcialmente, el artesano clasificará las cantidades no entregadas entre reutilizables y unidades que deban darse de baja, indicando motivo. Para las reutilizables se disminuirá la reserva sin descontar las existencias físicas; para las bajas se descontarán simultáneamente existencias físicas y reservas, sin ofrecer esas unidades nuevamente. La clasificación cubrirá todas las cantidades pendientes y se aplicará atómicamente. Si cancela el comprador, la cancelación no quedará bloqueada por esta clasificación: las unidades seguirán reservadas y fuera de la disponibilidad del catálogo hasta que el artesano registre su destino. No se permitirán cantidades negativas ni modificación manual directa de reservas. |
+<a id="rf-022"></a>
+
+### RF-022 — CONTROL DE EXISTENCIAS, DISPONIBILIDAD Y RESERVAS DE PRODUCTOS ESTÁNDAR
+
+| Campo | Contenido |
+|---|---|
+| Versión | 2.0 |
+| Autores | Equipo del proyecto |
+| Fuentes | DSI RF-016; decisión del equipo sobre unidades estándar; ampliación del alcance para incorporar control transaccional de inventario, disponibilidad y costos básicos. |
+| Dependencias | RF-017, RF-018, RF-023, RF-024 |
+| Descripción | El artesano podrá registrar la existencia inicial de los productos estándar y posteriormente registrar nuevas entradas o ajustes de inventario, indicando el motivo cuando corresponda. El sistema mantendrá separadas las existencias físicas, las unidades reservadas y las unidades pendientes de clasificación, y calculará automáticamente las unidades disponibles mediante la fórmula: disponibles = existencias físicas − reservadas − por clasificar.<br>Al aceptar un pedido, el sistema verificará y reservará atómicamente las cantidades estándar requeridas, evitando comprometer más unidades de las disponibles. Al registrar una entrega, descontará simultáneamente de las existencias físicas y de las reservas las unidades entregadas. Las reservas no podrán modificarse manualmente y únicamente cambiarán como consecuencia de operaciones válidas del sistema.<br>Cuando una cancelación o cierre parcial deje unidades pendientes de resolver, estas permanecerán fuera de la disponibilidad hasta que el artesano registre su clasificación. Las unidades reutilizables serán reincorporadas a la disponibilidad, mientras que las unidades que deban darse de baja reducirán las existencias físicas. La clasificación deberá cubrir todas las unidades pendientes y conservar el motivo cuando corresponda.<br>El sistema impedirá valores negativos en existencias físicas, reservas, cantidades pendientes de clasificación y disponibilidad, y garantizará la consistencia de estas cantidades frente a operaciones concurrentes. |
 | Importancia | Crítica |
 | Urgencia | Alta |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
-| Comentarios | Control mínimo, sin almacenes, Kardex, compras ni valorización. Las reservas no vencen automáticamente a las 48 horas; la cancelación es manual. Una clasificación pendiente de unidades pertenece al control de reservas y no crea otro estado del pedido. La recogida atrasada mantiene las reservas. Los productos personalizados no generan una reposición automática de unidades estándar. Probar clasificación concurrente con aceptación, entrega o ajuste. |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Especialista de Base de Datos, por la concurrencia, integridad y control de reservas; Analista de Sistemas, por las reglas de inventario y disponibilidad. |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Responsable de Soporte y Atención a Artesanos y Especialista en Capacitación de Usuarios |
+| Comentarios | Este requisito evoluciona desde un control mínimo de unidades hacia un control transaccional de inventario para productos estándar. No incluye múltiples almacenes, transferencias entre bodegas, compras, proveedores, materias primas, lotes ni números de serie. El historial de movimientos se define en RF-023 y la información económica asociada al inventario en RF-024. Los productos personalizados bajo demanda no generan automáticamente existencias estándar. |
 
----
+<a id="rf-023"></a>
 
-## 2. Requisitos no funcionales
+### RF-023 — HISTORIAL DE MOVIMIENTOS DE INVENTARIO
 
-| RNF-001 | USABILIDAD |
-| ----- | ----- |
+| Campo | Contenido |
+|---|---|
+| Versión | 1.0 |
+| Autores | Equipo del proyecto |
+| Fuentes | Ampliación del control de inventario; necesidades de trazabilidad de existencias, reservas, entregas y ajustes. |
+| Dependencias | RF-022 |
+| Descripción | El sistema conservará un historial transaccional de todas las operaciones que modifiquen, inmovilicen o liberen inventario de productos estándar. Cada movimiento registrará como mínimo el producto afectado, fecha y hora, usuario responsable, tipo de movimiento, cantidad, motivo cuando corresponda, valores anteriores y posteriores relevantes y la referencia al pedido, entrega, cancelación u operación que lo origine.<br>Los tipos mínimos de movimiento serán: existencia inicial, entrada, ajuste positivo, ajuste negativo, reserva, liberación de reserva, consumo por entrega, pendiente de clasificación, reincorporación y baja.<br>Los movimientos generados automáticamente por operaciones de pedidos deberán registrarse en la misma transacción que la operación de negocio que los origina, de manera que no pueda confirmarse una reserva, entrega, liberación o baja sin conservar también su evidencia de inventario.<br>Los movimientos históricos no admitirán edición ordinaria. Cualquier corrección posterior deberá registrarse mediante un nuevo movimiento que conserve la trazabilidad del ajuste realizado. |
+| Importancia | Alta |
+| Urgencia | Alta |
+| Estado | Propuesto para homologación |
+| Estabilidad | Media |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Especialista de Base de Datos, por almacenamiento, integridad y transacciones; Analista de Sistemas, por definición de tipos de movimiento y reglas de negocio. |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Responsable de Soporte y Atención a Artesanos |
+| Comentarios | El historial de movimientos permite reconstruir la evolución de las existencias y reservas de un producto. Su propósito es operativo y de auditoría; no constituye un Kárdex financiero completo ni un módulo de contabilidad general. |
+
+<a id="rf-024"></a>
+
+### RF-024 — COSTOS Y VALORIZACIÓN BÁSICA DEL INVENTARIO
+
+| Campo | Contenido |
+|---|---|
+| Versión | 1.0 |
+| Autores | Equipo del proyecto |
+| Fuentes | Necesidad de disponer de información económica básica sobre el inventario sin incorporar un sistema contable completo. |
+| Dependencias | RF-022, RF-023 |
+| Descripción | Para los productos estándar, el artesano podrá registrar el costo unitario asociado a las entradas de inventario. Cuando una nueva entrada incorpore unidades con un costo diferente, el sistema calculará un costo promedio ponderado para las existencias disponibles de acuerdo con las cantidades y costos registrados.<br>El sistema conservará el costo aplicado a las unidades entregadas o dadas de baja, evitando que cambios posteriores del costo modifiquen retroactivamente el valor histórico de operaciones ya registradas.<br>A partir de la información disponible, el sistema podrá mostrar al artesano el costo unitario vigente, el valor estimado de las existencias físicas, el valor de las unidades disponibles, el costo asociado a las unidades entregadas, el precio de venta y el margen unitario o margen bruto estimado cuando existan datos suficientes.<br>La valorización tendrá finalidad administrativa y servirá como apoyo para el control del inventario y la toma de decisiones del artesano. |
+| Importancia | Media |
+| Urgencia | Media |
+| Estado | Propuesto para homologación |
+| Estabilidad | Media |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Especialista de Base de Datos, por conservación de costos históricos e integridad; Analista de Sistemas, por reglas de cálculo. |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Responsable de Soporte y Atención a Artesanos |
+| Comentarios | Esta funcionalidad proporciona información económica básica del inventario y no sustituye un sistema contable. Quedan fuera de alcance el libro diario, catálogo de cuentas, debe y haber, estados financieros, impuestos, cuentas por pagar, cuentas por cobrar y demás funciones propias de un ERP o sistema contable. |
+
+## Requisitos no funcionales
+
+<a id="rnf-001"></a>
+
+### RNF-001 — USABILIDAD
+
+| Campo | Contenido |
+|---|---|
 | Versión | 2.0 |
 | Autores | Luis Gutiérrez, Heidi Piña, Keyling Rocha |
 | Fuentes | ISO 9241-210 / Heurísticas de Nielsen |
@@ -347,10 +577,18 @@
 | Urgencia | Alta |
 | Estado | Propuesto para homologación |
 | Estabilidad | Alta |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Analista de Sistemas (pruebas de flujo); Especialista en Capacitación de Usuarios (pruebas con artesanos) |
+| Responsable de validación | Coordinador de Desarrollo de Software y Coordinador de Calidad y Mejora Continua |
+| Operación y soporte | Especialista en Capacitación de Usuarios |
 | Comentarios | Añade criterios comprobables de interacción sin cambiar el objetivo de usabilidad. |
 
-| RNF-002 | RESPONSIVIDAD Y COMPATIBILIDAD MÓVIL |
-| ----- | ----- |
+<a id="rnf-002"></a>
+
+### RNF-002 — RESPONSIVIDAD Y COMPATIBILIDAD MÓVIL
+
+| Campo | Contenido |
+|---|---|
 | Versión | 2.1 |
 | Autores | Luis Gutiérrez, Heidi Piña, Keyling Rocha |
 | Fuentes | Estándares web W3C; definiciones de funcionamiento de Luis Gutiérrez y revisión de alineación del 30-sep-2026 |
@@ -360,10 +598,18 @@
 | Urgencia | Alta |
 | Estado | Propuesto para homologación |
 | Estabilidad | Alta |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Analista de Sistemas (pruebas en dispositivos) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | No aplica en la primera versión |
 | Comentarios | Verificar al menos 360 × 800, 390 × 844, 768 × 1024, 1366 × 768 y 1920 × 1080 px en los flujos esenciales; sin desbordamiento horizontal ni acciones ocultas. |
 
-| RNF-003 | DESEMPEÑO Y CARGA PROGRESIVA |
-| ----- | ----- |
+<a id="rnf-003"></a>
+
+### RNF-003 — DESEMPEÑO Y CARGA PROGRESIVA
+
+| Campo | Contenido |
+|---|---|
 | Versión | 2.0 |
 | Autores | Luis Gutiérrez, Heidi Piña, Keyling Rocha |
 | Fuentes | ISO/IEC 25010 |
@@ -373,10 +619,18 @@
 | Urgencia | Media |
 | Estado | Propuesto para homologación |
 | Estabilidad | Alta |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Especialista de Base de Datos (optimización de consultas); Administrador de Infraestructura Tecnológica (capacidad del servidor) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Administrador de Infraestructura Tecnológica |
 | Comentarios | ≤3 s es objetivo de evaluación, no una medición ya superada. |
 
-| RNF-004 | SEGURIDAD DE PAGOS Y DATOS SENSIBLES |
-| ----- | ----- |
+<a id="rnf-004"></a>
+
+### RNF-004 — SEGURIDAD DE PAGOS Y DATOS SENSIBLES
+
+| Campo | Contenido |
+|---|---|
 | Versión | 4.1 |
 | Autores | Luis Gutiérrez |
 | Fuentes | Política de datos del proyecto; Ley N°. 787, Ley de Protección de Datos Personales (referencia normativa por validar en revisión legal); definiciones de funcionamiento de Luis Gutiérrez y revisión de alineación del 30-sep-2026 |
@@ -386,10 +640,18 @@
 | Urgencia | Alta |
 | Estado | Propuesto para homologación |
 | Estabilidad | Alta |
+| Responsable de desarrollo | Coordinador de Seguridad y Gestión de Riesgos |
+| Cargos de apoyo | Especialista de Ciberseguridad (revisiones de seguridad); Desarrollador Full Stack (controles en la aplicación); Administrador de Infraestructura Tecnológica (controles en el servidor) |
+| Responsable de validación | Jefe del Departamento de Informática |
+| Operación y soporte | Especialista de Ciberseguridad |
 | Comentarios | Los permisos y el acceso al comprobante se aplican desde backend. |
 
-| RNF-005 | ARQUITECTURA E INTEROPERABILIDAD |
-| ----- | ----- |
+<a id="rnf-005"></a>
+
+### RNF-005 — ARQUITECTURA E INTEROPERABILIDAD
+
+| Campo | Contenido |
+|---|---|
 | Versión | 2.1 |
 | Autores | Luis Gutiérrez, Heidi Piña, Keyling Rocha |
 | Fuentes | Principios de arquitectura de software; definiciones de funcionamiento de Luis Gutiérrez y revisión de alineación del 30-sep-2026 |
@@ -399,10 +661,18 @@
 | Urgencia | Media |
 | Estado | Propuesto para homologación |
 | Estabilidad | Alta |
+| Responsable de desarrollo | Coordinador de Desarrollo de Software |
+| Cargos de apoyo | Desarrollador Full Stack (implementación de la API); Administrador de Infraestructura Tecnológica (entorno de despliegue) |
+| Responsable de validación | Jefe del Departamento de Informática |
+| Operación y soporte | No aplica en la primera versión |
 | Comentarios | La mantenibilidad se especifica en RNF-015. El enrutador y la estructura efectiva del frontend deben verificarse en la rama que se integrará; este requisito no impone migrar React Router o TanStack Router ni atribuye una implementación a main sin evidencia. |
 
-| RNF-006 | DISPONIBILIDAD |
-| ----- | ----- |
+<a id="rnf-006"></a>
+
+### RNF-006 — DISPONIBILIDAD
+
+| Campo | Contenido |
+|---|---|
 | Versión | 2.0 |
 | Autores | Luis Gutiérrez, Heidi Piña |
 | Fuentes | ISO/IEC 25010 |
@@ -412,36 +682,60 @@
 | Urgencia | Baja |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
+| Responsable de desarrollo | Administrador de Infraestructura Tecnológica |
+| Cargos de apoyo | Desarrollador Full Stack (comprobaciones de salud de la aplicación) |
+| Responsable de validación | Jefe del Departamento de Informática |
+| Operación y soporte | Administrador de Infraestructura Tecnológica |
 | Comentarios | La meta de 95 % exige definir periodo y medición; no se atribuye al prototipo actual. |
 
-| RNF-007 | ESCALABILIDAD |
-| ----- | ----- |
+<a id="rnf-007"></a>
+
+### RNF-007 — ESCALABILIDAD
+
+| Campo | Contenido |
+|---|---|
 | Versión | 2.0 |
 | Autores | Luis Gutiérrez, Heidi Piña |
 | Fuentes | ISO/IEC 25010 |
-| Dependencias | RF-003, RF-022 |
-| Descripción | Soportará como mínimo 50 talleres activos y 500 productos publicados, con filtros paginados; se probarán además solicitudes simultáneas de las últimas unidades estándar. |
+| Dependencias | RF-003, RF-022, RF-023 |
+| Descripción | El sistema soportará como mínimo 50 talleres activos y 500 productos publicados, con filtros y resultados paginados. Se probarán solicitudes simultáneas sobre las últimas unidades disponibles de productos estándar y consultas paginadas del historial de movimientos de inventario, verificando que el crecimiento de registros no afecte la integridad de las operaciones. |
 | Importancia | Media |
 | Urgencia | Baja |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
+| Responsable de desarrollo | Administrador de Infraestructura Tecnológica |
+| Cargos de apoyo | Especialista de Base de Datos (rendimiento de la base de datos); Desarrollador Full Stack (paginación y filtros) |
+| Responsable de validación | Jefe del Departamento de Informática |
+| Operación y soporte | Administrador de Infraestructura Tecnológica |
 | Comentarios | 50 talleres y 500 productos, más concurrencia de última unidad. |
 
-| RNF-008 | TRAZABILIDAD DE PEDIDOS, PAGOS, REEMBOLSOS Y UNIDADES |
-| ----- | ----- |
-| Versión | 3.1 |
+<a id="rnf-008"></a>
+
+### RNF-008 — TRAZABILIDAD DE PEDIDOS, PAGOS, REEMBOLSOS Y UNIDADES
+
+| Campo | Contenido |
+|---|---|
+| Versión | 4.0 |
 | Autores | Luis Gutiérrez |
 | Fuentes | Buenas prácticas de auditoría de sistemas transaccionales; definiciones de funcionamiento de Luis Gutiérrez y revisión de alineación del 30-sep-2026 |
-| Dependencias | RF-005, RF-010, RF-011, RF-015, RF-021, RF-022 |
-| Descripción | Cada operación de negocio registrará usuario autenticado, fecha y hora, operación, motivo cuando corresponda, estado anterior y nuevo y cantidades o importes pertinentes. El historial incluirá aceptación, rechazo, cancelación, solicitudes y respuestas de cierre parcial, intentos y correcciones de pago, observaciones con fecha de notificación y plazo de corrección, declaración de fondos no recibidos, conciliación posterior a Cancelado, reembolsos, entregas por renglón y su confirmación o discrepancia, ajustes de unidades, reservas, clasificación de cantidades pendientes, liberaciones, bajas y consumo. El evento se persistirá en la misma transacción que la operación y no admitirá edición ordinaria. |
+| Dependencias | RF-005, RF-010, RF-011, RF-015, RF-021, RF-022, RF-023, RF-024 |
+| Descripción | Cada operación de negocio registrará usuario autenticado, fecha y hora, operación realizada, motivo cuando corresponda, estado anterior y nuevo y las cantidades o importes pertinentes.<br>El historial incluirá aceptación, rechazo, cancelación, solicitudes y respuestas de cierre parcial, intentos y correcciones de pago, observaciones, conciliación posterior a Cancelado, reembolsos, entregas por renglón y su confirmación o discrepancia.<br>Para inventario, se conservarán además la existencia inicial, entradas, ajustes positivos y negativos, reservas, liberaciones, cantidades pendientes de clasificación, reincorporaciones, bajas y consumo por entrega. Cuando una operación incorpore información económica, se conservará también el costo aplicado al movimiento correspondiente.<br>Los eventos se persistirán en la misma transacción que la operación que los origina y no admitirán edición ordinaria. Los cambios posteriores de costo no modificarán retroactivamente los registros históricos. |
 | Importancia | Alta |
 | Urgencia | Media |
 | Estado | Propuesto para homologación |
 | Estabilidad | Alta |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Especialista de Base de Datos (almacenamiento del historial); Coordinador de Seguridad y Gestión de Riesgos (evidencias de auditoría) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Coordinador de Seguridad y Gestión de Riesgos y Coordinador de Calidad y Mejora Continua |
 | Comentarios | El cierre operativo no borra intentos de pago, cantidades entregadas, solicitudes de cierre o asuntos económicos pendientes. Los avisos automáticos por plazo se basan en estos datos persistidos; su mecanismo de ejecución se define en el ADR-006. La consulta administrativa sigue los límites de RNF-004 y RNF-013. |
 
-| RNF-009 | COMPATIBILIDAD DE NAVEGADORES DE ESCRITORIO |
-| ----- | ----- |
+<a id="rnf-009"></a>
+
+### RNF-009 — COMPATIBILIDAD DE NAVEGADORES DE ESCRITORIO
+
+| Campo | Contenido |
+|---|---|
 | Versión | 2.0 |
 | Autores | Keyling Rocha |
 | Fuentes | Complemento de RNF-002 (enfoque mobile-first) |
@@ -451,10 +745,18 @@
 | Urgencia | Baja |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Analista de Sistemas (pruebas funcionales) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | No aplica en la primera versión |
 | Comentarios | Amplía la matriz de verificación de navegadores. |
 
-| RNF-010 | EFICIENCIA EN CONSUMO DE DATOS MÓVILES (POLLING) |
-| ----- | ----- |
+<a id="rnf-010"></a>
+
+### RNF-010 — EFICIENCIA EN CONSUMO DE DATOS MÓVILES (POLLING)
+
+| Campo | Contenido |
+|---|---|
 | Versión | 2.1 |
 | Autores | Luis Gutiérrez, Heidi Piña |
 | Fuentes | Perfil de usuario del protocolo (conectividad limitada, planes de datos reducidos); definiciones de funcionamiento de Luis Gutiérrez y revisión de alineación del 30-sep-2026 |
@@ -464,23 +766,39 @@
 | Urgencia | Media |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Administrador de Infraestructura Tecnológica (carga del servidor) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | No aplica en la primera versión |
 | Comentarios | La elección del cursor y su garantía de concurrencia sigue pendiente de diseño y ratificación técnica. Puede emplearse serialización por pedido u otro mecanismo demostrado. La demo usará mensajes reproducibles; no se añaden mensajes comerciales aleatorios. |
 
-| RNF-011 | INTEGRIDAD TRANSACCIONAL Y CONCURRENCIA |
-| ----- | ----- |
+<a id="rnf-011"></a>
+
+### RNF-011 — INTEGRIDAD TRANSACCIONAL Y CONCURRENCIA
+
+| Campo | Contenido |
+|---|---|
 | Versión | 1.1 |
 | Autores | Equipo del proyecto (atribución formal por ratificar) |
 | Fuentes | RF-005, RF-015, RF-018, RF-021 y RF-022; PostgreSQL; definiciones de funcionamiento de Luis Gutiérrez y revisión de alineación del 30-sep-2026 |
-| Dependencias | RF-005, RF-010, RF-011, RF-015, RF-018, RF-021, RF-022 |
-| Descripción | La creación de renglones, aceptación y reserva integral, confirmación y conciliación de pagos, cancelación, cierre parcial, registro de entregas y consumo de unidades, clasificación y baja de cantidades no entregadas y generación de reembolsos usarán transacciones ACID y restricciones de PostgreSQL. Las operaciones críticas conservarán invariantes frente a concurrencia y reenvíos: no reservar ni entregar más de lo permitido, no descontar dos veces una entrega, no liberar cantidades pendientes de clasificación, no producir existencias negativas y no duplicar la confirmación ni la obligación de reembolso. |
+| Dependencias | RF-005, RF-010, RF-011, RF-015, RF-018, RF-021, RF-022, RF-023, RF-024 |
+| Descripción | La creación de renglones, aceptación y reserva integral, confirmación y conciliación de pagos, cancelación, cierre parcial, registro de entregas, clasificación de unidades, liberaciones, reincorporaciones, bajas, entradas y ajustes de inventario y generación de reembolsos utilizarán transacciones ACID y restricciones de PostgreSQL.<br>Las operaciones críticas conservarán invariantes frente a concurrencia y reenvíos: no reservar ni entregar más unidades de las disponibles, no descontar dos veces una entrega, no liberar cantidades pendientes de clasificación sin resolver su destino, no producir cantidades negativas y no duplicar movimientos de inventario.<br>Las entradas que modifiquen el costo promedio conservarán consistencia entre cantidad, costo y movimiento histórico, evitando recalcular dos veces el costo por reenvíos o concurrencia. |
 | Importancia | Crítica |
 | Urgencia | Alta |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
+| Responsable de desarrollo | Especialista de Base de Datos |
+| Cargos de apoyo | Desarrollador Full Stack (servicios de dominio) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Especialista de Base de Datos |
 | Comentarios | Verificar aceptación de la última unidad, aceptación simultánea con cancelación o clasificación, entrega repetida o concurrente con cierre parcial, baja de unidades dañadas y confirmación de fondos posterior a Cancelado. El reembolso se calcula con el desglose congelado. La evidencia de recepción del comprador no causa un segundo descuento. |
 
-| RNF-012 | RESPALDO Y RECUPERACIÓN |
-| ----- | ----- |
+<a id="rnf-012"></a>
+
+### RNF-012 — RESPALDO Y RECUPERACIÓN
+
+| Campo | Contenido |
+|---|---|
 | Versión | 1.0 |
 | Autores | Equipo del proyecto (atribución formal por ratificar) |
 | Fuentes | Propuesta §§4.3.6, 4.3.11 y 7.1 |
@@ -490,10 +808,18 @@
 | Urgencia | Media |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
+| Responsable de desarrollo | Especialista de Base de Datos |
+| Cargos de apoyo | Administrador de Infraestructura Tecnológica (respaldos en la nube); Coordinador de Seguridad y Gestión de Riesgos (cifrado y retención) |
+| Responsable de validación | Jefe del Departamento de Informática |
+| Operación y soporte | Especialista de Base de Datos y Administrador de Infraestructura Tecnológica |
 | Comentarios | Definir frecuencia y retención según entorno; comprobar restauración antes de operar con datos reales. |
 
-| RNF-013 | MINIMIZACIÓN Y ACCESO A DATOS PERSONALES |
-| ----- | ----- |
+<a id="rnf-013"></a>
+
+### RNF-013 — MINIMIZACIÓN Y ACCESO A DATOS PERSONALES
+
+| Campo | Contenido |
+|---|---|
 | Versión | 1.1 |
 | Autores | Equipo del proyecto (atribución formal por ratificar) |
 | Fuentes | Propuesta §7.1; política de datos del proyecto; Ley N°. 787, Ley de Protección de Datos Personales (referencia normativa por validar en revisión legal); definiciones de funcionamiento de Luis Gutiérrez y revisión de alineación del 30-sep-2026 |
@@ -503,537 +829,60 @@
 | Urgencia | Media |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
+| Responsable de desarrollo | Coordinador de Seguridad y Gestión de Riesgos |
+| Cargos de apoyo | Especialista de Base de Datos (protección de datos); Desarrollador Full Stack (controles de acceso); Analista de Sistemas (datos mínimos necesarios) |
+| Responsable de validación | Jefe del Departamento de Informática |
+| Operación y soporte | Especialista de Ciberseguridad |
 | Comentarios | Separar el contacto público del taller del teléfono privado de acceso. |
 
-| RNF-014 | RESILIENCIA ANTE CONECTIVIDAD INESTABLE |
-| ----- | ----- |
+<a id="rnf-014"></a>
+
+### RNF-014 — RESILIENCIA ANTE CONECTIVIDAD INESTABLE
+
+| Campo | Contenido |
+|---|---|
 | Versión | 1.1 |
 | Autores | Equipo del proyecto (atribución formal por ratificar) |
 | Fuentes | Diagnóstico de artesanos; RF-009, RF-011 y RF-015; definiciones de funcionamiento de Luis Gutiérrez y revisión de alineación del 30-sep-2026 |
 | Dependencias | RF-009, RF-010, RF-011, RF-015, RF-021, RF-022 |
-| Descripción | Ante conexión móvil inestable, la interfaz mostrará carga, éxito o error y permitirá reintentar sin duplicar pedidos, intentos de registro de pago, correcciones, cancelaciones, solicitudes y respuestas de cierre parcial, entregas, clasificación de unidades ni reembolsos por reenvío de la misma acción. Al recuperar conexión consultará el resultado persistido antes de repetir una operación de efecto incierto. |
+| Descripción | Ante conexión móvil inestable, la interfaz mostrará estados de carga, éxito o error y permitirá reintentar sin duplicar pedidos, intentos de registro de pago, correcciones, cancelaciones, solicitudes y respuestas de cierre parcial, entregas, clasificaciones, reembolsos, entradas de inventario, ajustes ni bajas por reenvío de la misma acción.<br>Al recuperar la conexión, la aplicación consultará el resultado persistido antes de repetir cualquier operación cuyo resultado sea incierto. La protección contra duplicados se aplicará en el servidor y no dependerá únicamente del estado visual de los controles de la interfaz. |
 | Importancia | Alta |
 | Urgencia | Media |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
+| Responsable de desarrollo | Desarrollador Full Stack |
+| Cargos de apoyo | Analista de Sistemas (casos de reintento) |
+| Responsable de validación | Coordinador de Desarrollo de Software |
+| Operación y soporte | Responsable de Soporte y Atención a Artesanos |
 | Comentarios | Distinguir el reenvío técnico de una acción del nuevo intento de pago decidido por el comprador. La protección contra duplicados se aplica en el servidor; ocultar o deshabilitar un botón no basta. |
 
-| RNF-015 | MANTENIBILIDAD Y PRUEBAS DE REGLAS DE NEGOCIO |
-| ----- | ----- |
+<a id="rnf-015"></a>
+
+### RNF-015 — MANTENIBILIDAD Y PRUEBAS DE REGLAS DE NEGOCIO
+
+| Campo | Contenido |
+|---|---|
 | Versión | 1.1 |
 | Autores | Equipo del proyecto (atribución formal por ratificar) |
 | Fuentes | RNF-005 histórico; propuesta §7.1; auditoría de alineación; definiciones de funcionamiento de Luis Gutiérrez y revisión de alineación del 30-sep-2026 |
 | Dependencias | RNF-005, RNF-011 |
-| Descripción | Las reglas de pedidos, pagos, entregas, reembolsos y reservas se centralizarán en servicios de dominio, con pruebas de transiciones, autorización, plazos, cálculo económico, idempotencia y concurrencia. La interfaz no será autoridad de esas reglas. Requisitos, módulos, contrato y pruebas conservarán correspondencia mediante identificadores RF/RNF y control de versiones. |
+| Descripción | Las reglas de pedidos, pagos, entregas, reembolsos, inventario, reservas, movimientos y costos se centralizarán en servicios de dominio, con pruebas de transiciones, autorización, plazos, cálculo económico, idempotencia y concurrencia.<br>La interfaz no será autoridad sobre estas reglas. Requisitos, módulos, contratos de API y pruebas conservarán correspondencia mediante identificadores RF/RNF y control de versiones.<br>Las pruebas deberán cubrir, entre otros casos, aceptación simultánea de las últimas unidades disponibles, liberación y consumo de reservas, entradas y ajustes repetidos, clasificación de unidades pendientes, bajas, cálculo del costo promedio y conservación de costos históricos. |
 | Importancia | Alta |
 | Urgencia | Media |
 | Estado | Propuesto para homologación |
 | Estabilidad | Media |
+| Responsable de desarrollo | Coordinador de Desarrollo de Software |
+| Cargos de apoyo | Desarrollador Full Stack (pruebas automatizadas); Analista de Sistemas (trazabilidad RF/RNF) |
+| Responsable de validación | Jefe del Departamento de Informática |
+| Operación y soporte | Coordinador de Desarrollo de Software |
 | Comentarios | Verificar pago antes de producción, rutas estándar y personalizada, corrección del comprobante durante 48 horas, cancelación por imposibilidad, cierre parcial aceptado, conciliación tras Cancelado y baja de unidades dañadas. Las simulaciones del prototipo serán reproducibles y se distinguirán de servicios reales. |
 
----
+## Decisiones que la fuente deja pendientes
 
-## 3. Definiciones de Luis posteriores a la v2.1
+La homologación del equipo y la atribución formal indicada en algunas fichas siguen pendientes. También requieren definición la recuperación asistida de contraseña; el tratamiento de recepción fallida fuera del taller; la restitución de publicaciones moderadas; el cursor de chat con garantía de concurrencia; el mecanismo de avisos por plazo; la periodicidad y retención de respaldos; y los perfiles de medición de rendimiento y disponibilidad. La referencia normativa y los cargos por tardanza conservan las reservas expresadas por la fuente.
 
-Las siguientes definiciones complementan la v2.1. **Son de Luis Gutiérrez y están pendientes de homologación del equipo**; no son decisiones confirmadas ni modifican el estado «Propuesto para homologación» de ninguna ficha.
+El **ADR-006** mencionado en las fichas es una decisión pendiente: este repositorio no contiene ese ADR y esta actualización no lo aprueba ni crea una implementación de tareas programadas.
 
-| # | Fecha | Definición | Fichas afectadas | Relación con la v2.1 |
-|---|---|---|---|---|
-| L-1 | 30-sep-2026 | **Pieza única o con existencias.** Las unidades de cada publicación se clasifican como *pieza única* (una sola unidad de ese producto o diseño; cantidad solicitable siempre 1) o *con existencias* (varias unidades; al publicar se indica un entero mayor que cero y se solicita entre 1 y las disponibles). Es una clasificación de unidades, independiente de la personalización. | RF-001, RF-017, RF-022 | Complementa. No aparece en la v2.1 |
-| L-2 | 30-sep-2026 | **Personalización opcional sobre unidades disponibles.** La personalización no es obligatoria para pedir una unidad sin modificaciones: solo se muestra y se exige cuando el producto la admite y el comprador elige esa opción. En esta fase **personalizar modifica una unidad existente y consume la misma reserva**: una pieza única admite como máximo 1 aunque se personalice; con existencias, el máximo es la disponibilidad; sin disponibilidad no se puede pedir mediante personalización. | RF-009, RF-017, RF-022 | Complementa. **No sustituye** la personalización bajo demanda de RF-017, que puede pedirse sin unidades disponibles: se conserva como modalidad independiente, pendiente de implementación |
-| L-3 | 30-sep-2026 | **Recoger el pedido en el taller cuesta C$ 0.** El artesano cotiza el costo de las demás modalidades antes de aceptar. | RF-006, RF-016 | Complementa |
-| L-4 | 1-oct-2026 | **La modalidad la elige el comprador.** El artesano conserva esa elección y cotiza solo costo y notas opcionales. Para recoger en taller, después de aceptar se registra una fecha de recogida y la dirección se toma del perfil del taller. | RF-009, RF-016 | **Difiere** de RF-016 v2.1, donde el artesano «registrará antes de aceptar el plan de una o varias entregas y sus costos». Ver desviación V-9 |
-| L-5 | 1-oct-2026 | **Ubicación obligatoria** para punto de encuentro y entrega por el artesano, indicada por el comprador al solicitar y no editable por el artesano. | RF-009, RF-016 | Complementa |
-| L-6 | 1-oct-2026 | **El comprador solo cancela desde Aceptado.** En producción y estados posteriores no admiten cancelación del comprador. | RF-015 | Coincide con RF-015 v2.1 («El comprador no podrá cancelar unilateralmente desde En producción ni desde Listo para entrega») |
+Para RF-024 falta ratificar la base exacta del promedio ponderado, el tratamiento de existencia inicial y ajustes y el redondeo monetario. La [guía de alineación](../trazabilidad/alineacion-main-456f613.md#costos-y-valorización) registra la propuesta del texto adjunto como propuesta técnica, manteniendo íntegra la ficha de la fuente.
 
----
-
-## 4. Máquina de estados
-
-La máquina de estados del pedido, sus transiciones por actor y las transiciones de revisión del pago están en la sección 4.4.3 y 4.4.4 de [Módulos y funcionalidades](modulos-funcionalidades.md#443-módulo-de-solicitudes-y-pedidos). La versión histórica del 15-ago-2026 está en el [Anexo A](#a3-máquina-de-estados-del-pedido-rf-010-histórica).
-
----
-
-## 5. Estado del prototipo frente a la v2.1
-
-El prototipo `masaya-artisan-connect` simula parte de esta especificación con datos mock en el navegador (estado 3 de la escala de avance: «simulado con datos mock»). **Nada de lo simulado está integrado con API, persistido en PostgreSQL ni validado por un backend.** La persistencia local de la demo (IndexedDB) no es la persistencia del sistema ni una frontera de seguridad.
-
-### 5.1 Qué simula el prototipo
-
-| RF/RNF | Simulado en el prototipo | Falta |
-|---|---|---|
-| RF-001, RF-002, RF-003 | Publicación con fotografía, nombre, precio, rubro y descripción; tipo de unidades y personalización (L-1, L-2); imágenes JPG/PNG/WebP ≤ 5 MB; catálogo con filtros, orden y paginación | Optimización en servidor y almacenamiento fuera de PostgreSQL; aprobación de talleres; despublicación (RF-019) |
-| RF-004 | Pantalla de acceso con validación; selector de vista rotulado como herramienta del prototipo | Autenticación, roles y permisos asignados por el servidor |
-| RF-005, RF-006 | Cotización visible en Pendiente; aceptación con nueva comprobación de disponibilidad, reserva y total congelado; rechazo con motivo | Renglones múltiples y distribución de cargos compartidos; cargos de personalización con objeto |
-| RF-008 | Perfil del taller con foto y portada reemplazables; encabezado público legible de 360 a 1920 px | Almacenamiento de archivos y propiedad verificados por servidor |
-| RF-009, RF-017 | Solicitud desde la ficha de un producto, con cantidad limitada, opción sin modificaciones o con personalización (L-2) y preferencia de entrega | Composición local de varios renglones (RF-018); personalización **bajo demanda** sin unidades disponibles |
-| RF-010 | Ruta estándar Aceptado → Listo y personalizada Aceptado → En producción → Listo, ambas con Pago confirmado; la entrega descuenta existencias y reservas | Entregas parciales por renglón, evidencia del comprador y Cerrado parcialmente |
-| RF-011 | Intentos de pago con método, referencia, nota e imagen; Pago observado con motivo y plazo de 48 horas; corrección que conserva imágenes anteriores; Pago confirmado y Pago no recibido; nuevo intento tras Pago no recibido | Conciliación de revisiones tras Cancelado y su obligación de reembolso (ver V-3); notificación persistente de la observación |
-| RF-014 | Chat por pedido según estado, con sondeo incremental de mensajes reales | Garantía de orden de confirmación (RNF-010) |
-| RF-015, RF-022 | Cancelación del comprador desde Aceptado; las unidades quedan pendientes de clasificación y fuera del catálogo; clasificación en reutilizables y bajas con motivo y suma exacta; ajustes de existencias con motivo y sin bajar de lo comprometido | Cancelación de solicitud Pendiente; cancelación por imposibilidad o por falta de pago; cierre parcial |
-| RF-016 | Preferencia del comprador, cotización del costo antes de aceptar, C$ 0 al recoger en el taller, fecha de recogida y coordinación sin alterar importes congelados | Plan de varias entregas; ver V-9 |
-| RNF-004, RNF-013 | La imagen del comprobante se pide aparte de los metadatos y el mock solo la entrega a las partes simuladas del pedido; no aparece en catálogo, perfiles ni listados | Autorización real por servidor y archivos privados |
-| RNF-008 | Historial de eventos de pedido, pago, entrega y unidades; movimientos de unidades con actor, fecha y motivo | Persistencia transaccional e inmutable en servidor |
-| RNF-011 | Operaciones del mock serializadas, con reversión si falla el guardado local | Transacciones ACID y restricciones de PostgreSQL |
-
-### 5.2 Desviaciones respecto de la v2.1
-
-| # | Requisito | Comportamiento del prototipo | Tratamiento |
-|---|---|---|---|
-| V-1 | RF-009, RF-018 | Un producto por solicitud | Brecha; RF-018 conserva su alcance |
-| V-2 | RF-015 | El comprador no puede cancelar una solicitud Pendiente; el artesano no puede cancelar por imposibilidad ni por falta de pago | Brecha (incluye la antigua D-4) |
-| V-3 | RF-011, RF-021 | Un pedido cancelado con un intento Registrado u Observado no permite resolver esa revisión; no existen reembolsos | Brecha (incluye la antigua D-5). La conciliación tras Cancelado requiere RF-021 |
-| V-4 | RF-011 | Vencidas las 48 horas, la demo bloquea la corrección del comprador y deja al artesano resolver como Confirmado o No recibido. La tabla de transiciones de la v2.1 (4.4.4) solo condiciona la corrección a que el pedido siga Aceptado, y la v2.1 indica que Pago no recibido «no acorta un plazo de corrección vigente» | **Pendiente de decisión.** El bloqueo no está en la v2.1; debe confirmarse o retirarse |
-| V-5 | RF-010, RF-018 | Sin entregas parciales, evidencia del comprador ni Cerrado parcialmente | Brecha |
-| V-6 | RF-017 | Sin personalización bajo demanda que no consuma unidades | Brecha independiente (L-2) |
-| V-7 | RF-019, RF-020 | Sin despublicación ni notificaciones persistentes; solo avisos de mensajes nuevos | Brecha |
-| V-8 | RF-004 | Sesión simulada con selector de vista | Pendiente del backend (antigua D-6) |
-| V-9 | RF-016 | La modalidad la elige el comprador y el artesano solo cotiza (L-4) | Definición de Luis que difiere de la v2.1; requiere homologación o ajuste de la ficha |
-| V-10 | RF-002 | Las imágenes se guardan en base64 en el navegador, sin optimizar | Pendiente del backend (antigua D-7) |
-| V-11 | RF-007 | Tasa de cambio fija en el código | Pendiente del backend (antigua D-8) |
-| V-12 | RF-013 | Sin rol de administración ni Django Admin | Pendiente del backend (antigua D-9) |
-
-Las desviaciones D-1 a D-10 de la línea base se conservan con su estado en el [Anexo A](#a4-desviaciones-de-la-línea-base).
-
----
-
-## Nota sobre las reglas de negocio
-
-El RF-013 de la línea base hacía referencia a una regla **RN-06** (prohibición de que el administrador lea los mensajes del chat). En la v2.1 esa restricción está escrita directamente en RF-013, RNF-004 y RNF-013. El catálogo de reglas de negocio (RN-xx) sigue sin incorporarse al repositorio.
-
----
-
-# Anexo A. Línea base del 15 de agosto de 2026 (histórica)
-
-Texto íntegro de las fichas aprobadas y propuestas en la versión del 15-ago-2026, conservado como evidencia de la evolución del proyecto. **No es la redacción vigente.** Las aprobaciones que registra siguen siendo válidas para esas versiones y no se trasladan a las fichas v2.1.
-
-## A.1 Requisitos funcionales (línea base)
-
-| RF-001       | CARGA SIMPLIFICADA DE PRODUCTOS                                                                                                                                  |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Versión      | 1.0                                                                                                                                                              |
-| Autores      | Luis Gutiérrez, Keyling Rocha                                                                                                                                    |
-| Fuentes      | Encuestas a artesanos (problemas de adopción tecnológica)                                                                                                        |
-| Dependencias | Ninguna                                                                                                                                                          |
-| Descripción  | El sistema debe permitir la creación de un nuevo producto requiriendo únicamente cuatro campos obligatorios: Fotografía, Nombre/Precio, Categoría y Descripción. |
-| Importancia  | Alta                                                                                                                                                             |
-| Urgencia     | Alta                                                                                                                                                             |
-| Estado       | Aprobado                                                                                                                                                         |
-| Estabilidad  | Alta                                                                                                                                                             |
-| Comentarios  | Sin cambios. Reduce la carga cognitiva para un usuario con baja alfabetización digital.                                                                          |
-
-| RF-002       | OPTIMIZACIÓN Y ALMACENAMIENTO EFICIENTE DE IMÁGENES                                                                                                                                    |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Versión      | 1.0                                                                                                                                                                                    |
-| Autores      | Luis Gutiérrez, Heidi Piña                                                                                                                                                             |
-| Fuentes      | Buenas prácticas de arquitectura de software                                                                                                                                           |
-| Dependencias | RF-001                                                                                                                                                                                 |
-| Descripción  | El sistema debe comprimir las imágenes subidas y almacenar únicamente la ruta de acceso (URL) en la base de datos, guardando el archivo físico en el sistema de archivos del servidor. |
-| Importancia  | Alta                                                                                                                                                                                   |
-| Urgencia     | Alta                                                                                                                                                                                   |
-| Estado       | Aprobado                                                                                                                                                                               |
-| Estabilidad  | Alta                                                                                                                                                                                   |
-| Comentarios  | Con DRF, se implementa con `ImageField` + `ModelSerializer`.                                                                                                                           |
-
-| RF-003       | CATEGORIZACIÓN POR RUBRO LOCAL                                                                                                                   |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Versión      | 1.0                                                                                                                                              |
-| Autores      | Luis Gutiérrez, Heidi Piña                                                                                                                       |
-| Fuentes      | Marco Teórico 6.1.1                                                                                                                              |
-| Dependencias | RF-001                                                                                                                                           |
-| Descripción  | El sistema debe clasificar los productos según los rubros artesanales de Masaya (Cuero/Calzado, Hamacas, Madera, Textiles, Dulces, entre otros). |
-| Importancia  | Media                                                                                                                                            |
-| Urgencia     | Media                                                                                                                                            |
-| Estado       | Aprobado                                                                                                                                         |
-| Estabilidad  | Alta                                                                                                                                             |
-| Comentarios  | Coherente con la taxonomía real del municipio.                                                                                                   |
-
-| RF-004       | AUTENTICACIÓN SIMPLIFICADA (ASISTIDA)                                                                                                                    |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Versión      | 1.1                                                                                                                                                      |
-| Autores      | Heidi Piña, Keyling Rocha                                                                                                                                |
-| Fuentes      | Encuestas a artesanos                                                                                                                                    |
-| Dependencias | Ninguna                                                                                                                                                  |
-| Descripción  | Registro e inicio de sesión mediante teléfono + contraseña (MVP). OAuth2 (Google) y verificación SMS/WhatsApp quedan como capa adicional, no bloqueante. |
-| Importancia  | Alta                                                                                                                                                     |
-| Urgencia     | Media                                                                                                                                                    |
-| Estado       | Propuesto                                                                                                                                                |
-| Estabilidad  | Media                                                                                                                                                    |
-| Comentarios  | MVP con `djangorestframework-simplejwt`; mejora futura con `dj-rest-auth` + `django-allauth`.                                                            |
-
-| RF-005       | EVALUACIÓN DE SOLICITUD (ACEPTAR/RECHAZAR)                                                                                                                                                                                                                                        |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Versión      | 2.0                                                                                                                                                                                                                                                                               |
-| Autores      | Luis Gutiérrez                                                                                                                                                                                                                                                                    |
-| Fuentes      | Modalidad de trabajo tradicional de los artesanos de Masaya                                                                                                                                                                                                                       |
-| Dependencias | RF-001, RF-004, RF-009, RF-010                                                                                                                                                                                                                                                    |
-| Descripción  | El sistema debe notificar al artesano sobre nuevas solicitudes (RF-009), permitiéndole seleccionar "Aceptar" o "Rechazar" según su capacidad de producción. El rechazo es un estado terminal (Rechazado), distinto de la cancelación posterior de un pedido ya aceptado (RF-015). |
-| Importancia  | Crítica                                                                                                                                                                                                                                                                           |
-| Urgencia     | Alta                                                                                                                                                                                                                                                                              |
-| Estado       | Aprobado                                                                                                                                                                                                                                                                          |
-| Estabilidad  | Alta                                                                                                                                                                                                                                                                              |
-| Comentarios  | Es el RF que define la naturaleza del sistema: no es e-commerce de stock, es gestión de pedidos bajo demanda.                                                                                                                                                                     |
-
-| RF-006       | RESUMEN ECONÓMICO DEL PEDIDO                                                                                                                                                                                    |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Versión      | 1.0                                                                                                                                                                                                             |
-| Autores      | Luis Gutiérrez                                                                                                                                                                                                  |
-| Fuentes      | —                                                                                                                                                                                                               |
-| Dependencias | RF-005, RF-010                                                                                                                                                                                                  |
-| Descripción  | El sistema debe mostrar el desglose del pedido: precio del producto, costos adicionales y costo de entrega si aplica, hasta un total estimado. No se asume todavía un modelo de comisión real de la plataforma. |
-| Importancia  | Alta                                                                                                                                                                                                            |
-| Urgencia     | Media                                                                                                                                                                                                           |
-| Estado       | Propuesto                                                                                                                                                                                                       |
-| Estabilidad  | Alta                                                                                                                                                                                                            |
-| Comentarios  | Correcto no comprometerse a un modelo de comisión que el protocolo no define — evita la pregunta de tribunal "¿cuál es su modelo de negocio?".                                                                  |
-
-| RF-007       | CONVERSIÓN DE DIVISAS                                                                                                                                                                                                                                                      |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Versión      | 1.1                                                                                                                                                                                                                                                                        |
-| Autores      | Keyling Rocha                                                                                                                                                                                                                                                              |
-| Fuentes      | Dinámica económica bimonetaria de Nicaragua                                                                                                                                                                                                                                |
-| Dependencias | Ninguna                                                                                                                                                                                                                                                                    |
-| Descripción  | El sistema debe mostrar precios en Córdobas y Dólares, usando una tasa configurada manualmente por el administrador. Una fuente externa (ej. BCN) puede usarse como referencia, pero el sistema no debe depender de su disponibilidad en tiempo real para mostrar precios. |
-| Importancia  | Media                                                                                                                                                                                                                                                                      |
-| Urgencia     | Baja                                                                                                                                                                                                                                                                       |
-| Estado       | Propuesto                                                                                                                                                                                                                                                                  |
-| Estabilidad  | Media                                                                                                                                                                                                                                                                      |
-| Comentarios  | Se quita la dependencia obligatoria de un API externo — si falla el día de la defensa, el sistema sigue funcionando con la tasa configurada manualmente.                                                                                                                   |
-
-| RF-008       | PERFIL DE ARTESANO/TALLER                                                                                                                                              |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Versión      | 1.0                                                                                                                                                                    |
-| Autores      | Propuesto en auditoría                                                                                                                                                 |
-| Fuentes      | Marco teórico 6.1.6, 6.2.4                                                                                                                                             |
-| Dependencias | RF-004                                                                                                                                                                 |
-| Descripción  | Cada artesano debe poder configurar un perfil público: nombre del taller, descripción/historia, rubro, ubicación general, horario, teléfono/WhatsApp y redes sociales. |
-| Importancia  | Alta                                                                                                                                                                   |
-| Urgencia     | Media                                                                                                                                                                  |
-| Estado       | Propuesto                                                                                                                                                              |
-| Estabilidad  | Alta                                                                                                                                                                   |
-| Comentarios  | Da correlato funcional a la narrativa cultural que el propio marco teórico usa como factor de fidelización.                                                            |
-
-| RF-009       | SOLICITUD DE PEDIDO PERSONALIZADO                                                                                                                                                   |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Versión      | 1.0                                                                                                                                                                                 |
-| Autores      | Propuesto en auditoría                                                                                                                                                              |
-| Fuentes      | Modelo de negocio de fabricación bajo demanda                                                                                                                                       |
-| Dependencias | RF-001, RF-004                                                                                                                                                                      |
-| Descripción  | El comprador debe poder, desde la ficha del producto, solicitar un pedido indicando cantidad y observaciones/personalización. Genera el registro que evaluará el artesano (RF-005). |
-| Importancia  | Crítica                                                                                                                                                                             |
-| Urgencia     | Alta                                                                                                                                                                                |
-| Estado       | Propuesto                                                                                                                                                                           |
-| Estabilidad  | Alta                                                                                                                                                                                |
-| Comentarios  | Es el eslabón que conecta al comprador con RF-005; sin este RF, RF-005 no tiene entrada.                                                                                            |
-
-| RF-010       | GESTIONAR EL CICLO DE VIDA DEL PEDIDO                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Versión      | 2.0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| Autores      | Propuesto en auditoría                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| Fuentes      | Modelo de negocio de fabricación bajo demanda                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Dependencias | RF-005, RF-009, RF-011, RF-015                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| Descripción  | El sistema debe representar el ciclo de vida del pedido mediante una máquina de estados: Pendiente → Aceptado → En producción → Listo para entrega → Entregado. Desde Pendiente, la alternativa es Rechazado (RF-005, terminal). Desde Aceptado o En producción, el pedido puede pasar a Cancelado (RF-015, terminal), siempre que no haya llegado a Listo para entrega. La transición de Aceptado a En producción requiere que el pago correspondiente haya sido registrado y confirmado, de acuerdo con RF-011. El sistema no permitirá iniciar la producción mientras el pago permanezca pendiente de confirmación. |
-| Importancia  | Crítica                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| Urgencia     | Alta                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| Estado       | Propuesto                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| Estabilidad  | Alta                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| Comentarios  | Se mantiene una máquina de estados independiente de la representación interna del pago, pero se establece una **precondición de negocio para iniciar la producción**: el pago debe estar confirmado. No se contempla el pago contra entrega ni el inicio de fabricación sin confirmación del pago.                                                                                                                                                                                                                                                                                                                     |
-
-| RF-011       | REGISTRAR Y CONFIRMAR EL PAGO                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Versión      | 3.0                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| Autores      | Propuesto en auditoría                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Fuentes      | Viabilidad de pasarelas de pago en Nicaragua                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| Dependencias | RF-010                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Descripción  | El sistema debe permitir dos acciones separadas: **(1)** el comprador registra el pago de un pedido en estado Aceptado, indicando el método de pago y adjuntando el comprobante cuando corresponda; **(2)** el artesano verifica y confirma la recepción del pago, actualizando el campo `estado_pago` (Pendiente de pago / Pago registrado / Pago confirmado). **El pago deberá ser confirmado antes de que el pedido pueda pasar de Aceptado a En producción.** El sistema no debe almacenar datos de tarjetas ni ofrecer la modalidad de pago contra entrega. |
-| Importancia  | Alta                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| Urgencia     | Alta                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| Estado       | Propuesto                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| Estabilidad  | Alta                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| Comentarios  | El flujo de pago se simplifica a un único pago previo al inicio de la producción. No se implementará el esquema de pago 50/50. El comprador registra el pago después de la aceptación y el artesano lo verifica antes de iniciar la fabricación. Los comprobantes se gestionan conforme a RNF-004.                                                                                                                                                                                                                                                               |
-
-> **RF-012 no existe.** La numeración salta deliberadamente de RF-011 a RF-013.
-
-| RF-013       | PANEL DE ADMINISTRACIÓN (DJANGO ADMIN)                                                                                                                                                                                                                                                                                                                                                                                |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Versión      | 2.0                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| Autores      | Propuesto en auditoría                                                                                                                                                                                                                                                                                                                                                                                                |
-| Fuentes      | Necesidad de un rol administrador no definido en el protocolo                                                                                                                                                                                                                                                                                                                                                         |
-| Dependencias | RF-001, RF-004                                                                                                                                                                                                                                                                                                                                                                                                        |
-| Descripción  | El panel administrativo, vía Django Admin, debe permitir: aprobar registro de nuevos artesanos, moderar/dar de baja productos que incumplan lineamientos, consultar en solo lectura el listado general de pedidos y su estado, y activar/desactivar cuentas de usuario. NO debe permitir modificar el contenido de un pedido específico (precio, personalización) ni leer los mensajes del chat de un pedido (RN-06). |
-| Importancia  | Media                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| Urgencia     | Media                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| Estado       | Propuesto                                                                                                                                                                                                                                                                                                                                                                                                             |
-| Estabilidad  | Alta                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Comentarios  | Costo de desarrollo casi nulo (Django Admin es nativo). Se acota explícitamente el alcance para no convertirlo en un panel que decide sobre transacciones ajenas. Moderación de disputas vía chat queda como mejora futura.                                                                                                                                                                                           |
-
-| RF-014       | MENSAJERÍA ASOCIADA AL PEDIDO                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Versión      | 1.0                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| Autores      | Propuesto en auditoría, a partir del riesgo de fuga a WhatsApp identificado por el equipo                                                                                                                                                                                                                                                                                                                                                                       |
-| Fuentes      | Riesgo de desintermediación tras el primer pedido                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Dependencias | RF-005, RF-010                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Descripción  | El sistema debe permitir mensajes de texto entre comprador y artesano, asociados exclusivamente a un pedido. El chat se habilita automáticamente al pasar a Aceptado (no antes) y queda en solo lectura al llegar a Entregado o Cancelado. Si la solicitud es Rechazada, no se crea chat. No se permite iniciar un nuevo pedido desde la misma conversación. Se implementa mediante sondeo periódico (polling) sobre la API REST/DRF existente, sin WebSockets. |
-| Importancia  | Alta                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| Urgencia     | Media                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Estado       | Propuesto                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| Estabilidad  | Media                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| Comentarios  | Polling elegido sobre WebSockets porque reutiliza la arquitectura ya definida (RNF-005) sin un segundo runtime (ASGI/Channels/Redis), y porque la conectividad móvil inestable de los artesanos tolera mejor solicitudes cortas periódicas que una conexión persistente. Ver RNF-010 para el intervalo recomendado.                                                                                                                                             |
-
-| RF-015       | CANCELACIÓN DE PEDIDO TRAS ACEPTACIÓN                                                                                                                                                                                                                                                                                                                                                                                                |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Versión      | 1.0                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| Autores      | Propuesto en auditoría                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Fuentes      | Gap detectado: no existía forma de cancelar un pedido ya aceptado                                                                                                                                                                                                                                                                                                                                                                    |
-| Dependencias | RF-005, RF-010, RF-014                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Descripción  | El sistema deberá permitir al comprador o al artesano cancelar un pedido en estado Aceptado o En producción, siempre que este no haya alcanzado el estado Listo para entrega. Al realizar la cancelación, el sistema deberá notificar a la otra parte y establecer el pedido como Cancelado. Cuando el pedido haya tenido un pago confirmado, el sistema deberá registrar la necesidad de realizar un reembolso por el monto pagado. |
-| Importancia  | Alta                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| Urgencia     | Alta                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| Estado       | Propuesto                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| Estabilidad  | Media                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| Comentarios  | El reembolso se registra como consecuencia de la cancelación de un pedido previamente pagado. No se contemplan pagos parciales ni reembolsos parciales. La plataforma no ejecutará directamente la transferencia bancaria; registrará el estado del reembolso.                                                                                                                                                                       |
-
-| RF-016       | REGISTRO DE MODALIDAD DE ENTREGA                                                                                                                                                                                                                                                                                                           |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Versión      | 1.0                                                                                                                                                                                                                                                                                                                                        |
-| Autores      | Propuesto en auditoría                                                                                                                                                                                                                                                                                                                     |
-| Fuentes      | Gap detectado entre "coordinar entrega" (capacidad del actor) y la decisión de no ser plataforma logística                                                                                                                                                                                                                                 |
-| Dependencias | RF-010, RF-014                                                                                                                                                                                                                                                                                                                             |
-| Descripción  | El sistema debe permitir registrar la modalidad de entrega de un pedido Aceptado: retiro en taller, punto de encuentro, entrega directa por el artesano, u otra (texto libre). Sin cálculo de rutas, tracking en tiempo real ni integración con operadores logísticos — la coordinación específica (fecha, hora, lugar) ocurre vía RF-014. |
-| Importancia  | Media                                                                                                                                                                                                                                                                                                                                      |
-| Urgencia     | Media                                                                                                                                                                                                                                                                                                                                      |
-| Estado       | Propuesto                                                                                                                                                                                                                                                                                                                                  |
-| Estabilidad  | Media                                                                                                                                                                                                                                                                                                                                      |
-| Comentarios  | Resuelve la contradicción entre "coordinar la entrega" (listado como capacidad del actor) y "no somos plataforma logística": esta es la versión acotada y no-logística de esa capacidad.                                                                                                                                                   |
-
----
-
-## A.2 Requisitos no funcionales (línea base)
-
-| RNF-001      | USABILIDAD                                                                                                                                                                                    |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Versión      | 1.0                                                                                                                                                                                           |
-| Autores      | Luis Gutiérrez, Heidi Piña, Keyling Rocha                                                                                                                                                     |
-| Fuentes      | ISO 9241-210 / Heurísticas de Nielsen                                                                                                                                                         |
-| Dependencias | Ninguna                                                                                                                                                                                       |
-| Descripción  | La interfaz debe incorporar zonas táctiles amplias (zona de pulgar), ubicación accesible de acciones, contrastes altos y fuentes ajustables, para artesanos con poca experiencia tecnológica. |
-| Importancia  | Alta                                                                                                                                                                                          |
-| Urgencia     | Alta                                                                                                                                                                                          |
-| Estado       | Aprobado                                                                                                                                                                                      |
-| Estabilidad  | Alta                                                                                                                                                                                          |
-| Comentarios  | Uno de los RNF mejor fundamentados — conecta directo con el perfil de usuario del protocolo.                                                                                                  |
-
-| RNF-002      | RESPONSIVIDAD Y COMPATIBILIDAD MÓVIL                                                                                                                       |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Versión      | 1.0                                                                                                                                                        |
-| Autores      | Luis Gutiérrez, Heidi Piña, Keyling Rocha                                                                                                                  |
-| Fuentes      | Estándares web W3C                                                                                                                                         |
-| Dependencias | RNF-001                                                                                                                                                    |
-| Descripción  | El sistema debe ser completamente responsive y renderizarse correctamente en navegadores móviles de dispositivos de gama media-baja, desde 360px de ancho. |
-| Importancia  | Crítica                                                                                                                                                    |
-| Urgencia     | Alta                                                                                                                                                       |
-| Estado       | Aprobado                                                                                                                                                   |
-| Estabilidad  | Alta                                                                                                                                                       |
-| Comentarios  | 360px como umbral verificable en pruebas.                                                                                                                  |
-
-| RNF-003      | DESEMPEÑO Y CARGA PROGRESIVA                                                                                                  |
-| ------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| Versión      | 1.1                                                                                                                           |
-| Autores      | Luis Gutiérrez, Heidi Piña, Keyling Rocha                                                                                     |
-| Fuentes      | ISO/IEC 25010                                                                                                                 |
-| Dependencias | RF-002                                                                                                                        |
-| Descripción  | Carga asíncrona (lazy loading): texto y estructura antes que imágenes, con carga del catálogo ≤3 segundos en red móvil 3G/4G. |
-| Importancia  | Alta                                                                                                                          |
-| Urgencia     | Media                                                                                                                         |
-| Estado       | Aprobado                                                                                                                      |
-| Estabilidad  | Alta                                                                                                                          |
-| Comentarios  | Verificable con Lighthouse, perfil de red 3G simulada.                                                                        |
-
-| RNF-004      | SEGURIDAD DE PAGOS Y DATOS SENSIBLES                                                                                                                                                                                   |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Versión      | 3.0                                                                                                                                                                                                                    |
-| Autores      | Luis Gutiérrez                                                                                                                                                                                                         |
-| Fuentes      | Ley 787 de Nicaragua / PCI-DSS                                                                                                                                                                                         |
-| Dependencias | RF-011                                                                                                                                                                                                                 |
-| Descripción  | El sistema no debe almacenar datos bancarios ni de tarjetas. Los comprobantes de pago (RF-011) deben guardarse en almacenamiento con control de acceso, sin exposición pública ni URLs descargables sin autenticación. |
-| Importancia  | Crítica                                                                                                                                                                                                                |
-| Urgencia     | Alta                                                                                                                                                                                                                   |
-| Estado       | Propuesto                                                                                                                                                                                                              |
-| Estabilidad  | Alta                                                                                                                                                                                                                   |
-| Comentarios  | Se simplificó de "cifrado" a "control de acceso": suficiente para el nivel de riesgo real de un comprobante de transferencia, sin sumar complejidad de manejo de claves de cifrado.                                    |
-
-| RNF-005      | MANTENIBILIDAD                                                                                                                       |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Versión      | 1.0                                                                                                                                  |
-| Autores      | Luis Gutiérrez, Heidi Piña, Keyling Rocha                                                                                            |
-| Fuentes      | Principios de arquitectura de software                                                                                               |
-| Dependencias | Ninguna                                                                                                                              |
-| Descripción  | Django y React deben estar desacoplados, comunicándose exclusivamente vía API REST/JSON.                                             |
-| Importancia  | Alta                                                                                                                                 |
-| Urgencia     | Media                                                                                                                                |
-| Estado       | Aprobado                                                                                                                             |
-| Estabilidad  | Alta                                                                                                                                 |
-| Comentarios  | Con DRF, se cumple de forma nativa vía serializers. El chat (RF-014) reutiliza este mismo patrón — no se introduce un segundo stack. |
-
-| RNF-006      | DISPONIBILIDAD                                                                                                  |
-| ------------ | --------------------------------------------------------------------------------------------------------------- |
-| Versión      | 1.0                                                                                                             |
-| Autores      | Propuesto en auditoría                                                                                          |
-| Fuentes      | ISO/IEC 25010                                                                                                   |
-| Dependencias | Ninguna                                                                                                         |
-| Descripción  | El sistema debe mantener al menos 95% de disponibilidad mensual durante el periodo de evaluación del prototipo. |
-| Importancia  | Media                                                                                                           |
-| Urgencia     | Baja                                                                                                            |
-| Estado       | Propuesto                                                                                                       |
-| Estabilidad  | Media                                                                                                           |
-| Comentarios  | 95% es razonable para un prototipo académico, no exige infraestructura de producción real.                      |
-
-| RNF-007      | ESCALABILIDAD                                                                                                  |
-| ------------ | -------------------------------------------------------------------------------------------------------------- |
-| Versión      | 1.0                                                                                                            |
-| Autores      | Propuesto en auditoría                                                                                         |
-| Fuentes      | ISO/IEC 25010                                                                                                  |
-| Dependencias | Ninguna                                                                                                        |
-| Descripción  | El sistema debe soportar al menos 50 artesanos activos y 500 productos publicados sin degradación perceptible. |
-| Importancia  | Media                                                                                                          |
-| Urgencia     | Baja                                                                                                           |
-| Estado       | Propuesto                                                                                                      |
-| Estabilidad  | Media                                                                                                          |
-| Comentarios  | Número concreto y defendible para el alcance de tesis.                                                         |
-
-| RNF-008      | TRAZABILIDAD (PEDIDOS, PAGOS Y MENSAJERÍA)                                                                                                                                                                   |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Versión      | 2.0                                                                                                                                                                                                          |
-| Autores      | Propuesto en auditoría                                                                                                                                                                                       |
-| Fuentes      | Buenas prácticas de auditoría de sistemas transaccionales                                                                                                                                                    |
-| Dependencias | RF-010, RF-011, RF-014                                                                                                                                                                                       |
-| Descripción  | El sistema debe registrar el historial de cambios de estado del pedido, cambios de `estado_pago`, y mantener el historial de mensajería de cada pedido (estado anterior, estado nuevo, usuario, fecha/hora). |
-| Importancia  | Alta                                                                                                                                                                                                         |
-| Urgencia     | Media                                                                                                                                                                                                        |
-| Estado       | Propuesto                                                                                                                                                                                                    |
-| Estabilidad  | Alta                                                                                                                                                                                                         |
-| Comentarios  | Se amplió el alcance para cubrir pago y mensajería, no solo estado del pedido — necesario para resolver disputas artesano-comprador.                                                                         |
-
-| RNF-009      | COMPATIBILIDAD DE NAVEGADORES DE ESCRITORIO                                                                        |
-| ------------ | ------------------------------------------------------------------------------------------------------------------ |
-| Versión      | 1.0                                                                                                                |
-| Autores      | Propuesto en auditoría                                                                                             |
-| Fuentes      | Complemento de RNF-002 (enfoque mobile-first)                                                                      |
-| Dependencias | Ninguna                                                                                                            |
-| Descripción  | El sistema debe funcionar correctamente en las últimas versiones estables de Chrome, Firefox y Edge en escritorio. |
-| Importancia  | Media                                                                                                              |
-| Urgencia     | Baja                                                                                                               |
-| Estado       | Propuesto                                                                                                          |
-| Estabilidad  | Media                                                                                                              |
-| Comentarios  | RNF-002 cubre móviles; este cubre el caso de escritorio, que también puede ser usado por artesanos o compradores.  |
-
-| RNF-010      | EFICIENCIA EN CONSUMO DE DATOS MÓVILES (POLLING)                                                                                                                               |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Versión      | 1.0                                                                                                                                                                            |
-| Autores      | Propuesto en auditoría                                                                                                                                                         |
-| Fuentes      | Perfil de usuario del protocolo (conectividad limitada, planes de datos reducidos)                                                                                             |
-| Dependencias | RF-014                                                                                                                                                                         |
-| Descripción  | El mecanismo de polling del chat (RF-014) debe usar un intervalo no menor a 10-15 segundos y solicitar únicamente mensajes nuevos, no la conversación completa en cada sondeo. |
-| Importancia  | Alta                                                                                                                                                                           |
-| Urgencia     | Media                                                                                                                                                                          |
-| Estado       | Propuesto                                                                                                                                                                      |
-| Estabilidad  | Media                                                                                                                                                                          |
-| Comentarios  | Este RNF es lo que convierte "elegimos polling" en una decisión medible y defendible, no solo una preferencia de implementación.                                               |
-
----
-
-## A.3 Máquina de estados del pedido (RF-010, histórica)
-
-```
-                    ┌──────────────┐
-                    │  Pendiente   │
-                    └──────┬───────┘
-                           │
-              ┌────────────┴────────────┐
-              │                         │
-       (artesano acepta)         (artesano rechaza)
-              │                         │
-              ▼                         ▼
-       ┌──────────────┐          ┌─────────────┐
-       │   Aceptado   │          │  Rechazado  │ ← terminal, sin chat
-       └──────┬───────┘          └─────────────┘
-              │
-              │ ⚠ PRECONDICIÓN: estado_pago = Pago confirmado
-              │
-              ▼
-       ┌──────────────────┐
-       │  En producción   │
-       └──────┬───────────┘
-              │
-              ▼
-       ┌────────────────────────┐
-       │  Listo para entrega    │
-       └──────┬─────────────────┘
-              │
-              ▼
-       ┌──────────────┐
-       │  Entregado   │ ← terminal, chat en solo lectura
-       └──────────────┘
-
-Cancelación (RF-015): desde Aceptado o En producción → Cancelado (terminal).
-Si el pedido tenía pago confirmado, se registra la necesidad de reembolso.
-```
-
-**Flujo de pago (RF-011), único y previo a la producción:**
-
-```
-Pendiente de pago ──(comprador registra)──> Pago registrado
-                  ──(artesano confirma)──> Pago confirmado
-```
-
-No existe pago contra entrega. No existe pago dividido 50/50. No existen pagos ni reembolsos parciales.
-
----
-
-## A.4 Desviaciones de la línea base
-
-Diferencias detectadas el 15-ago-2026 entre la línea base y el código. Estado al 4-oct-2026: D-1, D-2 y D-3 están corregidas en el prototipo; D-4 y D-5 continúan como V-2 y V-3; D-6 a D-9 como V-8, V-10, V-11 y V-12; D-10 se corrigió en la demo y queda pendiente en el backend (ver la sección 5.2).
-
-| #    | Requisito | Comportamiento actual del prototipo                                                                                              | Corrección pendiente                                                                                                        |
-| ---- | --------- | -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| D-1  | RF-011    | `src/routes/pedidos.$id.tsx` solo permite registrar el pago cuando el pedido está en "Listo para entrega"                        | Permitirlo desde "Aceptado"                                                                                                 |
-| D-2  | RF-010    | `changeOrderStatus()` en `src/services/mock-api.ts` no valida el estado del pago al avanzar                                      | Bloquear "Aceptado" → "En producción" mientras el pago no esté confirmado                                                   |
-| D-3  | RF-011    | `PaymentMethod` en `src/types/index.ts` incluye "Pago contra entrega"                                                            | Eliminar esa modalidad                                                                                                      |
-| D-4  | RF-015    | La interfaz del artesano (`src/routes/panel.pedidos.$id.tsx`) oculta la opción de cancelar                                       | Habilitar la cancelación para ambos roles                                                                                   |
-| D-5  | RF-015    | No existe ningún concepto de reembolso                                                                                           | Modelar el registro del reembolso tras cancelar un pedido pagado                                                            |
-| D-6  | RF-004    | La sesión es un usuario fijo en `src/hooks/use-session.tsx` con la constante `DEMO_ARTISAN_ID`; el rol se elige en el formulario | Autenticación real; el rol proviene de la cuenta                                                                            |
-| D-7  | RF-002    | `processImage()` convierte a base64 en el cliente sin comprimir                                                                  | Compresión en el servidor con Pillow; almacenar ruta en PostgreSQL                                                          |
-| D-8  | RF-007    | La tasa de cambio es la constante `TASA_CAMBIO` en `src/lib/format.ts`                                                           | Configurable por el administrador                                                                                           |
-| D-9  | RF-013    | No existe rol de administrador ni panel                                                                                          | Django Admin, con el alcance acotado del RF-013                                                                             |
-| D-10 | RNF-004   | Corregida en la demo del 30-sep: imagen e historial en IndexedDB, consultados solo por las partes simuladas                      | Pendiente en backend: archivos privados y autorización autenticada; el almacenamiento local no es una frontera de seguridad |
-
----
-
-## A.5 Notas de revisión del prototipo (30-sep y 1-oct-2026)
-
-Notas registradas antes de disponer de la v2.1. Se conservan como historial; su contenido vigente está en las secciones 3 y 5.
-
-**Revisión de entrega del 1-oct-2026 (RF-009/RF-016), indicada por Luis:** la modalidad la elige el comprador y el artesano conserva esa elección al cotizar solo costo y notas opcionales. Para recoger en taller, el costo sigue en C$ 0; después de aceptar se guarda una fecha mediante selector de calendario, separada de las notas. La dirección mostrada al comprador se consulta del perfil del artesano. Esta revisión sustituye las menciones anteriores a que el artesano decide la modalidad o escribe fecha y lugar juntos para recogida; se conservan las aprobaciones históricas. Pruebas a cargo de Luis.
-
-**Revisión operativa del 1-oct-2026 (RF-015), indicada por Luis:** el comprador solo cancela un pedido en Aceptado. En producción y estados posteriores no admiten cancelación. Esta revisión sustituye esa condición en la simulación; las menciones a cancelar desde En producción en la línea base inferior quedan como historial de la redacción anterior, sin cambiar sus aprobaciones formales. El servicio rechaza el intento y la vista del comprador oculta la acción y explica el bloqueo. Las cancelaciones válidas desde Aceptado siguen dejando las unidades pendientes de clasificación. No se alteran pedidos históricos guardados ni se implementan excepciones por el artesano. Pruebas a cargo de Luis.
-
-**Fecha de esta versión:** 15 de agosto de 2026
-
-**Revisión del prototipo — 30-sep-2026:** se conservan las fichas históricas y sus estados de aprobación. Las correcciones autorizadas por Luis se describen en [Módulos y funcionalidades](modulos-funcionalidades.md) y en el [plan funcional](../superpowers/plans/2026-09-30-correcciones-funcionales-demo.md). Implementarlas en el mock no homologa requisitos ni implementa Django. La especificación v2.1 sigue sin localizarse: el archivo disponible en Downloads declara v2.0, modificado a las 00:07 del 30-sep. No se sustituyen fichas por una supuesta transcripción de v2.1.
-
-| RF/RNF afectado                    | Corrección simulada                                                                                                                                                        | Estado y brecha                                                                                          |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| RF-001, RF-002, RF-003, RF-017     | Publicación con pieza única/existencias y personalización opcional; catálogo con disponibilidad; imágenes JPG/PNG/WebP ≤ 5 MB                                              | Definiciones de Luis pendientes de homologación. Fabricación bajo demanda independiente, sin implementar |
-| RF-004                             | Acceso visible y selector identificado como demo                                                                                                                           | Sin autenticación real                                                                                   |
-| RF-005, RF-006, RF-009, RF-022     | Cantidades enteras limitadas, verificación al aceptar, reserva y total congelado                                                                                           | Transacciones reales y contrato pendientes                                                               |
-| RF-008                             | Foto y portada reemplazables, persistencia local y encabezado público corregido                                                                                            | Almacenamiento y permisos de servidor pendientes                                                         |
-| RF-010                             | Estándar: Aceptado → Listo; personalizado: Aceptado → En producción → Listo; ambas rutas exigen pago confirmado                                                            | Revisión autorizada por Luis, pendiente de homologación                                                  |
-| RF-011                             | Intentos, imágenes y correcciones conservados; Confirmado, Observado y No recibido; plazo de 48 horas                                                                      | Detalle normativo de v2.1 pendiente de cotejo                                                            |
-| RF-015, RF-022                     | Cancelación existente traslada reserva a clasificación; devuelve disponibles o descuenta bajas con motivo; entrega consume físicas y reservas                              | No amplía actores ni estados de cancelación; reembolsos pendientes                                       |
-| RF-016                             | Preferencia del comprador, cotización previa por artesano, recogida C$ 0, coordinación posterior sin alterar importes                                                      | Recogida gratuita es definición nueva de Luis, pendiente de homologación                                 |
-| RF-018                             | Un producto por pedido en esta fase                                                                                                                                        | Varios renglones de un taller sigue como brecha, sin reducir el alcance del RF                           |
-| RNF-004, RNF-008, RNF-011, RNF-013 | Imagen separada de metadatos y consultada solo por las partes simuladas; movimientos y resoluciones auditados; operaciones serializadas con reversión si falla el guardado | Autorización real, archivos privados y concurrencia de servidor pendientes                               |
-
-**Persistencia de demo:** IndexedDB conserva productos, imágenes del taller, pedidos, reservas, pagos, comprobantes, movimientos y mensajes. «Restablecer» borra la instantánea y vuelve al escenario inicial completo. No comparte datos entre dispositivos ni sincroniza pestañas; la serialización protege una instancia del mock.
-
-**Plazo del pago observado:** corrección hasta observación + 48 horas; agrega una imagen y vuelve el intento a Registrado. Vencido el plazo, la demo bloquea correcciones y deja al artesano resolver como Confirmado o No recibido. No cambia el estado automáticamente. Esta mecánica requiere cotejo con v2.1 y no se presenta como redacción normativa confirmada.
+La tabla de costos de desarrollo y los encabezados de diagramas del archivo de Drive quedan fuera de estas fichas. Esta revisión no establece gastos contratados ni considera elaborados los diagramas solo por aparecer sus títulos.

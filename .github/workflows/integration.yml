@@ -1,0 +1,27 @@
+name: Monorepo integration
+on:
+  push:
+    paths: ['apps/**', 'infra/**', 'docs/**', 'docker-compose.yml', '.env.example', '.github/workflows/integration.yml']
+  pull_request:
+    paths: ['apps/**', 'infra/**', 'docs/**', 'docker-compose.yml', '.env.example', '.github/workflows/integration.yml']
+permissions:
+  contents: read
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: python infra/scripts/check-doc-links.py
+      - run: python infra/scripts/check-secrets.py
+      - run: cp .env.example .env
+      - run: docker compose up --build --wait --wait-timeout 180
+      - run: docker compose exec -T frontend node ../../infra/scripts/check-health.mjs
+      - if: always()
+        run: docker compose logs --no-color --tail 80
+      - if: always()
+        run: docker compose stop

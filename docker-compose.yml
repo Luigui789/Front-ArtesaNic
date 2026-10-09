@@ -1,0 +1,76 @@
+name: artesanic
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-artesanic}
+      POSTGRES_USER: ${POSTGRES_USER:-artesanic}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Copiar .env.example a .env}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5434}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  backend:
+    build:
+      context: .
+      dockerfile: infra/docker/backend.Dockerfile
+    environment:
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?Copiar .env.example a .env}
+      DJANGO_SETTINGS_MODULE: config.settings.local
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-true}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1,backend}
+      DJANGO_FRONTEND_ORIGINS: ${DJANGO_FRONTEND_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
+      DJANGO_SECURE_COOKIES: ${DJANGO_SECURE_COOKIES:-false}
+      DJANGO_COOKIE_SAMESITE: ${DJANGO_COOKIE_SAMESITE:-Lax}
+      POSTGRES_DB: ${POSTGRES_DB:-artesanic}
+      POSTGRES_USER: ${POSTGRES_USER:-artesanic}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Copiar .env.example a .env}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+    command: ["sh", "-c", "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000 --noreload"]
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
+    volumes:
+      - ./apps/backend:/workspace/apps/backend
+      - ./docs:/workspace/docs:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import json, urllib.request; assert json.load(urllib.request.urlopen('http://127.0.0.1:8000/api/v1/salud/', timeout=5)) == {'estado': 'ok'}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+  frontend:
+    build:
+      context: .
+      dockerfile: infra/docker/frontend.Dockerfile
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-/api/v1}
+      API_PROXY_TARGET: http://backend:8000
+    command: ["pnpm", "dev", "--host", "0.0.0.0", "--port", "5173"]
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-5173}:5173"
+    volumes:
+      - ./apps/frontend:/workspace/apps/frontend
+      - ./infra:/workspace/infra:ro
+      - frontend_node_modules:/workspace/apps/frontend/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5173').then(r => { if (!r.ok) process.exit(1); }).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+volumes:
+  postgres_data:
+    name: ${POSTGRES_VOLUME:-artesanic_postgres_data}
+  frontend_node_modules:

@@ -1,0 +1,29 @@
+name: Frontend
+on:
+  push:
+    paths: ['apps/frontend/**', '.github/workflows/frontend.yml', '.gitattributes']
+  pull_request:
+    paths: ['apps/frontend/**', '.github/workflows/frontend.yml', '.gitattributes']
+permissions:
+  contents: read
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: apps/frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
