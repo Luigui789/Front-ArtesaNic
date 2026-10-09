@@ -265,3 +265,39 @@ Se adaptaron catálogo/ficha, solicitud, Mis productos, ambos detalles del pedid
 9. Checks opcionales: `node node_modules/typescript/bin/tsc --noEmit`, `node node_modules/vite/bin/vite.js build`, `node scripts/check-demo.mjs` y lint comparando la deuda indicada.
 
 El bloqueo de corrección tras 48 horas, sin cambio automático y con resolución por el taller, requiere cotejo con v2.1. Varias líneas, fabricación bajo demanda, cancelaciones ampliadas, reembolsos y entregas parciales siguen pendientes. Persistencia y concurrencia corresponden a una instancia local; no prueban seguridad o transacciones de backend.
+
+## 13. Continuación del 4-oct-2026
+
+**Estado encontrado.** La migración no estaba incompleta: el commit `bf15b07` (1-oct) ya integraba modelo, mock, persistencia y pantallas, y `tsc` pasaba. Quedaban pendientes la documentación con la v2.1 y la validación que Luis había asumido.
+
+**Fuente v2.1.** El archivo `Especificacion_RF_RNF_y_Modulos_ArtesaNic_2026-09-29.md` no estaba en Descargas (solo el PDF y una copia «(1)» que declara v2.0). Se usó el texto entregado por Luis el 4-oct, cuyo encabezado dice «Versión de trabajo: 2.1 consolidada · Fecha de revisión local: 30 de septiembre de 2026». Esto resuelve P-1 (§3.2).
+
+**Correcciones de esta continuación:**
+
+- **Pérdida silenciosa de datos guardados.** `leerInstantanea` devolvía `null` tanto ante un error de lectura como ante una instantánea de otra versión, y la primera escritura la sobrescribía. Ahora distingue vacía, cargada, otra versión y error; en los dos últimos casos el mock trabaja solo en memoria, no guarda, lo avisa con un banner y solo «Restablecer» reemplaza lo guardado. Los errores de escritura muestran un mensaje comprensible y revierten el cambio.
+- La sección de pago del artesano mostraba un texto dirigido al comprador en Pendiente.
+- El historial mostraba «— → —» en eventos de entrega y unidades, que no cambian estado.
+- Concordancia «1 unidad pendiente» en el evento del escenario.
+
+**Documentación.** `requisitos.md` contiene las fichas v2.1, un registro de revisiones, las definiciones posteriores de Luis (L-1 a L-6), el estado del prototipo y las desviaciones V-1 a V-12. La línea base del 15-ago queda íntegra en su Anexo A con sus aprobaciones. `modulos-funcionalidades.md` contiene la sección 4.4 de la v2.1 y el estado en el prototipo; su texto anterior se conserva al final.
+
+**Verificación (4-oct):** `tsc`, build y `node scripts/check-demo.mjs` pasan. En el navegador se verificó:
+
+- persistencia de producto, foto, portada, pago con comprobante y mensaje tras recargar;
+- instantánea de otra versión con aviso y sin sobrescribirla;
+- «Restablecer» desde la interfaz;
+- límites de cantidad: pieza única fija en 1; con existencias, botón «+» bloqueado y envío rechazado al exceder;
+- cotización con C$ 0 al recoger en el taller, aceptación con reserva y total congelado;
+- comprobante: rechazo de formato y tamaño, previsualización y reemplazo antes de enviar, observación con plazo de 48 h y corrección que conserva ambas imágenes, confirmación;
+- rutas personalizada (producción) y estándar (directo a Listo), y descuento de unidades al entregar;
+- clasificación con suma exacta, y cancelación solo desde Aceptado;
+- formulario de unidades, y foto y portada del taller;
+- perfil público a 360, 390, 768, 1366 y 1920 px, y cabecera a 1024 px.
+
+Lint: 6 607 errores `prettier/prettier` (línea base 10 590) y las 9 advertencias `react-refresh` previas; ningún error nuevo en los archivos tocados.
+
+**Pendiente de decisión de Luis:**
+
+- **V-4.** El bloqueo de la corrección tras 48 horas no figura en la v2.1.
+- **V-9.** Que la modalidad la elija el comprador difiere de RF-016 v2.1.
+- «Confirmar pago recibido» no pide confirmación en un diálogo; no lo exige ningún requisito.
