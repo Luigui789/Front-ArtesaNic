@@ -1,0 +1,10 @@
+from django.contrib import admin
+from django.urls import include, path
+
+from .health import SaludView
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("api/v1/salud/", SaludView.as_view(), name="salud"),
+    path("api/v1/auth/", include("apps.accounts.api.urls")),
+]
